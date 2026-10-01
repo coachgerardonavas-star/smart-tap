@@ -1,0 +1,106 @@
+---
+import Base from "../../layouts/Base.astro";
+import MetricCard from "../../components/MetricCard.astro";
+import { assertBusinessAccess, requireAuth } from "../../lib/auth";
+import { dashboardData } from "../../lib/data";
+
+const identity = await requireAuth(Astro.request, Astro.cookies);
+const data = await dashboardData(identity, Astro.url.searchParams.get("business"));
+const { businesses, business, metrics } = data;
+const canManage = business ? identity.isPlatformAdmin || await assertBusinessAccess(identity.id, business.id, false).then(() => true).catch(() => false) : false;
+const dateFormat = new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" });
+const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "numeric", timeZone: "UTC" });
+---
+
+<Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin}>
+  {!business || !metrics ? (
+    <section class="empty card">
+      <p class="eyebrow">Smart Tap</p>
+      <h1>Aún no tienes un negocio asignado</h1>
+      <p class="muted">Pide al administrador de Automate IT que agregue tu cuenta.</p>
+    </section>
+  ) : (
+    <>
+      <header class="page-head">
+        <div>
+          <p class="eyebrow">Resumen del negocio</p>
+          <h1>{business.display_name}</h1>
+          <p class="muted">Datos actualizados al cargar esta página.</p>
+        </div>
+        {businesses.length > 1 && (
+          <form method="get">
+            <label for="business" class="sr-only">Cambiar negocio</label>
+            <select id="business" name="business" onchange="this.form.submit()">
+              {businesses.map((item) => <option value={item.slug} selected={item.id === business.id}>{item.display_name}</option>)}
+            </select>
+          </form>
+        )}
+      </header>
+
+      <section class="metrics" aria-label="Indicadores principales">
+        <MetricCard label="Clientes" value={metrics.totalCustomers} note="Registrados" />
+        <MetricCard label="Visitas" value={metrics.totalVisits} note="Acumuladas" />
+        <MetricCard label="Clientes frecuentes" value={metrics.repeatCustomers} note="Más de una visita" />
+        <MetricCard label="Sin regresar" value={metrics.inactiveCustomers} note={`Más de ${business.inactivity_days} días`} />
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="card table-card customers-card">
+          <div class="card-head"><div><h2>Clientes</h2><p>Últimos 250 por visita reciente</p></div></div>
+          {metrics.customers.length ? (
+            <div class="table-scroll">
+              <table>
+                <thead><tr><th>Cliente</th><th>Teléfono</th><th>Visitas</th><th>Última visita</th>{canManage && <th><span class="sr-only">Acciones</span></th>}</tr></thead>
+                <tbody>
+                  {metrics.customers.map((customer) => (
+                    <tr>
+                      <td><strong>{customer.full_name}</strong></td>
+                      <td>{customer.phone_e164}</td>
+                      <td><span class="count">{customer.visitCount}</span></td>
+                      <td>{dateFormat.format(new Date(customer.last_seen_at))}</td>
+                      {canManage && <td><form action={`/api/dashboard/customer/${customer.id}/delete`} method="post" onsubmit="return confirm('¿Eliminar este cliente y todas sus visitas? Esta acción no se puede deshacer.')"><input type="hidden" name="businessId" value={business.id} /><button class="delete-button" type="submit">Eliminar</button></form></td>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p class="empty-row">El primer cliente aparecerá después de registrar una visita.</p>}
+        </article>
+
+        <aside class="card birthdays">
+          <div class="card-head"><div><h2>Próximos cumpleaños</h2><p>Siguientes 30 días</p></div></div>
+          {metrics.upcomingBirthdays.length ? (
+            <ul>
+              {metrics.upcomingBirthdays.map((customer) => (
+                <li><span class="avatar">{customer.full_name.slice(0, 1)}</span><div><strong>{customer.full_name}</strong><small>{birthdayFormat.format(new Date(`${customer.birthday}T00:00:00Z`))}</small></div></li>
+              ))}
+            </ul>
+          ) : <p class="empty-row">No hay cumpleaños próximos.</p>}
+        </aside>
+      </section>
+    </>
+  )}
+</Base>
+
+<style>
+  .page-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
+  .page-head h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 8px 0; }
+  .page-head select { min-height: 44px; padding: 0 36px 0 12px; border: 1px solid #d0d5dd; border-radius: 10px; background: #fff; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
+  .table-card { overflow: hidden; }
+  .card-head { padding: 21px 22px 15px; display: flex; justify-content: space-between; }
+  .card-head h2 { font-size: 1.05rem; margin-bottom: 4px; }
+  .card-head p { color: #98a2b3; font-size: .78rem; margin: 0; }
+  .count { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 20px; background: #eef4ff; color: #3538cd; font-weight: 750; }
+  td form { margin: 0; } .delete-button { border: 0; background: transparent; color: #b42318; font-size: .8rem; font-weight: 700; cursor: pointer; }
+  .birthdays ul { list-style: none; padding: 0 20px 15px; margin: 0; }
+  .birthdays li { display: flex; gap: 12px; align-items: center; padding: 13px 0; border-top: 1px solid #f2f4f7; }
+  .birthdays li:first-child { border-top: 0; }
+  .birthdays li div { display: grid; gap: 3px; }
+  .birthdays small { color: #98a2b3; }
+  .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #f2f4f7; color: #475467; font-weight: 800; }
+  .empty, .empty-row { padding: 36px; }
+  @media (max-width: 960px) { .metrics { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .page-head { align-items: start; flex-direction: column; } .metrics { grid-template-columns: 1fr 1fr; } }
+</style>

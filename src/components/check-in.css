@@ -1,0 +1,22 @@
+.checkin-form { display: grid; gap: 18px; }
+.checkin-form .field { display: grid; gap: 7px; }
+.checkin-form .field label { color: #292524; font-size: .9rem; font-weight: 750; }
+.checkin-form .field input {
+  width: 100%; min-height: 50px; padding: 11px 13px; border: 1px solid #d6d3d1;
+  border-radius: 11px; background: #fff; color: #1c1917; font: inherit; outline: none;
+}
+.checkin-form .field input:focus { border-color: var(--brand-color, #155eef); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-color, #155eef) 14%, transparent); }
+.checkin-form .hint, .privacy-note { color: #78716c; font-size: .78rem; line-height: 1.45; }
+.checkin-form .optional { color: #78716c; font-weight: 500; }
+.checkin-form .consent { display: grid; grid-template-columns: 20px 1fr; gap: 10px; color: #57534e; font-size: .83rem; line-height: 1.48; }
+.checkin-form .consent input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--brand-color, #155eef); }
+.checkin-form button { min-height: 52px; border: 0; border-radius: 12px; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+.checkin-form button:disabled { opacity: .6; cursor: wait; }
+.checkin-form .form-alert { padding: 12px 14px; border-radius: 10px; background: #fef3f2; color: #b42318; font-size: .86rem; }
+.checkin-form .privacy-note { text-align: center; margin: -5px 0 0; }
+.honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.confirmation { padding: 18px 4px 8px; text-align: center; }
+.confirmation .check { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 24px; border-radius: 50%; color: #fff; font-size: 1.7rem; font-weight: 900; }
+.confirmation h2 { font-size: 1.8rem; margin-bottom: 10px; }
+.confirmation p { color: #57534e; line-height: 1.55; }
+.confirmation .small { color: #a8a29e; font-size: .82rem; }

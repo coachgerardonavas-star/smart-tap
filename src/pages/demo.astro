@@ -1,0 +1,29 @@
+---
+import Base from "../layouts/Base.astro";
+import MetricCard from "../components/MetricCard.astro";
+const customers = [
+  { name: "Elena García", phone: "+1 305 555 0101", visits: 3, last: "Hace 2 días" },
+  { name: "Ana Torres", phone: "+1 305 555 0103", visits: 2, last: "Ayer" },
+  { name: "Marco Ruiz", phone: "+1 305 555 0102", visits: 2, last: "Hace 42 días" },
+];
+---
+<Base title="Demostración | Smart Tap">
+  <div class="demo-banner"><strong>Demostración de Smart Tap</strong><span>Los datos de esta vista son ficticios.</span><a href="/login">Ingresar</a></div>
+  <main class="demo-main">
+    <header class="head"><div><p class="eyebrow">Resumen del negocio</p><h1>Café Luna</h1><p class="muted">Así verá el negocio su actividad.</p></div><a class="button secondary" href="/demo/capture">Ver captura NFC</a></header>
+    <section class="metrics"><MetricCard label="Clientes" value="3" note="Registrados" /><MetricCard label="Visitas" value="7" note="Acumuladas" /><MetricCard label="Clientes frecuentes" value="3" note="Más de una visita" /><MetricCard label="Sin regresar" value="1" note="Más de 30 días" /></section>
+    <section class="grid">
+      <article class="card table-card"><div class="card-head"><h2>Clientes</h2><p>Ordenados por visita reciente</p></div><div class="table-scroll"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Visitas</th><th>Última visita</th></tr></thead><tbody>{customers.map((customer) => <tr><td><strong>{customer.name}</strong></td><td>{customer.phone}</td><td><span>{customer.visits}</span></td><td>{customer.last}</td></tr>)}</tbody></table></div></article>
+      <aside class="card birthdays"><div class="card-head"><h2>Próximos cumpleaños</h2><p>Siguientes 30 días</p></div><div class="person"><b>E</b><span><strong>Elena García</strong><small>15 de octubre</small></span></div></aside>
+    </section>
+  </main>
+</Base>
+<style>
+  .demo-banner { min-height: 48px; display: flex; justify-content: center; align-items: center; gap: 18px; padding: 10px 20px; background: #101828; color: #fff; font-size: .85rem; } .demo-banner span { color: #d0d5dd; } .demo-banner a { color: #84adff; font-weight: 750; }
+  .demo-main { width: min(1180px, 92vw); margin: 38px auto 60px; } .head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 28px; } h1 { font-size: 3rem; margin: 7px 0; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; } .grid { display: grid; grid-template-columns: 1fr 300px; gap: 20px; } .table-card { overflow: hidden; }
+  .card-head { padding: 21px; } .card-head h2 { margin-bottom: 4px; font-size: 1.05rem; } .card-head p { margin: 0; color: #98a2b3; font-size: .78rem; } td span { display: inline-grid; place-items: center; min-width: 28px; height: 28px; border-radius: 20px; background: #eef4ff; color: #3538cd; font-weight: 800; }
+  .person { display: flex; gap: 12px; align-items: center; padding: 0 21px 22px; } .person b { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: #f2f4f7; } .person span { display: grid; gap: 3px; } .person small { color: #98a2b3; }
+  @media(max-width:900px){.metrics{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.head{align-items:start;flex-direction:column;gap:18px}}
+  @media(max-width:600px){.demo-banner span{display:none}.metrics{grid-template-columns:1fr 1fr}h1{font-size:2.4rem}}
+</style>

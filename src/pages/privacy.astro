@@ -1,0 +1,23 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base title="Privacidad | Smart Tap" description="Información sobre el uso de datos en Smart Tap.">
+  <main class="legal card">
+    <p class="eyebrow">Smart Tap</p>
+    <h1>Información de privacidad</h1>
+    <p>El negocio mostrado en la página de registro usa Smart Tap para guardar tu nombre, teléfono, cumpleaños opcional y visitas.</p>
+    <h2>Para qué se usan los datos</h2>
+    <p>El negocio usa estos datos para reconocer tus visitas, conocer la frecuencia con la que regresas y recordar fechas que compartiste de forma voluntaria.</p>
+    <h2>Consentimiento</h2>
+    <p>Smart Tap guarda la fecha, la versión del aviso y un identificador técnico protegido cada vez que aceptas el registro.</p>
+    <h2>Acceso y eliminación</h2>
+    <p>Puedes pedir al negocio que consulte, corrija o elimine tus datos. Usa los medios de contacto habituales del negocio donde registraste tu visita.</p>
+    <h2>Protección</h2>
+    <p>Cada negocio accede solo a sus propios clientes. Smart Tap limita el acceso a usuarios autorizados y protege las claves del sistema en el servidor.</p>
+    <p class="muted updated">Última actualización: 1 de octubre de 2026.</p>
+  </main>
+</Base>
+<style>
+  .legal { width: min(760px, calc(100% - 32px)); margin: 48px auto; padding: clamp(26px, 6vw, 54px); }
+  h1 { font-size: clamp(2.2rem, 6vw, 3.5rem); margin: 10px 0 30px; } h2 { margin-top: 30px; font-size: 1.15rem; } p { color: #475467; line-height: 1.75; } .updated { margin-top: 40px; font-size: .85rem; }
+</style>

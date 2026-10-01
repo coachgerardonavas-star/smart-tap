@@ -1,0 +1,64 @@
+---
+import Base from "../../layouts/Base.astro";
+import { requirePlatformAdmin } from "../../lib/auth";
+import { createSupabaseServiceClient } from "../../lib/supabase";
+import type { Business } from "../../lib/types";
+
+await requirePlatformAdmin(Astro.request, Astro.cookies);
+const service = createSupabaseServiceClient();
+const { data, error } = await service.from("businesses").select("*").order("created_at", { ascending: false });
+if (error) throw error;
+const businesses = (data ?? []) as Business[];
+const message = Astro.url.searchParams.get("message");
+const formError = Astro.url.searchParams.get("error");
+---
+
+<Base title="Administración | Smart Tap" privateArea isAdmin>
+  <header class="page-head"><div><p class="eyebrow">Automate IT Admin</p><h1>Negocios</h1><p class="muted">Configura un negocio y genera su primer enlace NFC.</p></div></header>
+  {message && <div class="alert success">{message}</div>}
+  {formError && <div class="alert">{formError}</div>}
+  <div class="admin-grid">
+    <section class="card form-card">
+      <h2>Nuevo negocio</h2>
+      <form action="/api/admin/businesses" method="post">
+        <div class="split">
+          <div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" required minlength="2" maxlength="100" /></div>
+          <div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="cafe-luna" /></div>
+        </div>
+        <div class="field"><label for="legalName">Razón social (opcional)</label><input id="legalName" name="legalName" maxlength="160" /></div>
+        <div class="field"><label for="ownerEmail">Correo del dueño (opcional)</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="off" /></div>
+        <div class="field"><label for="logoUrl">URL del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /></div>
+        <div class="field"><label for="privacyUrl">Política de privacidad (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="https://... o /privacy" /></div>
+        <div class="split compact">
+          <div class="field"><label for="primaryColor">Color principal</label><input id="primaryColor" name="primaryColor" type="color" value="#155EEF" /></div>
+          <div class="field"><label for="secondaryColor">Color secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value="#0B1220" /></div>
+          <div class="field"><label for="inactivityDays">Días inactivo</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value="45" /></div>
+        </div>
+        <div class="split">
+          <div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value="America/New_York" required /></div>
+          <div class="field"><label for="defaultCountry">País del teléfono</label><input id="defaultCountry" name="defaultCountry" value="US" minlength="2" maxlength="2" required /></div>
+        </div>
+        <button class="button" type="submit">Crear negocio</button>
+      </form>
+    </section>
+    <section class="card list-card">
+      <div class="list-head"><h2>Negocios activos</h2><span>{businesses.length}</span></div>
+      {businesses.length ? <ul>{businesses.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug}</small></div><span class:list={["status", { off: !business.is_active }]}>{business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page-head { margin-bottom: 28px; } .page-head h1 { font-size: 2.7rem; margin: 8px 0; }
+  .admin-grid { display: grid; grid-template-columns: minmax(420px, .9fr) minmax(380px, 1.1fr); gap: 22px; margin-top: 20px; }
+  .form-card { padding: 26px; } .form-card form { display: grid; gap: 17px; margin-top: 22px; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .split.compact { grid-template-columns: 1fr 1fr 1.2fr; }
+  input[type="color"] { padding: 5px; }
+  .list-card { overflow: hidden; } .list-head { display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #eaecf0; }
+  .list-head h2 { margin: 0; } .list-head > span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #f2f4f7; font-weight: 750; }
+  ul { list-style: none; padding: 0; margin: 0; } li a { display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 14px; padding: 17px 22px; border-bottom: 1px solid #f2f4f7; text-decoration: none; }
+  li a:hover { background: #fcfcfd; } li div { display: grid; gap: 4px; } li small { color: #98a2b3; }
+  .swatch { width: 12px; height: 42px; border-radius: 8px; } .status { padding: 5px 9px; border-radius: 20px; background: #ecfdf3; color: #027a48; font-size: .72rem; font-weight: 750; } .status.off { background: #f2f4f7; color: #667085; }
+  @media (max-width: 880px) { .admin-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) { .split, .split.compact { grid-template-columns: 1fr; } }
+</style>
