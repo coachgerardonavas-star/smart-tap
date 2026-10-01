@@ -1,4 +1,4 @@
-import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -28,6 +28,9 @@ export const checkInInputSchema = z.object({
   birthday: z.iso.date().optional().or(z.literal("")),
   consent: z.literal(true),
   consentVersion: z.string().trim().min(1).max(30),
+}).refine((value) => !value.birthday || value.birthday <= new Date().toISOString().slice(0, 10), {
+  message: "El cumpleaños no puede estar en el futuro.",
+  path: ["birthday"],
 });
 
 export const loginInputSchema = z.object({
@@ -43,8 +46,10 @@ export const businessInputSchema = z.object({
   privacyUrl: privacyUrlSchema.optional().or(z.literal("")),
   primaryColor: z.string().regex(hexColorPattern),
   secondaryColor: z.string().regex(hexColorPattern),
-  timezone: z.string().trim().min(3).max(80),
-  defaultCountry: z.string().trim().length(2).transform((value) => value.toUpperCase()),
+  timezone: z.string().trim().min(3).max(80).refine((value) => {
+    try { new Intl.DateTimeFormat("en-US", { timeZone: value }); return true; } catch { return false; }
+  }, "La zona horaria no es válida."),
+  defaultCountry: z.string().trim().length(2).transform((value) => value.toUpperCase()).refine((value) => isSupportedCountry(value as CountryCode), "El país no es válido."),
   inactivityDays: z.coerce.number().int().min(7).max(365),
   ownerEmail: optionalEmailSchema,
 });

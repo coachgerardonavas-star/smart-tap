@@ -42,7 +42,9 @@ In Supabase Auth settings:
 3. Add `{PUBLIC_SITE_URL}/auth/callback` to allowed redirect URLs.
 4. Set the Site URL to `PUBLIC_SITE_URL`.
 5. Configure custom SMTP before inviting commercial users.
-6. Require a password length of at least 12 and enable leaked-password protection when the plan supports it.
+6. Replace the hosted **Invite user** template with `supabase/templates/invite.html`.
+7. Replace the hosted **Reset password** template with `supabase/templates/recovery.html`.
+8. Require a password length of at least 12 and enable leaked-password protection when the plan supports it.
 
 ## First live test
 

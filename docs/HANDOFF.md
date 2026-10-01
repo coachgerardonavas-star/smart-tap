@@ -78,7 +78,7 @@ Review these risks first:
 
 1. RLS membership helpers and cross-tenant isolation.
 2. Service-only execution of `record_public_check_in`.
-3. Admin bootstrap and invitation callback behavior against a live Supabase project.
+3. Admin bootstrap, token-hash email templates, and invitation callback behavior against a live Supabase project.
 4. Tenant authorization before every service-role query.
 5. Production privacy notice and retention choices.
 

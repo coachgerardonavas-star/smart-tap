@@ -43,9 +43,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       redirectTo: `${import.meta.env.PUBLIC_SITE_URL}/auth/callback?next=/set-password`,
       data: { full_name: input.displayName },
     });
-    if (invite?.user) {
-      await service.from("business_members").upsert({ business_id: business.id, user_id: invite.user.id, role: "owner", is_active: true });
-    } else if (inviteError) {
+    let ownerUserId = invite?.user?.id;
+    if (!ownerUserId && inviteError) {
+      const listed = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      ownerUserId = listed.data.users.find((user) => user.email?.toLowerCase() === input.ownerEmail.toLowerCase())?.id;
+    }
+    if (ownerUserId) {
+      await service.from("business_members").upsert({ business_id: business.id, user_id: ownerUserId, role: "owner", is_active: true });
+    } else {
       inviteWarning = " El negocio quedó creado; revisa la invitación del dueño.";
     }
   }

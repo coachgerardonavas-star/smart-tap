@@ -32,4 +32,4 @@ All runtime dependencies are exact versions in `package.json` and `package-lock.
 
 ## Remaining verification
 
-Supabase CLI and Docker are unavailable on this laptop, and no hosted Supabase credentials were supplied. The migration ran under embedded PostgreSQL, while Supabase-specific hosted behavior, SMTP delivery, PKCE invitation links, and the production deploy still need a live smoke test after credentials are connected.
+Supabase CLI and Docker are unavailable on this laptop, and no hosted Supabase credentials were supplied. The migration ran under embedded PostgreSQL, while Supabase-specific hosted behavior, SMTP delivery, token-hash invitation links, and the production deploy still need a live smoke test after credentials are connected.

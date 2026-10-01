@@ -6,6 +6,7 @@ describe("public check-in validation", () => {
     const valid = { slug: "cafe-luna", tagCode: "demo-cafe-luna-main-2026", fullName: "Elena García", phone: "305-555-0101", birthday: "1992-10-15", consent: true, consentVersion: "2026-10-01" };
     expect(checkInInputSchema.safeParse(valid).success).toBe(true);
     expect(checkInInputSchema.safeParse({ ...valid, consent: false }).success).toBe(false);
+    expect(checkInInputSchema.safeParse({ ...valid, birthday: "2099-01-01" }).success).toBe(false);
   });
 
   it("rejects a slug that could alter a query or route", () => {
@@ -24,6 +25,8 @@ describe("admin validation", () => {
     const valid = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "", privacyUrl: "/privacy", primaryColor: "#155EEF", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "us", inactivityDays: "45", ownerEmail: "owner@example.com" };
     expect(businessInputSchema.safeParse(valid).success).toBe(true);
     expect(businessInputSchema.safeParse({ ...valid, primaryColor: "red; background:url(x)" }).success).toBe(false);
+    expect(businessInputSchema.safeParse({ ...valid, defaultCountry: "ZZ" }).success).toBe(false);
+    expect(businessInputSchema.safeParse({ ...valid, timezone: "Moon/Base" }).success).toBe(false);
   });
 
   it("allows only local redirect paths", () => {
