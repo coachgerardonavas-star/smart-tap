@@ -1,9 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const migration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001000000_initial_schema.sql", import.meta.url)), "utf8");
+const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
+const migrations = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
+  .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8"));
 const seed = readFileSync(fileURLToPath(new URL("../supabase/seed.sql", import.meta.url)), "utf8");
 const database = new PGlite();
 
@@ -22,7 +24,7 @@ beforeAll(async () => {
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
     $$;
   `);
-  await database.exec(migration);
+  for (const migration of migrations) await database.exec(migration);
   await database.exec(seed);
 }, 30_000);
 
@@ -43,7 +45,7 @@ describe("database migration and check-in transaction", () => {
     const result = await database.query<{ result: { visitCount: number } }>(`
       select public.record_public_check_in(
         'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Nuevo', '+13055550199',
-        '1990-10-20', '2026-10-01', repeat('a', 64), 'integration-test'
+        '1990-10-20', '2026-10-01', repeat('a', 64), repeat('b', 64), 'integration-test'
       ) as result
     `);
     expect(Number(result.rows[0]?.result.visitCount)).toBe(1);
@@ -54,6 +56,67 @@ describe("database migration and check-in transaction", () => {
         (select count(*)::int from public.consent_records r join public.customers c on c.id = r.customer_id where c.phone_e164 = '+13055550199') as consents
     `);
     expect(records.rows[0]).toEqual({ customers: 1, visits: 1, consents: 1 });
+  });
+});
+
+describe("one counted visit per day", () => {
+  it("does not add a second visit for the same customer on the same business day", async () => {
+    const run = (ipHash: string) => database.query<{ result: { visitCount: number; alreadyCounted: boolean } }>(`
+      select public.record_public_check_in(
+        'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Diario', '+13055553000',
+        null, '2026-10-01', '${ipHash}', '${"f".repeat(64)}', 'daily-test'
+      ) as result
+    `);
+    const first = (await run("1".repeat(64))).rows[0]?.result;
+    const second = (await run("2".repeat(64))).rows[0]?.result;
+    expect(first).toMatchObject({ visitCount: 1, alreadyCounted: false });
+    expect(second).toMatchObject({ visitCount: 1, alreadyCounted: true });
+    const consents = await database.query<{ count: number }>(`
+      select count(*)::int as count from public.consent_records r
+      join public.customers c on c.id = r.customer_id where c.phone_e164 = '+13055553000'
+    `);
+    expect(consents.rows[0]?.count).toBe(2);
+  });
+
+  it("counts a visit again on the next business day", async () => {
+    await database.exec(`
+      update public.visits set visited_at = now() - interval '1 day'
+      where customer_id = (select id from public.customers where phone_e164 = '+13055553000')
+    `);
+    const next = await database.query<{ result: { visitCount: number; alreadyCounted: boolean } }>(`
+      select public.record_public_check_in(
+        'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Diario', '+13055553000',
+        null, '2026-10-01', '${"3".repeat(64)}', '${"e".repeat(64)}', 'daily-test'
+      ) as result
+    `);
+    expect(next.rows[0]?.result).toMatchObject({ visitCount: 2, alreadyCounted: false });
+  });
+});
+
+describe("check-in rate limits", () => {
+  const checkIn = (phone: string, ipHash: string, phoneHash: string) => database.query(`
+    select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Limite', '${phone}',
+      null, '2026-10-01', '${ipHash}', '${phoneHash}', 'rate-test'
+    )
+  `);
+
+  it("lets many customers share one venue IP", async () => {
+    const sharedIp = "c".repeat(64);
+    for (let index = 0; index < 20; index += 1) {
+      const suffix = String(index).padStart(2, "0");
+      await checkIn(`+130555511${suffix}`, sharedIp, suffix.repeat(32));
+    }
+  });
+
+  it("blocks a fourth submission for one phone inside the window", async () => {
+    const phoneHash = "d".repeat(64);
+    for (let index = 0; index < 3; index += 1) await checkIn("+13055552000", `${index}`.repeat(64), phoneHash);
+    await expect(checkIn("+13055552000", "9".repeat(64), phoneHash)).rejects.toThrow(/rate_limit_exceeded/);
+  });
+
+  it("rejects calls without keyed identifiers", async () => {
+    await expect(checkIn("+13055552001", "", "e".repeat(64))).rejects.toThrow(/invalid_identifier/);
   });
 });
 
@@ -80,5 +143,14 @@ describe("tenant isolation", () => {
     } finally {
       await database.exec("rollback");
     }
+  });
+
+  it("denies the aggregate view and check-in function to anon", async () => {
+    const privileges = await database.query<{ view_select: boolean; check_in: boolean }>(`
+      select
+        has_table_privilege('anon', 'public.customer_visit_counts', 'select') as view_select,
+        has_function_privilege('anon', 'public.record_public_check_in(text,text,text,text,date,text,text,text,text)', 'execute') as check_in
+    `);
+    expect(privileges.rows[0]).toEqual({ view_select: false, check_in: false });
   });
 });

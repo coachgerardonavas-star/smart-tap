@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { siteUrl } from "../../../lib/env";
 import { createSupabaseServerClient } from "../../../lib/supabase";
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
@@ -7,7 +8,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   if (email.includes("@") && email.length <= 254) {
     const supabase = createSupabaseServerClient(request, cookies);
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${import.meta.env.PUBLIC_SITE_URL}/auth/callback?next=/set-password`,
+      redirectTo: `${siteUrl()}/auth/callback?next=/set-password`,
     });
   }
   return redirect("/forgot-password?sent=1", 303);

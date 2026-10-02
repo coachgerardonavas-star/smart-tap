@@ -1,15 +1,22 @@
 import type { AstroCookies } from "astro";
+import { serverEnv } from "./env";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "./supabase";
 
 export type AuthIdentity = {
   id: string;
   email: string | null;
   isPlatformAdmin: boolean;
+  aal: "aal1" | "aal2";
 };
 
+export type AuthorizationReason = "authentication_required" | "forbidden" | "mfa_required";
+
 export class AuthorizationError extends Error {
-  constructor(public readonly status: 401 | 403) {
-    super(status === 401 ? "Authentication required" : "Forbidden");
+  constructor(
+    public readonly status: 401 | 403,
+    public readonly reason: AuthorizationReason = status === 401 ? "authentication_required" : "forbidden",
+  ) {
+    super(reason === "mfa_required" ? "MFA required" : status === 401 ? "Authentication required" : "Forbidden");
   }
 }
 
@@ -27,8 +34,9 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
     .maybeSingle();
 
   const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
-  const bootstrapEmail = import.meta.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
-  if (email && bootstrapEmail && email.toLowerCase() === bootstrapEmail && profile?.platform_role !== "platform_admin") {
+  const bootstrapEmail = serverEnv("ADMIN_BOOTSTRAP_EMAIL")?.trim().toLowerCase();
+  if (email && bootstrapEmail && email.toLowerCase() === bootstrapEmail && profile?.platform_role !== "platform_admin"
+    && await hasConfirmedEmail(subject, bootstrapEmail)) {
     const promoted = await service
       .from("profiles")
       .update({ platform_role: "platform_admin" })
@@ -42,7 +50,18 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
     id: subject,
     email,
     isPlatformAdmin: profile?.platform_role === "platform_admin",
+    // getClaims verifies the token signature before these claims are trusted.
+    // Supabase treats a missing AAL claim as aal1.
+    aal: data?.claims.aal === "aal2" ? "aal2" : "aal1",
   };
+}
+
+// Promotion relies on Auth having confirmed the address, not only on the email claim,
+// so a misconfigured project with open signup cannot mint a platform admin.
+async function hasConfirmedEmail(userId: string, expectedEmail: string): Promise<boolean> {
+  const { data } = await createSupabaseServiceClient().auth.admin.getUserById(userId);
+  const user = data?.user;
+  return Boolean(user?.email_confirmed_at && user.email?.toLowerCase() === expectedEmail);
 }
 
 export async function requireAuth(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
@@ -51,10 +70,20 @@ export async function requireAuth(request: Request, cookies: AstroCookies): Prom
   return identity;
 }
 
-export async function requirePlatformAdmin(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
+export async function requirePlatformAdminRole(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
   const identity = await requireAuth(request, cookies);
   if (!identity.isPlatformAdmin) throw new AuthorizationError(403);
   return identity;
+}
+
+export function enforcePlatformAdminMfa(identity: AuthIdentity): AuthIdentity {
+  if (!identity.isPlatformAdmin) throw new AuthorizationError(403);
+  if (identity.aal !== "aal2") throw new AuthorizationError(403, "mfa_required");
+  return identity;
+}
+
+export async function requirePlatformAdmin(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
+  return enforcePlatformAdminMfa(await requirePlatformAdminRole(request, cookies));
 }
 
 export async function assertBusinessAccess(userId: string, businessId: string, allowViewer = true) {

@@ -79,8 +79,20 @@ export function normalizePhone(value: string, defaultCountry: string): string | 
 }
 
 export function safeNextPath(value: FormDataEntryValue | null): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
+  const fallback = "/dashboard";
+  // Browsers read "/\host" as "//host", and strip tabs and newlines before resolving.
+  if (typeof value !== "string" || !value.startsWith("/") || /[\\\u0000-\u001f\u007f]/.test(value)) return fallback;
+  try {
+    const base = "https://smart-tap.invalid";
+    const resolved = new URL(value, base);
+    if (resolved.origin !== base) return fallback;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return fallback;
   }
-  return value;
 }
+
+export const statusChangeSchema = z.object({
+  targetId: z.uuid(),
+  active: z.enum(["true", "false"]).transform((value) => value === "true"),
+});

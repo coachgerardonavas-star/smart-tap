@@ -33,5 +33,8 @@ describe("admin validation", () => {
     expect(safeNextPath("/dashboard?business=cafe-luna")).toBe("/dashboard?business=cafe-luna");
     expect(safeNextPath("https://evil.example")).toBe("/dashboard");
     expect(safeNextPath("//evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/\\evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/\t/evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/admin/../dashboard")).toBe("/dashboard");
   });
 });
