@@ -20,7 +20,7 @@ Generate `CHECK_IN_HASH_SECRET` with at least 32 random characters. Keep `.env` 
 
 ## Supabase
 
-Apply `supabase/migrations/20261001000000_initial_schema.sql`, then `supabase/seed.sql`. The Supabase CLI can run them after the project is linked. The SQL Editor can also apply each file in order.
+Apply every file in `supabase/migrations/` in name order (`20261001000000_initial_schema.sql`, then `20261002000000_review_hardening.sql`), then `supabase/seed.sql`. The Supabase CLI can run them after the project is linked. The SQL Editor can also apply each file in order.
 
 Set these values in `.env` and in the production host:
 
@@ -31,9 +31,14 @@ SUPABASE_SECRET_KEY=
 PUBLIC_SITE_URL=
 CHECK_IN_HASH_SECRET=
 ADMIN_BOOTSTRAP_EMAIL=
+TRUSTED_IP_HEADER=
 ```
 
-Create the bootstrap email in Supabase Auth. On its first authenticated request, the server sets its `profiles.platform_role` to `platform_admin`.
+The server reads these values at runtime. Set them in the host's environment; a rebuild is not required after changing them, and the build output contains none of them.
+
+Set `TRUSTED_IP_HEADER` only to a header your proxy overwrites: `cf-connecting-ip` behind Cloudflare, `x-forwarded-for` behind a single reverse proxy. With no proxy, leave it empty. A wrong value lets a client choose its own rate-limit identity.
+
+Create the bootstrap email in Supabase Auth and confirm it. On its first authenticated request with a confirmed email, the server sets its `profiles.platform_role` to `platform_admin`.
 
 In Supabase Auth settings:
 

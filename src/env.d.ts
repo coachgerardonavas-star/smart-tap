@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly PUBLIC_SITE_URL: string;
   readonly CHECK_IN_HASH_SECRET: string;
   readonly ADMIN_BOOTSTRAP_EMAIL?: string;
+  readonly TRUSTED_IP_HEADER?: string;
 }
 
 interface ImportMeta {

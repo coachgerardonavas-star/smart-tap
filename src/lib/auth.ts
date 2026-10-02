@@ -1,4 +1,5 @@
 import type { AstroCookies } from "astro";
+import { serverEnv } from "./env";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "./supabase";
 
 export type AuthIdentity = {
@@ -27,8 +28,9 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
     .maybeSingle();
 
   const email = typeof data?.claims?.email === "string" ? data.claims.email : null;
-  const bootstrapEmail = import.meta.env.ADMIN_BOOTSTRAP_EMAIL?.trim().toLowerCase();
-  if (email && bootstrapEmail && email.toLowerCase() === bootstrapEmail && profile?.platform_role !== "platform_admin") {
+  const bootstrapEmail = serverEnv("ADMIN_BOOTSTRAP_EMAIL")?.trim().toLowerCase();
+  if (email && bootstrapEmail && email.toLowerCase() === bootstrapEmail && profile?.platform_role !== "platform_admin"
+    && await hasConfirmedEmail(subject, bootstrapEmail)) {
     const promoted = await service
       .from("profiles")
       .update({ platform_role: "platform_admin" })
@@ -43,6 +45,14 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
     email,
     isPlatformAdmin: profile?.platform_role === "platform_admin",
   };
+}
+
+// Promotion relies on Auth having confirmed the address, not only on the email claim,
+// so a misconfigured project with open signup cannot mint a platform admin.
+async function hasConfirmedEmail(userId: string, expectedEmail: string): Promise<boolean> {
+  const { data } = await createSupabaseServiceClient().auth.admin.getUserById(userId);
+  const user = data?.user;
+  return Boolean(user?.email_confirmed_at && user.email?.toLowerCase() === expectedEmail);
 }
 
 export async function requireAuth(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {

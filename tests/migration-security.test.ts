@@ -1,9 +1,10 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const migrationPath = fileURLToPath(new URL("../supabase/migrations/20261001000000_initial_schema.sql", import.meta.url));
-const sql = readFileSync(migrationPath, "utf8").toLowerCase();
+const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
+const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
+  .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8")).join("\n").toLowerCase();
 const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log"];
 
 describe("database security migration", () => {

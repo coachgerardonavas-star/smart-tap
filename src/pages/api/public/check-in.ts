@@ -7,7 +7,7 @@ function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   const length = Number(request.headers.get("content-length") || 0);
   if (length > 12_000) return json(413, { error: "La solicitud es demasiado grande." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato no válido." });
@@ -42,7 +42,8 @@ export const POST: APIRoute = async ({ request }) => {
       p_phone_e164: phone,
       p_birthday: parsed.data.birthday || null,
       p_consent_version: parsed.data.consentVersion,
-      p_ip_hash: hashIdentifier(requestIp(request)),
+      p_ip_hash: hashIdentifier(`ip:${requestIp(request, clientAddress)}`),
+      p_phone_hash: hashIdentifier(`phone:${phone}`),
       p_user_agent: request.headers.get("user-agent") || "unknown",
     });
 

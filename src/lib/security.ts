@@ -1,12 +1,20 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { serverEnv } from "./env";
 
-export function requestIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || request.headers.get("cf-connecting-ip") || "unknown";
+// Client-supplied headers are untrusted. Only the header named in TRUSTED_IP_HEADER,
+// written by the proxy in front of this server, may replace the socket address.
+export function requestIp(request: Request, clientAddress: string | undefined, trustedHeader = serverEnv("TRUSTED_IP_HEADER")): string {
+  const header = trustedHeader?.trim().toLowerCase();
+  if (header) {
+    // The last entry is the one appended by the nearest proxy; earlier entries come from the client.
+    const value = request.headers.get(header)?.split(",").map((part) => part.trim()).filter(Boolean).at(-1);
+    if (value) return value;
+  }
+  return clientAddress || "unknown";
 }
 
 export function hashIdentifier(value: string): string {
-  const secret = import.meta.env.CHECK_IN_HASH_SECRET;
+  const secret = serverEnv("CHECK_IN_HASH_SECRET");
   if (!secret || secret.length < 32) throw new Error("CHECK_IN_HASH_SECRET must contain at least 32 characters");
   return createHmac("sha256", secret).update(value).digest("hex");
 }

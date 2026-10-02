@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import { requirePlatformAdmin } from "../../lib/auth";
+import { siteUrl as configuredSiteUrl } from "../../lib/env";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 
@@ -20,7 +21,7 @@ const members = await Promise.all((membersResult.data ?? []).map(async (member) 
   const result = await service.auth.admin.getUserById(member.user_id);
   return { ...member, email: result.data.user?.email ?? "Usuario sin correo" };
 }));
-const siteUrl = import.meta.env.PUBLIC_SITE_URL.replace(/\/$/, "");
+const siteUrl = configuredSiteUrl();
 const message = Astro.url.searchParams.get("message");
 const formError = Astro.url.searchParams.get("error");
 ---
@@ -52,13 +53,13 @@ const formError = Astro.url.searchParams.get("error");
     <div class="side-stack">
       <section class="card panel">
         <h2>NFC y enlaces</h2>
-        <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small>{siteUrl}/b/{business.slug}?t={tag.code}</small></div><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span></li>)}</ul>
+        <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small>{siteUrl}/b/{business.slug}?t={tag.code}</small></div><div class="status"><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/tag-status`} method="post"><input type="hidden" name="targetId" value={tag.id} /><input type="hidden" name="active" value={tag.is_active ? "false" : "true"} /><button class="link-button" type="submit">{tag.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul>
         <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre del nuevo NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Generar</button></form>
       </section>
 
       <section class="card panel">
         <h2>Usuarios autorizados</h2>
-        {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{member.role}</small></div><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
+        {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
         <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Rol</label><select id="role" name="role"><option value="owner">Dueño</option><option value="manager">Gerente</option><option value="viewer">Consulta</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
       </section>
     </div>
@@ -75,6 +76,7 @@ const formError = Astro.url.searchParams.get("error");
   .records { list-style: none; padding: 0; margin: -5px 0 20px; border: 1px solid #eaecf0; border-radius: 11px; overflow: hidden; }
   .records li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border-bottom: 1px solid #eaecf0; } .records li:last-child { border: 0; }
   .records li div { min-width: 0; display: grid; gap: 4px; } .records small { color: #98a2b3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .status { display: flex; align-items: center; gap: 10px; flex-shrink: 0; } .status form { margin: 0; } .status .link-button { font-size: .75rem; }
   .pill { padding: 4px 8px; border-radius: 14px; background: #ecfdf3; color: #027a48; font-size: .7rem; font-weight: 750; } .pill.off { background: #f2f4f7; color: #667085; }
   .inline-form { display: grid !important; grid-template-columns: 1fr auto; align-items: end; } .inline-form.member { grid-template-columns: 1fr 120px auto; }
   @media (max-width: 950px) { .settings-grid { grid-template-columns: 1fr; } }

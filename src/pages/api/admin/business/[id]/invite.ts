@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { siteUrl } from "../../../../../lib/env";
 import { requirePlatformAdmin } from "../../../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
 import { memberInviteSchema } from "../../../../../lib/validation";
@@ -15,7 +16,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
 
   let userId: string | undefined;
   const invited = await service.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo: `${import.meta.env.PUBLIC_SITE_URL}/auth/callback?next=/set-password`,
+    redirectTo: `${siteUrl()}/auth/callback?next=/set-password`,
     data: { full_name: business.display_name },
   });
   userId = invited.data.user?.id;

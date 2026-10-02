@@ -1,9 +1,11 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-const migration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261001000000_initial_schema.sql", import.meta.url)), "utf8");
+const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
+const migrations = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
+  .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8"));
 const seed = readFileSync(fileURLToPath(new URL("../supabase/seed.sql", import.meta.url)), "utf8");
 const database = new PGlite();
 
@@ -22,7 +24,7 @@ beforeAll(async () => {
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
     $$;
   `);
-  await database.exec(migration);
+  for (const migration of migrations) await database.exec(migration);
   await database.exec(seed);
 }, 30_000);
 
@@ -43,7 +45,7 @@ describe("database migration and check-in transaction", () => {
     const result = await database.query<{ result: { visitCount: number } }>(`
       select public.record_public_check_in(
         'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Nuevo', '+13055550199',
-        '1990-10-20', '2026-10-01', repeat('a', 64), 'integration-test'
+        '1990-10-20', '2026-10-01', repeat('a', 64), repeat('b', 64), 'integration-test'
       ) as result
     `);
     expect(Number(result.rows[0]?.result.visitCount)).toBe(1);
@@ -54,6 +56,33 @@ describe("database migration and check-in transaction", () => {
         (select count(*)::int from public.consent_records r join public.customers c on c.id = r.customer_id where c.phone_e164 = '+13055550199') as consents
     `);
     expect(records.rows[0]).toEqual({ customers: 1, visits: 1, consents: 1 });
+  });
+});
+
+describe("check-in rate limits", () => {
+  const checkIn = (phone: string, ipHash: string, phoneHash: string) => database.query(`
+    select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Limite', '${phone}',
+      null, '2026-10-01', '${ipHash}', '${phoneHash}', 'rate-test'
+    )
+  `);
+
+  it("lets many customers share one venue IP", async () => {
+    const sharedIp = "c".repeat(64);
+    for (let index = 0; index < 20; index += 1) {
+      const suffix = String(index).padStart(2, "0");
+      await checkIn(`+130555511${suffix}`, sharedIp, suffix.repeat(32));
+    }
+  });
+
+  it("blocks a fourth submission for one phone inside the window", async () => {
+    const phoneHash = "d".repeat(64);
+    for (let index = 0; index < 3; index += 1) await checkIn("+13055552000", `${index}`.repeat(64), phoneHash);
+    await expect(checkIn("+13055552000", "9".repeat(64), phoneHash)).rejects.toThrow(/rate_limit_exceeded/);
+  });
+
+  it("rejects calls without keyed identifiers", async () => {
+    await expect(checkIn("+13055552001", "", "e".repeat(64))).rejects.toThrow(/invalid_identifier/);
   });
 });
 
@@ -80,5 +109,14 @@ describe("tenant isolation", () => {
     } finally {
       await database.exec("rollback");
     }
+  });
+
+  it("denies the aggregate view and check-in function to anon", async () => {
+    const privileges = await database.query<{ view_select: boolean; check_in: boolean }>(`
+      select
+        has_table_privilege('anon', 'public.customer_visit_counts', 'select') as view_select,
+        has_function_privilege('anon', 'public.record_public_check_in(text,text,text,text,date,text,text,text,text)', 'execute') as check_in
+    `);
+    expect(privileges.rows[0]).toEqual({ view_select: false, check_in: false });
   });
 });
