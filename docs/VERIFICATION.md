@@ -113,3 +113,5 @@ Targeted tests in `tests/admin-mfa.test.ts` prove:
 - middleware redirects an admin page request at `aal1` to `/admin/mfa` and preserves its local path.
 
 Hosted enrollment, QR scanning, TOTP challenge, cookie refresh and the complete live smoke test remain pending until the local `.env` contains the Supabase secret key and the dashboard settings are complete.
+
+The first PR run found two Gitleaks false positives in commit `6d53ba9`: the same Supabase publishable browser key documented twice in `docs/CODEX_NEXT.md`. `.gitleaksignore` contains only those two exact historical fingerprints. New findings, different files, lines, commits or rules continue to fail CI.
