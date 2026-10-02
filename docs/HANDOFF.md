@@ -15,7 +15,7 @@ Updated: 2026-10-02 (independent review by Claude Code)
 
 The complete executable MVP is implemented. Public demo routes work without credentials. The live data path, Auth, invitations, dashboard, and admin require a Supabase project and environment values. No production project or deploy was changed because credentials and a target were not supplied.
 
-Estimated completion: 88% of the commercial MVP. Code review is complete; the remaining work is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing. The earlier 92% estimate did not account for a build defect that would have prevented any live deploy (see review below).
+Estimated completion: 90% of the commercial MVP. Code review is complete; the remaining work is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing. The earlier 92% estimate did not account for a build defect that would have prevented any live deploy (see review below).
 
 ## What works
 
@@ -103,6 +103,10 @@ Review these risks first:
 5. Production privacy notice and retention choices.
 
 Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
+
+## Hosted Supabase status
+
+Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Both migrations and the seed are applied, and the live RLS, rate-limit and privilege checks passed (see `docs/VERIFICATION.md`). Pending in the dashboard: Auth settings, SMTP, templates, redirect URLs, bootstrap admin user, and copying the secret key to the host.
 
 ## Real blockers
 

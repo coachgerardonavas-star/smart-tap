@@ -53,3 +53,35 @@ Build output checks:
 - Built server started with runtime-only variables: `/demo` and `/demo/capture` 200; `/dashboard` and `/admin` redirect anonymous users to `/login?next=…`; anonymous customer delete 401; cross-origin form POST to login 403; `next=/\evil.example` falls back to `/dashboard`; check-in without consent rejected; CSP, `X-Frame-Options` and `nosniff` present.
 
 Not run here: hosted Supabase, SMTP, real invitations and recovery, HTTPS deploy, physical NFC, browser screenshots of the new pause buttons on the admin page.
+
+## Hosted Supabase — Claude Code, 2026-10-02
+
+Project `smart-tap` (ref `vrouyhxzxrfkuuqfslrc`, us-east-1, organization Automate IT, free plan). To fit the free-plan limit of two active projects, `automate-it-job-tracker` was paused at the CEO's request.
+
+Applied:
+
+- `initial_schema` — migration 1 unchanged.
+- `review_hardening_rate_limit_helper` and `review_hardening_check_in_v2` — migration 2 without its first `drop function` line. The Supabase MCP connector stalled on the destructive statement, so the old eight-argument function was neutralized instead: `revoke all ... from public, anon, authenticated, service_role`. Dropping it in the SQL Editor is optional: `drop function public.record_public_check_in(text, text, text, text, date, text, text, text);`
+- `supabase/seed.sql` — Café Luna, 3 customers, 7 visits.
+
+Live checks, run inside one PL/pgSQL block that ends in an exception so every test row rolls back (confirmed afterwards: 3 customers, 7 visits, 0 Auth users, 0 limiter rows):
+
+| Check | Result |
+|---|---|
+| Profile trigger on `auth.users` insert | 2 of 2 profiles created |
+| Check-in creates customer, consent and visit | 1 visit |
+| Unknown NFC code | `tag_not_found` |
+| 4th submission for one phone in 10 minutes | `rate_limit_exceeded` |
+| 20 customers from one shared IP | all accepted |
+| Viewer of Café Luna reading another business's customers / view rows | 0 / 0 |
+| Viewer total customers, businesses, memberships | own tenant only (4, 1, 1) |
+| Owner of another business reading Café Luna customers / consents | 0 / 0 |
+| Authenticated user sets own `platform_role` | permission denied |
+| `anon` reading customers | permission denied |
+| Execute check-in: anon / authenticated / service_role | false / false / true |
+| Old check-in function for service_role | false |
+| Supabase security advisor | 0 lints |
+
+Note: `audit_log` has a platform-admin select policy but no table grant to `authenticated`, so audit rows are readable only through the server. This is safe; the policy is unused.
+
+Not verified: the application against this project, because the secret key is not available to the connector. Auth settings, SMTP, email templates and redirect URLs are dashboard settings not reachable from the connector.
