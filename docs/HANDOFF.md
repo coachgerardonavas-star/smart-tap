@@ -1,12 +1,12 @@
 # Smart Tap handoff
 
-Updated: 2026-10-02 (independent review by Claude Code)
+Updated: 2026-10-02 (Builder implementation of platform-admin MFA in progress)
 
 ## Project identity
 
 - Absolute path: `C:\automate-it\smart-tap`
 - Git repository: local repository initialized in the project root
-- Branch: `main`
+- Branch: `codex/live-smoke-mfa`, based on `origin/claude/review-hardening`
 - Builder: ChatGPT Codex
 - Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
@@ -14,6 +14,8 @@ Updated: 2026-10-02 (independent review by Claude Code)
 ## Current state
 
 The complete executable MVP is implemented. Public demo routes work without credentials. The live data path, Auth, invitations, dashboard, and admin require a Supabase project and environment values. No production project or deploy was changed because credentials and a target were not supplied.
+
+The current Builder branch adds mandatory TOTP MFA for `platform_admin`. All protected `/admin` pages and `/api/admin` routes require a server-verified `aal2` claim. `/admin/mfa` handles enrollment and challenge at `aal1`. Local policy and response tests pass; the hosted QR flow and live smoke test still require the dashboard configuration listed in `docs/CODEX_NEXT.md`.
 
 Estimated completion: 90% of the commercial MVP. Code review is complete; the remaining work is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing. The earlier 92% estimate did not account for a build defect that would have prevented any live deploy (see review below).
 

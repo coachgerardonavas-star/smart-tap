@@ -1,6 +1,6 @@
 # Verification
 
-Last full local gate: 2026-10-01.
+Last full local gate: 2026-10-02. Current result: 0 diagnostics, 37 of 37 tests passed across 6 files, standalone Node build complete.
 
 ## Automated
 
@@ -99,3 +99,17 @@ The control matrix (GS-01 to GS-60) lives in `docs/security/CONTROL_MATRIX.md`; 
 ## Body limit — 2026-10-02
 
 `readJsonLimited` counts the bytes actually read; a streamed 20 KB body without `Content-Length` is rejected (`tests/security.test.ts`). Before, the check relied on the header alone.
+
+## Platform-admin MFA — local gate, 2026-10-02
+
+Implementation follows the Supabase TOTP enrollment, challenge and verification flow. `getAuthIdentity` reads `aal` only after `getClaims` verifies the session token. A missing or different claim is treated as `aal1`.
+
+Targeted tests in `tests/admin-mfa.test.ts` prove:
+
+- an `aal1` platform admin is rejected by the shared admin guard with `mfa_required`;
+- an `aal2` platform admin passes the guard;
+- every protected admin page and API source uses the shared `requirePlatformAdmin` guard;
+- middleware returns JSON HTTP 403 for an admin API request at `aal1`;
+- middleware redirects an admin page request at `aal1` to `/admin/mfa` and preserves its local path.
+
+Hosted enrollment, QR scanning, TOTP challenge, cookie refresh and the complete live smoke test remain pending until the local `.env` contains the Supabase secret key and the dashboard settings are complete.

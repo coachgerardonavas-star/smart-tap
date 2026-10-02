@@ -15,6 +15,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
         login.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
         response = context.redirect(login.toString(), 302);
       }
+    } else if (error.reason === "mfa_required" && !context.url.pathname.startsWith("/api/")) {
+      const mfa = new URL("/admin/mfa", context.url);
+      mfa.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
+      response = context.redirect(mfa.toString(), 302);
+    } else if (error.reason === "mfa_required") {
+      response = new Response(JSON.stringify({ error: "Debes confirmar el segundo factor." }), {
+        status: 403,
+        headers: { "content-type": "application/json" },
+      });
     } else {
       response = new Response("Acceso denegado", { status: 403 });
     }

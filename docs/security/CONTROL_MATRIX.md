@@ -8,7 +8,7 @@ Revision: branch `claude/review-hardening` after `482bf27`, 2026-10-02. Prepared
 
 | Asset | Attacker | Path | Impact | Control | Test |
 |---|---|---|---|---|---|
-| Customer PII of all tenants | Outsider with a stolen admin password | /admin, service-role queries | Full cross-tenant disclosure | GS-03 MFA aal2 for platform_admin (pending) | Codex task 4 |
+| Customer PII of all tenants | Outsider with a stolen admin password | /admin, service-role queries | Full cross-tenant disclosure | GS-03 TOTP and server-enforced aal2 for platform_admin | Local policy and response tests; live flow pending |
 | Customer PII of tenant B | Member of tenant A | Dashboard/API with B's slug or ids | Cross-tenant disclosure | Server resolves tenant from memberships; RLS | L + H cross-tenant tests |
 | Visit counts / future rewards | Customer with a copied NFC URL | Scripted check-ins | Inflated loyalty | D-017 one visit per day; 3/phone, 40/IP per 10 min | L + H |
 | Customer identity | Anyone knowing a phone | Check-in with that phone | Name overwrite, visit count seen | Accepted residual (D-003) | — |
@@ -22,7 +22,7 @@ Revision: branch `claude/review-hardening` after `482bf27`, 2026-10-02. Prepared
 |---|---|---|---|---|
 | GS-01 Org isolation | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Memberships resolve tenant; delete filters tenant+customer; H: 0 cross-tenant rows | — |
 | GS-02 Strict RLS | Yes | VERIFICADO (H) | RLS on 8 tables; select-only grants; anon denied; advisor 0 lints. FORCE RLS not set: only service_role/postgres bypass, both server-side | Decide FORCE RLS (low) |
-| GS-03 Robust auth | Yes | PENDIENTE — HIGH | Supabase Auth, getClaims, token_hash; no MFA for platform_admin | Codex: TOTP + aal2 on /admin and /api/admin |
+| GS-03 Robust auth | Yes | IMPLEMENTADO NO VERIFICADO — HIGH | TOTP flow at `/admin/mfa`; signed `aal` claim; `/admin` redirects and `/api/admin` returns 403 at aal1; 5 local tests | Complete enrollment and challenge against hosted Auth |
 | GS-04 Server authorization | Yes | VERIFICADO LOCALMENTE | requirePlatformAdmin, assertBusinessAccess on every route | Live viewer test (Codex) |
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
 | GS-06 Secrets | Yes | VERIFICADO LOCALMENTE | Runtime env, canary build clean, .env ignored, history scan clean; gitleaks in CI | CI first run |
@@ -63,7 +63,7 @@ Revision: branch `claude/review-hardening` after `482bf27`, 2026-10-02. Prepared
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
 | GS-42 Account attacks | Yes | IMPLEMENTADO NO VERIFICADO | Generic login error; recovery always "sent" | Confirm Auth limits |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
-| GS-44 Recent auth | Yes | PENDIENTE — MEDIUM | Role changes and deletions without re-auth | aal2 covers admin; decide for owner deletions |
+| GS-44 Recent auth | Yes | IMPLEMENTADO NO VERIFICADO — MEDIUM | Every platform-admin change requires an aal2 session; owner/manager customer deletion still uses aal1 | Verify admin aal2 live; decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO LOCALMENTE | Delete, member-status, tag-status filter by tenant + id | Live test |
 | GS-46 Mass assignment | Yes | VERIFICADO LOCALMENTE | Explicit field allowlists on every write | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
@@ -76,7 +76,7 @@ Revision: branch `claude/review-hardening` after `482bf27`, 2026-10-02. Prepared
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | PENDIENTE | Member pause exists | Monthly review owner |
 | GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE | Each fix has a test (env canary, XFF, next path, rate limits, daily visit, body limit) | — |
-| GS-57 Threat model | Yes | IMPLEMENTADO | Above | Update with MFA |
+| GS-57 Threat model | Yes | IMPLEMENTADO | Threat table now maps stolen admin passwords to TOTP, verified JWT aal2, and local regression tests | Confirm the full control in the hosted smoke test |
 | GS-58 Inventory | Yes | IMPLEMENTADO NO VERIFICADO | Lockfile; CycloneDX SBOM artifact in CI | CI first run |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
 | GS-60 Acceptance criteria | Yes | IMPLEMENTADO | This matrix is part of done | — |
