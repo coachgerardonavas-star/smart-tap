@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
-import { hashIdentifier, requestIp } from "../../../lib/security";
+import { BodyTooLargeError, hashIdentifier, readJsonLimited, requestIp } from "../../../lib/security";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
 
 function json(status: number, body: unknown) {
@@ -8,12 +8,17 @@ function json(status: number, body: unknown) {
 }
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
-  const length = Number(request.headers.get("content-length") || 0);
-  if (length > 12_000) return json(413, { error: "La solicitud es demasiado grande." });
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato no válido." });
 
   let raw: Record<string, unknown>;
-  try { raw = await request.json(); } catch { return json(400, { error: "Datos no válidos." }); }
+  try {
+    const body = await readJsonLimited(request, 12_000);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json(400, { error: "Datos no válidos." });
+    raw = body as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) return json(413, { error: "La solicitud es demasiado grande." });
+    return json(400, { error: "Datos no válidos." });
+  }
   if (raw.website) return json(400, { error: "No pudimos registrar la visita." });
 
   const parsed = checkInInputSchema.safeParse(raw);

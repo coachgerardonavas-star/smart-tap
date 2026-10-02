@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("astro:env/server", () => ({ getSecret: () => undefined }));
-const { requestIp } = await import("../src/lib/security");
+const { BodyTooLargeError, readJsonLimited, requestIp } = await import("../src/lib/security");
 
 const request = (headers: Record<string, string>) => new Request("https://example.test/api/public/check-in", { headers });
 
@@ -17,5 +17,24 @@ describe("client IP for rate limiting", () => {
 
   it("falls back to the socket address when the trusted header is missing", () => {
     expect(requestIp(request({}), "10.0.0.5", "cf-connecting-ip")).toBe("10.0.0.5");
+  });
+});
+
+describe("request body limit (GS-33)", () => {
+  const streamed = (text: string) => new Request("https://example.test/api/public/check-in", {
+    method: "POST",
+    body: new ReadableStream({ start(controller) { controller.enqueue(new TextEncoder().encode(text)); controller.close(); } }),
+    // @ts-expect-error duplex is required by Node for streamed bodies
+    duplex: "half",
+  });
+
+  it("rejects an oversized body sent without Content-Length", async () => {
+    const request = streamed(JSON.stringify({ fullName: "x".repeat(20_000) }));
+    expect(request.headers.get("content-length")).toBeNull();
+    await expect(readJsonLimited(request, 12_000)).rejects.toBeInstanceOf(BodyTooLargeError);
+  });
+
+  it("parses a body under the limit", async () => {
+    await expect(readJsonLimited(streamed('{"slug":"cafe-luna"}'), 12_000)).resolves.toEqual({ slug: "cafe-luna" });
   });
 });

@@ -68,6 +68,6 @@ Automate IT admins can pause and reactivate a business member or an NFC tag from
 
 A customer earns at most one visit per business per calendar day in the business's time zone. A repeated check-in the same day updates the customer, appends a consent record, and answers "already registered today" without adding a visit. The customer upsert locks the customer row, so concurrent submissions for one phone cannot both add a visit. This caps visit inflation from a copied NFC URL at one per day per phone. Proof of physical presence (dynamic NFC such as NTAG 424 DNA SUN, or staff confirmation) remains open for when rewards are introduced.
 
-## D-018 — Glasswing Secure Build Gate applies to Smart Tap (2026-10-02)
+## D-018 — Glasswing Shield applies to Smart Tap (2026-10-02)
 
-Manual Maestro §10.1 requires the gate before Smart Tap is considered complete or deployed. The live checklist is in `docs/VERIFICATION.md`. Changes to `main` go through a pull request with the `verify` workflow green (§10.2).
+Glasswing Shield v1.0 (ADN `Glasswing_Shield.md`, Manual Maestro §10.1) governs this project. The matrix is `docs/security/CONTROL_MATRIX.md`. Changes to `main` go through a pull request with the `verify` workflow green, which runs gitleaks, npm audit, check, tests, build and an SBOM.

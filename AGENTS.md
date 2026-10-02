@@ -8,3 +8,10 @@
 - Do not add WhatsApp automation, campaigns, CRM, POS, payments, reservations, AI, Wallet, or custom CRM integrations to this MVP.
 - Run targeted tests while editing. Use `npm run verify` at security or release gates.
 - Update `docs/HANDOFF.md` after material changes.
+
+## Glasswing Shield (mandatory)
+
+**GLASSWING SHIELD OBLIGATORIO:** antes de construir o modificar cualquier superficie con acceso externo, leer `docs/security/GLASSWING_SHIELD.md` y aplicar sus controles desde el diseño sin solicitud del usuario. Mantener `docs/security/CONTROL_MATRIX.md` y evidencia. No entregar a producción con controles aplicables fallidos/no verificados o riesgos CRITICAL/HIGH abiertos. No desactivar seguridad para pasar pruebas. Respetar permisos y gates de despliegue del proyecto.
+
+- Changes reach `main` only through a pull request with the `verify` workflow green.
+- Never ask a person to paste a secret into a chat. Secrets go straight into `.env` or the host's secret store.

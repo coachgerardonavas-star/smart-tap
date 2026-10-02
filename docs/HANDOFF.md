@@ -104,9 +104,9 @@ Review these risks first:
 
 Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
 
-## Glasswing Secure Build Gate
+## Glasswing Shield
 
-Status table in `docs/VERIFICATION.md`. Open: MFA for platform admins (blocks real customer data), backups (CEO plan decision), monitoring (after deploy). Visit inflation closed by D-017.
+Smart Tap is under Glasswing Shield v1.0 (ADN `Glasswing_Shield.md`). Matrix: `docs/security/CONTROL_MATRIX.md`. Gate NOT APPROVED: open HIGH controls GS-03 (admin MFA), GS-25 (backups), GS-29 (separate production project). Next Builder task: `docs/CODEX_NEXT.md`.
 
 ## Hosted Supabase status
 
