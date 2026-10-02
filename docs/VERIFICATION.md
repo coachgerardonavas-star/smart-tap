@@ -85,3 +85,34 @@ Live checks, run inside one PL/pgSQL block that ends in an exception so every te
 Note: `audit_log` has a platform-admin select policy but no table grant to `authenticated`, so audit rows are readable only through the server. This is safe; the policy is unused.
 
 Not verified: the application against this project, because the secret key is not available to the connector. Auth settings, SMTP, email templates and redirect URLs are dashboard settings not reachable from the connector.
+
+## One visit per day — 2026-10-02
+
+- Migration `20261002010000_one_visit_per_day.sql`; `npm run verify`: 0 diagnostics, 30 tests.
+- Tests: second same-day check-in returns `alreadyCounted: true` and keeps `visitCount` at 1 while appending a second consent record; a visit moved to the previous day lets the next check-in count again.
+- Hosted Supabase: migration applied as `one_visit_per_day`; live call pair returned `{visitCount: 1, alreadyCounted: false}` then `{visitCount: 1, alreadyCounted: true}`; anon cannot execute, service_role can. Test rows rolled back.
+
+## Glasswing Secure Build Gate (Manual Maestro §10.1) — status 2026-10-02
+
+| Control | Status | Evidence or gap |
+|---|---|---|
+| Secrets and credentials | PASS | Runtime `astro:env` (D-013); canary build has no secrets in `dist/`; `.env` git-ignored; secret key never in chat. |
+| Authentication | PASS (live pending) | Supabase Auth, `getClaims`, token-hash invite/recovery; live flow in Codex smoke test. |
+| Authorization and least privilege | PASS | Platform admin on every admin route; owner/manager for deletion; viewer read-only; hosted grants verified. |
+| Input validation | PASS | Zod schemas, E.164 phone, slug, colors, URLs, birthday, `next` path. |
+| Rate limiting | PASS | 40/IP and 3/phone per 10 min, spoof-proof IP (D-014). |
+| RLS and access control | PASS | Hosted cross-tenant checks: 0 rows across tenants; self-promotion denied. |
+| Tenant isolation | PASS | Server never trusts a client `business_id`; delete filters by tenant and customer. |
+| Webhooks and replay | N/A | No webhooks. |
+| Once-only operations, atomicity, races | PASS | One visit per day under row lock (D-017); check-in atomic; invitation links single-use (Supabase). |
+| Dependencies | PASS | `npm audit` 0 vulnerabilities; exact versions. |
+| CI/CD | ADDED | `.github/workflows/verify.yml` runs audit + verify on PRs and `main`. Branch protection on `main` must be enabled in GitHub settings. |
+| CORS and headers | PASS (HSTS pending) | Same-origin only, CSP, frame deny, nosniff, origin check; HSTS at the HTTPS host. |
+| Storage | N/A | No file storage. |
+| Logs and sensitive data | PASS | Logs carry error codes only; IP stored as keyed hash; no secrets logged. |
+| Backups and recovery | OPEN | Free plan offers no project backups. CEO decision: Pro plan (daily backups) before real customer data, or a scheduled export. |
+| Monitoring | OPEN | No uptime or error monitoring. Add the Smart Tap URL to the `health-check` Worker once deployed. |
+| MFA | OPEN — critical | Platform admins see every tenant's personal data and have no second factor. Required by §10.2 before real customer data: Supabase TOTP MFA, `aal2` enforced for `/admin` and admin APIs. Supabase dashboard account also needs MFA. |
+| AI endpoints | N/A | No AI in the MVP. |
+
+Gate result: not passed yet. Three items stay open (MFA, backups, monitoring); MFA is the only one that blocks loading real customer data.

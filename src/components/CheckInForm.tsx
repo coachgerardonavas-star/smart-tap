@@ -14,6 +14,7 @@ type SuccessData = {
   customerName: string;
   businessName: string;
   visitCount: number;
+  alreadyCounted?: boolean;
 };
 
 export default function CheckInForm({ slug, tagCode = "", businessName, primaryColor, privacyUrl, demo = false }: Props) {
@@ -64,9 +65,11 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
     return (
       <section className="confirmation" aria-live="polite">
         <div className="check" style={{ backgroundColor: primaryColor }} aria-hidden="true">✓</div>
-        <p className="eyebrow">Visita registrada</p>
+        <p className="eyebrow">{success.alreadyCounted ? "Visita de hoy ya registrada" : "Visita registrada"}</p>
         <h2>Gracias, {success.customerName}</h2>
-        <p>Esta es tu visita número {success.visitCount} a {success.businessName}.</p>
+        <p>{success.alreadyCounted
+          ? `Tu visita de hoy a ${success.businessName} ya estaba registrada. Llevas ${success.visitCount} en total.`
+          : `Esta es tu visita número ${success.visitCount} a ${success.businessName}.`}</p>
         <p className="small">Puedes cerrar esta página.</p>
       </section>
     );

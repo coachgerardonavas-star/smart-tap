@@ -104,9 +104,13 @@ Review these risks first:
 
 Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
 
+## Glasswing Secure Build Gate
+
+Status table in `docs/VERIFICATION.md`. Open: MFA for platform admins (blocks real customer data), backups (CEO plan decision), monitoring (after deploy). Visit inflation closed by D-017.
+
 ## Hosted Supabase status
 
-Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Both migrations and the seed are applied, and the live RLS, rate-limit and privilege checks passed (see `docs/VERIFICATION.md`). Pending in the dashboard: Auth settings, SMTP, templates, redirect URLs, bootstrap admin user, and copying the secret key to the host.
+Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Both migrations and the seed are applied, and the live RLS, rate-limit and privilege checks passed (see `docs/VERIFICATION.md`). Three migrations are applied (the third is `one_visit_per_day`). Pending in the dashboard: Auth settings, SMTP, templates, redirect URLs, bootstrap admin user, and copying the secret key to the host.
 
 ## Real blockers
 

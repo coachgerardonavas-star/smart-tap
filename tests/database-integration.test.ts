@@ -59,6 +59,40 @@ describe("database migration and check-in transaction", () => {
   });
 });
 
+describe("one counted visit per day", () => {
+  it("does not add a second visit for the same customer on the same business day", async () => {
+    const run = (ipHash: string) => database.query<{ result: { visitCount: number; alreadyCounted: boolean } }>(`
+      select public.record_public_check_in(
+        'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Diario', '+13055553000',
+        null, '2026-10-01', '${ipHash}', '${"f".repeat(64)}', 'daily-test'
+      ) as result
+    `);
+    const first = (await run("1".repeat(64))).rows[0]?.result;
+    const second = (await run("2".repeat(64))).rows[0]?.result;
+    expect(first).toMatchObject({ visitCount: 1, alreadyCounted: false });
+    expect(second).toMatchObject({ visitCount: 1, alreadyCounted: true });
+    const consents = await database.query<{ count: number }>(`
+      select count(*)::int as count from public.consent_records r
+      join public.customers c on c.id = r.customer_id where c.phone_e164 = '+13055553000'
+    `);
+    expect(consents.rows[0]?.count).toBe(2);
+  });
+
+  it("counts a visit again on the next business day", async () => {
+    await database.exec(`
+      update public.visits set visited_at = now() - interval '1 day'
+      where customer_id = (select id from public.customers where phone_e164 = '+13055553000')
+    `);
+    const next = await database.query<{ result: { visitCount: number; alreadyCounted: boolean } }>(`
+      select public.record_public_check_in(
+        'cafe-luna', 'demo-cafe-luna-main-2026', 'Cliente Diario', '+13055553000',
+        null, '2026-10-01', '${"3".repeat(64)}', '${"e".repeat(64)}', 'daily-test'
+      ) as result
+    `);
+    expect(next.rows[0]?.result).toMatchObject({ visitCount: 2, alreadyCounted: false });
+  });
+});
+
 describe("check-in rate limits", () => {
   const checkIn = (phone: string, ipHash: string, phoneHash: string) => database.query(`
     select public.record_public_check_in(
