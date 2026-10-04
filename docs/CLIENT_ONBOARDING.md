@@ -9,9 +9,11 @@ Start onboarding after successful Smart Tap payment/subscription.
 Commercial baseline:
 - setup: $199
 - monthly: $79
-- initial Stripe checkout: $278 when setup + first month are charged together.
-- minimum commitment: 3 monthly payments.
-- base package: one business location and 3 configured NFC tags.
+- initial Stripe checkout: $278 when setup + first month are charged together;
+- the first $79 is month 1 prepaid;
+- the next $79 charge occurs **30 days after the initial $278 payment**, regardless of go-live date;
+- minimum commitment: 3 monthly payments;
+- base package: one business location and 3 configured NFC tags;
 - additional configured NFC tags: $10 each.
 
 ## Approved onboarding flow
