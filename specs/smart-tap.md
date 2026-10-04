@@ -19,7 +19,7 @@ Deliver one configurable multi-tenant platform that lets a local business captur
 11. Include a reproducible demo business and a demo that can be shown before production credentials are connected.
 12. Record architecture, decisions, tasks, verification, setup, and current handoff state.
 
-13. Capture separate, optional WhatsApp marketing consent; detect follow-up opportunities; show a follow-up queue with an owner-sent WhatsApp link (D-023, `docs/FOLLOW_UP_QUEUE.md`).
+13. Capture separate, optional WhatsApp marketing consent; detect follow-up opportunities; show a follow-up queue with an owner-sent WhatsApp link (D-021, `docs/FOLLOW_UP_QUEUE.md`).
 
 ## Edge cases
 

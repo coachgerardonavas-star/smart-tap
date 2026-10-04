@@ -1,4 +1,4 @@
-# Follow-up Queue — specification (D-023)
+# Follow-up Queue — specification (D-021)
 
 Approved by the CEO on 2026-10-04. Written by Claude Code (Reviewer) for the Builder.
 

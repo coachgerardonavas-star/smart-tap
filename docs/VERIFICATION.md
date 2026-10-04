@@ -184,7 +184,7 @@ Target: hosted Supabase project `vrouyhxzxrfkuuqfslrc` with the standalone Node 
 | NFC emergency stop | PASSED | Paused tag made the check-in API answer 404 `Este NFC no está activo.`; reactivation restored it. |
 | Viewer isolation | PASSED | Second account accepted the invite, saw only `Review Live`, had no Delete action and received `Acceso denegado` at `/admin`. |
 | Viewer pause | PASSED | Membership changed from active to paused; refresh displayed `Aún no tienes un negocio asignado`. |
-| Password recovery | PARTIAL / EXTERNAL BLOCKER | Three default email links immediately returned `otp_expired`. A fresh server-generated one-time recovery token reached `/set-password`, changed the password and cleared the recovery marker. D-021 records the production email fix. |
+| Password recovery | PARTIAL / EXTERNAL BLOCKER | Three default email links immediately returned `otp_expired`. A fresh server-generated one-time recovery token reached `/set-password`, changed the password and cleared the recovery marker. D-022 records the production email fix. |
 | Customer deletion | PASSED | Before: 1 visit and 2 consent records. After: customer 0, visits 0, consents 0. Audit event retained. |
 | Cleanup | PASSED | `review-live`, membership, NFC, customers, consents and visits count 0; viewer Auth user absent. Café Luna count 1 and platform admin present. |
 
@@ -194,7 +194,7 @@ Hosted Auth configuration observed: signup disabled, email confirmation enabled,
 
 The merged migration-security test now normalizes CRLF to LF before checking SQL, so the same assertion works on Windows and Linux. The first post-merge run exposed this test-only portability defect; application and migration code were unchanged.
 
-`npm audit` reported `GHSA-ch52-4w7c-c8xp` through `http-cache-semantics@4.2.0`, Astro and `@astrojs/node`. The upstream advisory has no patched version as of 2026-10-04. Smart Tap does not use a shared HTTP response cache; the installed Astro distribution imports this package for remote asset build caching. D-022 adds a fail-closed audit gate limited to the exact advisory, dependency chain and version. Any other high or critical finding still fails CI.
+`npm audit` reported `GHSA-ch52-4w7c-c8xp` through `http-cache-semantics@4.2.0`, Astro and `@astrojs/node`. The upstream advisory has no patched version as of 2026-10-04. Smart Tap does not use a shared HTTP response cache; the installed Astro distribution imports this package for remote asset build caching. D-023 adds a fail-closed audit gate limited to the exact advisory, dependency chain and version. Any other high or critical finding still fails CI.
 
 Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build. GitHub Actions run `37172436364` passed the same PR gate for commit `9dd0116`.
 
@@ -202,7 +202,7 @@ Final local result after the merge: `npm run audit:prod` passed the narrow excep
 
 - Merge resolution of `claude/mfa-review` (22cebbb): intent preserved; D-020 guards, live migration names and branch map intact.
 - CRLF normalisation in `tests/migration-security.test.ts`: correct.
-- D-022: the upstream fix shipped the same day; dependency updated, exception removed, audit 0.
+- D-023: the upstream fix shipped the same day; dependency updated, exception removed, audit 0.
 - New: prefetch-safe `/auth/callback` (GET shows "Continuar", POST verifies), `tests/auth-callback.test.ts` (3 tests).
-- Merged `claude/mfa-review` again to bring the Follow-up Queue scope (D-023; renumbered from D-021 to avoid colliding with the Builder's D-021).
+- Merged `claude/mfa-review` again to bring the Follow-up Queue scope (the Builder numbered it D-021; recovery prefetch became D-022 and the audit exception D-023).
 - `npm run verify`: 0 diagnostics, 44 tests. `npm audit --omit=dev`: 0 vulnerabilities.

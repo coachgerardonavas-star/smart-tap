@@ -4,10 +4,10 @@ Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
 ## Part A — sync (first, before any new code)
 
-1. `git fetch origin`; on `codex/live-smoke-mfa`: `git pull --ff-only origin codex/live-smoke-mfa`. The Reviewer already merged `claude/mfa-review` (Follow-up Queue scope) into this branch , added the prefetch-safe callback and removed the D-022 exception (upstream fix released).
+1. `git fetch origin`; on `codex/live-smoke-mfa`: `git pull --ff-only origin codex/live-smoke-mfa`. The Reviewer already merged `claude/mfa-review` (Follow-up Queue scope) into this branch , added the prefetch-safe callback and removed the D-023 audit exception (upstream fix released).
 2. `npm ci`, `npm run audit:prod`, `npm run verify` (baseline 0 diagnostics, 44 tests).
 
-## Part B — Follow-up Queue (D-023)
+## Part B — Follow-up Queue (D-021)
 
 Implement exactly `docs/FOLLOW_UP_QUEUE.md`, sections 1–8, on the same branch and PR. Smallest change that meets it: reuse the existing dashboard, auth guards and check-in function pattern.
 
