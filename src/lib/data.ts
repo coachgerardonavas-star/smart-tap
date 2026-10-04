@@ -1,10 +1,11 @@
-import { assertBusinessAccess, type AuthIdentity } from "./auth";
+import { assertBusinessAccess, enforcePlatformAdminMfa, type AuthIdentity } from "./auth";
 import { createSupabaseServiceClient } from "./supabase";
 import type { Business, Customer } from "./types";
 
 export async function accessibleBusinesses(identity: AuthIdentity): Promise<Business[]> {
   const service = createSupabaseServiceClient();
   if (identity.isPlatformAdmin) {
+    enforcePlatformAdminMfa(identity);
     const { data, error } = await service.from("businesses").select("*").order("display_name");
     if (error) throw error;
     return (data ?? []) as Business[];
@@ -27,7 +28,7 @@ export async function dashboardData(identity: AuthIdentity, requestedSlug?: stri
   const businesses = await accessibleBusinesses(identity);
   const business = businesses.find((item) => item.slug === requestedSlug) ?? businesses[0] ?? null;
   if (!business) return { businesses, business: null, metrics: null };
-  await assertBusinessAccess(identity.id, business.id);
+  await assertBusinessAccess(identity, business.id);
 
   const service = createSupabaseServiceClient();
   const inactiveBefore = new Date(Date.now() - business.inactivity_days * 86_400_000).toISOString();

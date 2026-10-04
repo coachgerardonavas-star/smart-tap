@@ -1,125 +1,65 @@
 # Smart Tap handoff
 
-Updated: 2026-10-03 (hosted smoke test and cleanup complete)
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after integrating Claude's review and recording the hosted smoke test.
 
 ## Project identity
 
-- Absolute path: `C:\automate-it\smart-tap`
-- Git repository: local repository initialized in the project root
-- Branch: `codex/live-smoke-mfa`, based on `origin/claude/review-hardening`
-- Pull request: #1, `https://github.com/coachgerardonavas-star/smart-tap/pull/1`, open against `main`
-- Builder: ChatGPT Codex
-- Reviewer: Claude Code
+- Local path: `C:\automate-it\smart-tap` · GitHub: `coachgerardonavas-star/smart-tap`
+- Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
+- Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
+
+## Branches — which one is current
+
+| Branch | State |
+|---|---|
+| `main` | Original MVP (`f1ec5d3`). Does not match the live database: its code calls the old 8-argument check-in function, which no role may execute. **Do not deploy or build on `main` until PR #1 is merged.** |
+| `claude/mfa-review` | Reviewer source integrated at `22cebbb`; contains the MFA bypass fixes (D-020) and ops reconciliation. |
+| `codex/live-smoke-mfa` | **Current PR #1 branch.** Contains the hosted smoke evidence and integrates `claude/mfa-review`. |
+| `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
+| `claude/review-hardening` | Superseded; already contained in the branches above. |
+
+## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
+
+Migration history matches `supabase/migrations/` file names exactly:
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`.
+
+Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
+
+Advisors: Security — one WARN, leaked-password protection, Pro-plan feature (compensated by 12-character minimum and admin MFA). Performance — five INFO unindexed foreign keys, deferred until workload evidence.
 
 ## Current state
 
-The complete executable MVP is implemented and the main hosted data path was exercised against Supabase. Mandatory TOTP MFA for `platform_admin`, public capture, same-day idempotency, dashboard reads, NFC pause/reactivation, invitations, viewer isolation, member pause and customer cascade deletion all passed live. Test data and the viewer account were removed after verification; Café Luna and the administrator remain.
+MVP implemented. Security hardening, one visit per customer per day (D-017), admin MFA at `aal2` for `/admin`, `/dashboard`, customer deletion and the Data API (D-019, D-020). The hosted application smoke test exercised capture, dashboard, NFC pause, viewer isolation, member pause and deletion cleanup.
 
-The default recovery email path is blocked by link prefetch: three new messages reached Supabase as already consumed. Recovery itself passed with a fresh server-generated one-time token. D-020 and `docs/VERIFICATION.md` record the production requirement for custom SMTP, disabled tracking and a two-step recovery template.
+Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 MFA passed live enrollment and challenge.
 
-Estimated completion: 96% of the demonstration MVP and 82% of production readiness. Code and hosted application behavior are verified. Commercial launch still needs SMTP/recovery hardening, backups, a separate production project, a host/domain decision, business privacy text and physical NFC writing.
+Estimated completion: 96% of the demonstration MVP and 82% of production readiness.
 
-## What works
+Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-022 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI is pending.
 
-- branded NFC landing, validation, consent, repeat identification, and confirmation;
-- atomic customer, consent, and visit writes;
-- database rate limiting and opaque NFC codes;
-- strict tenant RLS and exact count dashboard;
-- customers, visits per customer, latest visit, inactivity, and birthdays;
-- Auth login, invitations, password setup, recovery, and logout;
-- Automate IT business, branding, NFC, and member setup;
-- audited admin changes and controlled customer deletion;
-- responsive demo dashboard and capture flow;
-- deterministic database seed.
+## Builder live smoke and cleanup — 2026-10-03
 
-## Key files
+- Admin TOTP enrollment and challenge passed; `/admin` opened at AAL2.
+- `review-live` capture created one customer, one visit and two consent records after a repeated same-day submission; the second submission did not add a visit.
+- Dashboard, birthday, NFC pause/reactivation, viewer tenant isolation, `/admin` denial and member pause passed live.
+- Three default recovery emails returned `otp_expired`, consistent with documented link prefetch. A fresh server-generated one-time token completed password recovery. D-021 records the production fix.
+- Customer deletion cascaded from 1 visit and 2 consent records to zero; its audit event remains.
+- Cleanup removed `review-live` and the viewer Auth user. Café Luna and the platform admin remain.
+- PR #1: `https://github.com/coachgerardonavas-star/smart-tap/pull/1`.
 
-- Product scope: `specs/smart-tap.md`, `docs/PRODUCT.md`
-- Architecture and decisions: `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`
-- Database: `supabase/migrations/20261001000000_initial_schema.sql`
-- Demo data: `supabase/seed.sql`
-- Public capture: `src/pages/b/[slug].astro`, `src/pages/api/public/check-in.ts`
-- Dashboard: `src/pages/dashboard/index.astro`
-- Admin: `src/pages/admin/index.astro`, `src/pages/admin/[id].astro`
-- Tests: `tests/`, `supabase/tests/`
-- Activation: `docs/SETUP.md`
-- Test record: `docs/VERIFICATION.md`
+## Activation documents
 
-## Directory map
-
-```text
-smart-tap/
-  docs/          product, architecture, decisions, setup, verification, handoff
-  specs/         accepted MVP specification
-  public/        static public assets
-  src/
-    components/  React and Astro UI
-    layouts/     shared page layout
-    lib/         Auth, tenant access, validation, metrics, Supabase clients
-    pages/       public, Auth, dashboard, admin, and API routes
-  supabase/
-    migrations/  reproducible schema and security
-    tests/       pgTAP catalog checks
-    seed.sql     Café Luna demo data
-  tests/         unit, security, and embedded PostgreSQL tests
-```
-
-## Review result — 2026-10-02
-
-Verdict: approved with conditions. Code is ready for the live smoke test; it is not yet proven against hosted Supabase.
-
-Fixed in the review commit:
-
-1. Critical — `import.meta.env` compiled secrets into `dist/server` and ignored runtime host variables. Now `src/lib/env.ts` reads them at request time (D-013).
-2. High — the check-in limiter trusted a client-supplied `X-Forwarded-For`, so one sender could rotate identities without limit, while customers behind one venue Wi-Fi shared an eight-per-ten-minutes bucket. New migration `20261002000000_review_hardening.sql` adds per-phone limiting and raises the per-IP window; `TRUSTED_IP_HEADER` controls proxy trust (D-014).
-3. Medium — `safeNextPath` allowed `/\host`, an open redirect after login. Fixed and tested.
-4. Medium — no way to remove a member's access or retire an NFC tag without SQL. Admin pause/activate added (D-016).
-5. Low — bootstrap admin now requires a confirmed email (D-015); session cookies HTTP-only and `Secure` on HTTPS; `anon` lost its default grants on the aggregate view; explicit `service_role` grants.
-
-Residual risks accepted for the MVP:
-
-- Anyone who knows a customer's phone can submit under that phone: the name is overwritten and the confirmation shows the visit count. This follows D-003 (no phone verification).
-- A customer who submits twice within ten minutes records two visits (up to three).
-- When Supabase is unreachable, the landing and API answer "business not available" instead of a temporary error.
-- The CSP keeps `'unsafe-inline'` for scripts; Astro output is escaped and no user HTML is rendered.
-- HSTS must be set by the HTTPS host.
-
-## Reviewer instructions
-
-Open the existing folder directly. Do not scaffold another project or create a worktree.
-
-```powershell
-cd C:\automate-it\smart-tap
-git status --short --branch
-git log -1 --oneline
-npm ci
-npm run verify
-```
-
-Review these risks first:
-
-1. RLS membership helpers and cross-tenant isolation.
-2. Service-only execution of `record_public_check_in`.
-3. Admin bootstrap, token-hash email templates, and invitation callback behavior against a live Supabase project.
-4. Tenant authorization before every service-role query.
-5. Production privacy notice and retention choices.
-
-Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
-
-## Glasswing Shield
-
-Smart Tap is under Glasswing Shield v1.0 (ADN `Glasswing_Shield.md`). Matrix: `docs/security/CONTROL_MATRIX.md`. Gate NOT APPROVED: open HIGH controls GS-03 (admin MFA), GS-25 (backups), GS-29 (separate production project). Next Builder task: `docs/CODEX_NEXT.md`.
-
-## Hosted Supabase status
-
-Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Three migrations and the seed are applied. Live RLS, rate-limit, privilege, Auth, MFA and application smoke checks passed as recorded in `docs/VERIFICATION.md`. The Site URL and callback redirect are configured. The platform admin remains; the `review-live` business and viewer user were removed. Custom SMTP and editable prefetch-safe templates remain open.
+`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`.
 
 ## Real blockers
 
-- GS-25: the Supabase free plan has no managed backups; choose Pro or implement and restore-test scheduled exports before real customer data.
-- GS-29: staging and production still share one Supabase project; provision a separate production project before real customer data.
-- Configure production SMTP, disable link tracking and install the prefetch-safe recovery template from D-020.
-- Enable `main` branch protection with required pull requests and the `verify` status check.
-- Production host/domain, business privacy text and physical NFC programming remain outside this no-deploy task.
-- Optional cleanup: drop the revoked eight-argument `record_public_check_in` function in the Supabase SQL Editor.
+- CEO: Supabase plan (backups GS-25, separate production project GS-29).
+- Production host and domain (D-009), then Auth Site URL and redirect.
+- Custom SMTP with tracking disabled and a prefetch-safe recovery template before commercial invitations (D-021).
+- Business privacy notice and retention (D-011).
+- Physical NFC writing.
+
+## Coordination rule
+
+Work happens on the PR branch, never directly on `main`. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.

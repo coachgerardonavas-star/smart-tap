@@ -23,6 +23,9 @@ beforeAll(async () => {
     create function auth.uid() returns uuid language sql stable as $$
       select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
     $$;
+    create function auth.jwt() returns jsonb language sql stable as $$
+      select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+    $$;
   `);
   for (const migration of migrations) await database.exec(migration);
   await database.exec(seed);
@@ -143,6 +146,30 @@ describe("tenant isolation", () => {
     } finally {
       await database.exec("rollback");
     }
+  });
+
+  it("grants the platform-admin bypass only with a second factor", async () => {
+    const admin = "40000000-0000-4000-8000-0000000000c1";
+    await database.exec(`
+      insert into auth.users (id, email) values ('${admin}', 'admin@example.test');
+      update public.profiles set platform_role = 'platform_admin' where id = '${admin}';
+    `);
+    const countAs = async (aal: string) => {
+      await database.exec(`
+        begin;
+        set local role authenticated;
+        select set_config('request.jwt.claim.sub', '${admin}', true);
+        select set_config('request.jwt.claims', '{"sub":"${admin}","aal":"${aal}"}', true);
+      `);
+      try {
+        const result = await database.query<{ count: number }>("select count(*)::int as count from public.customers");
+        return result.rows[0]?.count;
+      } finally {
+        await database.exec("rollback");
+      }
+    };
+    expect(await countAs("aal1")).toBe(0);
+    expect(await countAs("aal2")).toBeGreaterThan(0);
   });
 
   it("denies the aggregate view and check-in function to anon", async () => {

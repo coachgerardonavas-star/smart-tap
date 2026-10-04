@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
-  .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8")).join("\n").toLowerCase();
+  .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
 const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log"];
 
 describe("database security migration", () => {

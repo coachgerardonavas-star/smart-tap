@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("astro:env/server", () => ({ getSecret: () => undefined }));
 vi.mock("astro:middleware", () => ({ defineMiddleware: (handler: unknown) => handler }));
 
-const { AuthorizationError, enforcePlatformAdminMfa } = await import("../src/lib/auth");
+const { AuthorizationError, assertBusinessAccess, enforcePlatformAdminMfa } = await import("../src/lib/auth");
 const { onRequest } = await import("../src/middleware");
 
 const admin = (aal: "aal1" | "aal2") => ({
@@ -49,6 +49,21 @@ describe("platform admin MFA policy", () => {
         "requirePlatformAdmin(Astro.request, Astro.cookies)",
       );
     }
+  });
+});
+
+describe("platform admin MFA on customer-data routes", () => {
+  it("denies an aal1 platform_admin tenant access before any query", async () => {
+    await expect(assertBusinessAccess(admin("aal1"), "22222222-2222-4222-8222-222222222222", false)).rejects.toMatchObject({ status: 403, reason: "mfa_required" });
+  });
+
+  it("allows an aal2 platform_admin tenant access", async () => {
+    await expect(assertBusinessAccess(admin("aal2"), "22222222-2222-4222-8222-222222222222", false)).resolves.toEqual({ role: "platform_admin" });
+  });
+
+  it("puts the dashboard and customer deletion behind the data-access guard", () => {
+    expect(readFileSync(join(process.cwd(), "src/pages/dashboard/index.astro"), "utf8")).toContain("requireDataAccess(Astro.request, Astro.cookies)");
+    expect(readFileSync(join(process.cwd(), "src/pages/api/dashboard/customer/[id]/delete.ts"), "utf8")).toContain("requireDataAccess(request, cookies)");
   });
 });
 

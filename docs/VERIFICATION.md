@@ -1,36 +1,40 @@
 # Verification
 
-Last full local gate: 2026-10-02. Current result: 0 diagnostics, 37 of 37 tests passed across 6 files, standalone Node build complete.
+Updated: 2026-10-04. Sections below are chronological; the Reviewer's reconciliation at the end is the current state.
 
-## Automated
+## Existing local gate
 
-`npm run check` passed with zero errors. `npm test` passed 21 tests across four files. `npm run build` produced the standalone Node server.
+Last recorded full local gate: 2026-10-01.
 
-The tests cover:
+- `npm run check` passed with zero errors.
+- `npm test` passed 21 tests across four files.
+- `npm run build` produced the standalone Node server.
+- `npm audit` reported zero known vulnerabilities during installation.
 
-- consent and field validation;
-- phone normalization;
-- slug, color, and redirect rejection;
-- dashboard counts, repeat visits, inactivity, and birthdays;
-- RLS enabled on every exposed table;
-- anonymous roles denied from the check-in function;
-- security-invoker aggregate view;
-- full migration execution in PostgreSQL;
-- demo seed creation;
-- atomic customer, consent, and visit insertion;
-- real RLS isolation between two businesses.
+Existing tests cover consent/field validation, phone normalization, slug/color/redirect rejection, dashboard metrics, RLS enabled on exposed tables, anonymous denial from check-in, security-invoker aggregate view, migration execution, seed data, atomic writes, and cross-tenant isolation.
 
-## Browser
+## Existing browser verification
 
-The local `/demo` dashboard was checked at desktop size. Layout, metrics, customer table, and birthdays rendered correctly.
+- `/demo` dashboard rendered correctly at desktop size.
+- `/demo/capture` was exercised through confirmation after fixing a React hydration issue.
 
-The local `/demo/capture` flow was checked in the browser. The form initially exposed a React hydration error. The TypeScript JSX override was removed, the server was restarted, and the form then rendered. A fictitious customer completed the flow and reached the visit confirmation.
+## Live Supabase verification — 2026-10-03
 
-## Dependency and build checks
+Project:
+- name: `smart-tap`
+- ref: `vrouyhxzxrfkuuqfslrc`
+- region: `us-east-1`
+- status: ACTIVE_HEALTHY
 
-All runtime dependencies are exact versions in `package.json` and `package-lock.json`. `npm audit` reported zero known vulnerabilities during installation.
+Observed public application tables all have RLS enabled:
+`profiles`, `businesses`, `business_members`, `nfc_tags`, `customers`, `consent_records`, `visits`, `audit_log`.
 
-## Remaining verification
+Observed live migration history:
+1. `20261002005131_initial_schema`
+2. `20261002014439_review_hardening_rate_limit_helper`
+3. `20261002014453_review_hardening_check_in_v2`
+4. `20261002072441_one_visit_per_day`
+5. `20261004010900_admin_rls_requires_aal2`
 
 Supabase CLI and Docker are unavailable on this laptop, and no hosted Supabase credentials were supplied. The migration ran under embedded PostgreSQL, while Supabase-specific hosted behavior, SMTP delivery, token-hash invitation links, and the production deploy still need a live smoke test after credentials are connected.
 
@@ -88,7 +92,7 @@ Not verified: the application against this project, because the secret key is no
 
 ## One visit per day — 2026-10-02
 
-- Migration `20261002010000_one_visit_per_day.sql`; `npm run verify`: 0 diagnostics, 30 tests.
+- Migration now reconciled as `20261002072441_one_visit_per_day.sql`; `npm run verify`: 0 diagnostics, 30 tests at the time of that change.
 - Tests: second same-day check-in returns `alreadyCounted: true` and keeps `visitCount` at 1 while appending a second consent record; a visit moved to the previous day lets the next check-in count again.
 - Hosted Supabase: migration applied as `one_visit_per_day`; live call pair returned `{visitCount: 1, alreadyCounted: false}` then `{visitCount: 1, alreadyCounted: true}`; anon cannot execute, service_role can. Test rows rolled back.
 
@@ -116,31 +120,80 @@ Hosted enrollment, QR scanning, TOTP challenge, cookie refresh and the complete 
 
 The first PR run found two Gitleaks false positives in commit `6d53ba9`: the same Supabase publishable browser key documented twice in `docs/CODEX_NEXT.md`. `.gitleaksignore` contains only those two exact historical fingerprints. New findings, different files, lines, commits or rules continue to fail CI.
 
-## Hosted application smoke test — 2026-10-03
+## Review of PR #1 (MFA) — Claude Code, 2026-10-04
+
+Reviewed `3de6fac` and `f08ff95`. Two MFA bypasses found and fixed (D-020):
+
+1. HIGH — `/dashboard` and `/api/dashboard/customer/[id]/delete` used `requireAuth`; a platform admin at `aal1` listed and deleted customers of every business. Now `requireDataAccess` + `assertBusinessAccess(identity)`; tests in `tests/admin-mfa.test.ts`.
+2. HIGH — `private.is_platform_admin()` ignored AAL; an `aal1` admin token read all tenants through PostgREST. Hosted proof before the fix: aal1 admin saw 3 customers of a business it is not a member of. After the fix (hosted): aal1 → 0 customers and 0 businesses; aal2 → 3. Regression test `grants the platform-admin bypass only with a second factor` fails without the migration and passes with it.
+
+`npm run verify`: 0 diagnostics, 41 of 41 tests. Migration applied to hosted Supabase as `admin_rls_requires_aal2`; test rows rolled back.
+
+Accepted for this phase: an admin who has never enrolled a factor can enroll one at `aal1`, so the first enrollment must happen right after the account is created.
+
+Function privilege inspection confirms the current nine-argument `public.record_public_check_in` is SECURITY DEFINER and executable by `service_role`, not by `anon`/`authenticated`. Private authorization helpers remain in the `private` schema; platform-admin authorization has a live AAL2 requirement.
+
+## Supabase advisors
+
+Security Advisor:
+- WARN: leaked-password protection disabled.
+- Classification: expected Free-plan limitation, not a release blocker. Supabase currently documents leaked-password protection as Pro-and-above only.
+- Compensating controls: strong password policy, MFA/AAL2 for platform admin, restricted signup/invitations.
+
+Performance Advisor:
+- INFO only: five foreign keys lack covering indexes (`audit_log.actor_user_id`, `audit_log.business_id`, `consent_records.business_id`, `nfc_tags.business_id`, `visits.tag_id`).
+- Decision: do not add indexes solely to silence INFO-level advice. Revisit if query plans or production workload show a need.
+
+## Git/live drift found and reconciled
+
+Before this verification, GitHub `main` contained only `20261001000000_initial_schema.sql`, while live Supabase had five migrations with different history/version numbers. The branch `ops/reconcile-live-2026-10-03` reconstructs the live migration sequence and replaces the stale initial migration version. Do not run `db push` from unreconciled `main` against production.
+
+## Still requiring hosted verification
+
+- production host/domain;
+- production environment values;
+- Auth Site URL and redirect URL;
+- custom SMTP;
+- actual invite/recovery delivery;
+- hosted end-to-end flow;
+- physical NFC read/write test;
+- tenant A/B test using real authenticated business users.
+
+Use `docs/PRODUCTION_SMOKE_TEST.md` once deployment is available. Do not repeat the full local audit unless intervening code changes affect previously verified surfaces.
+
+## Reviewer reconciliation — Claude Code, 2026-10-04
+
+Reviewed `ops/reconcile-live-2026-10-03` (13 commits by the CEO's ChatGPT session).
+
+- Correct: migration files reproduce the live history; contents compared with the applied SQL — identical apart from transaction wrappers. Live state checked: 5 migrations, Café Luna demo only, admin confirmed with one MFA factor.
+- Defect: the branch was cut from `main`, whose code calls the old 8-argument check-in function that the live database no longer lets any role execute. Deploying that branch would break every check-in. It was merged into `claude/mfa-review`, which has the matching code.
+- Defect: with both branches merged, the migrations folder would hold two copies of three migrations, and a rebuild would fail on duplicate objects. The duplicates under the old names were removed; the live names were kept.
+- Gap: the manual revoke of the old function was not in any file. Added `20261004021305_revoke_legacy_check_in.sql`, the version the live database assigned when it was applied.
+- The handoff instruction "Codex should continue implementation on main" was replaced: work continues on the PR branch.
+
+## Hosted application smoke test — ChatGPT Codex, 2026-10-03
 
 Target: hosted Supabase project `vrouyhxzxrfkuuqfslrc` with the standalone Node build running locally from runtime environment variables at `127.0.0.1:4321`. No production deployment was made.
 
 | Step | Result | Evidence |
 |---|---|---|
-| Admin login and MFA | PASSED | TOTP factor enrolled and verified; `/admin` opened only after AAL2. An AAL1 admin is blocked by the shared guard and tests. |
+| Admin login and MFA | PASSED | TOTP factor enrolled and verified; `/admin` opened only after AAL2. |
 | Create `review-live` | PASSED | Business, one NFC tag and admin page created through the application. |
-| Public check-in | PASSED | Fictitious customer created with one visit and one birthday. A repeated same-day phone submission returned `alreadyCounted: true`; visit count stayed at 1 and consent history reached 2. |
+| Public check-in | PASSED | Fictitious customer created with one visit and one birthday. Repeating the phone returned `alreadyCounted: true`; visit count stayed at 1 and consent history reached 2. |
 | Dashboard | PASSED | `Review Live` showed 1 customer, 1 visit and the October 15 birthday. |
 | NFC emergency stop | PASSED | Paused tag made the check-in API answer 404 `Este NFC no está activo.`; reactivation restored it. |
-| Viewer isolation | PASSED | Real second account accepted the invite. It saw only `Review Live`, had no Delete action, and `/admin` displayed `Acceso denegado`. |
+| Viewer isolation | PASSED | Second account accepted the invite, saw only `Review Live`, had no Delete action and received `Acceso denegado` at `/admin`. |
 | Viewer pause | PASSED | Membership changed from active to paused; refresh displayed `Aún no tienes un negocio asignado`. |
-| Password recovery | PARTIAL / EXTERNAL BLOCKER | Three default email links immediately returned `otp_expired`. Supabase documents email prefetch as a cause. A fresh server-generated one-time recovery token opened directly, reached `/set-password`, changed the password, cleared the recovery marker and returned to the paused viewer dashboard. D-020 records the production fix required. |
-| Customer deletion | PASSED | Before delete: 1 visit and 2 consent records. After delete: customer 0, visits 0, consents 0. The audit event remains. |
-| Cleanup | PASSED | `review-live`, its membership, NFC, customers, consents and visits all count 0; viewer Auth user absent. Café Luna count 1 and the platform admin still exists. |
+| Password recovery | PARTIAL / EXTERNAL BLOCKER | Three default email links immediately returned `otp_expired`. A fresh server-generated one-time recovery token reached `/set-password`, changed the password and cleared the recovery marker. D-021 records the production email fix. |
+| Customer deletion | PASSED | Before: 1 visit and 2 consent records. After: customer 0, visits 0, consents 0. Audit event retained. |
+| Cleanup | PASSED | `review-live`, membership, NFC, customers, consents and visits count 0; viewer Auth user absent. Café Luna count 1 and platform admin present. |
 
-Hosted Auth configuration observed:
+Hosted Auth configuration observed: signup disabled, email confirmation enabled, Site URL `http://localhost:4321`, callback redirect allowed, TOTP enrolled and enforced. The default mailer remains in use; the dashboard requires custom SMTP before templates can be edited. Supabase dashboard-account MFA and the minimum password policy were not independently observable.
 
-- new user signup disabled and email confirmation enabled;
-- Site URL `http://localhost:4321`;
-- allowed redirect `http://localhost:4321/auth/callback`;
-- TOTP enrolled and enforced for the platform admin;
-- default Supabase mailer in use; the dashboard requires custom SMTP before templates can be edited;
-- MFA for the CEO's Supabase dashboard account was requested but was not independently observable;
-- minimum password policy was not independently observable.
+## Post-merge local gate — ChatGPT Codex, 2026-10-04
 
-PR #1 is open against `main`. GitHub Actions run `36980341980` completed `verify` successfully after `.gitleaksignore` was narrowed to two exact historical public-key fingerprints.
+The merged migration-security test now normalizes CRLF to LF before checking SQL, so the same assertion works on Windows and Linux. The first post-merge run exposed this test-only portability defect; application and migration code were unchanged.
+
+`npm audit` reported `GHSA-ch52-4w7c-c8xp` through `http-cache-semantics@4.2.0`, Astro and `@astrojs/node`. The upstream advisory has no patched version as of 2026-10-04. Smart Tap does not use a shared HTTP response cache; the installed Astro distribution imports this package for remote asset build caching. D-022 adds a fail-closed audit gate limited to the exact advisory, dependency chain and version. Any other high or critical finding still fails CI.
+
+Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build.

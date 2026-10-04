@@ -1,13 +1,13 @@
 ---
 import Base from "../../layouts/Base.astro";
 import MetricCard from "../../components/MetricCard.astro";
-import { assertBusinessAccess, requireAuth } from "../../lib/auth";
+import { assertBusinessAccess, requireDataAccess } from "../../lib/auth";
 import { dashboardData } from "../../lib/data";
 
-const identity = await requireAuth(Astro.request, Astro.cookies);
+const identity = await requireDataAccess(Astro.request, Astro.cookies);
 const data = await dashboardData(identity, Astro.url.searchParams.get("business"));
 const { businesses, business, metrics } = data;
-const canManage = business ? identity.isPlatformAdmin || await assertBusinessAccess(identity.id, business.id, false).then(() => true).catch(() => false) : false;
+const canManage = business ? await assertBusinessAccess(identity, business.id, false).then(() => true).catch(() => false) : false;
 const dateFormat = new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" });
 const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "numeric", timeZone: "UTC" });
 ---

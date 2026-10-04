@@ -10,7 +10,8 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run check && npm test && npm run build"
+    "verify": "npm run check && npm test && npm run build",
+    "audit:prod": "node scripts/audit-dependencies.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.6",

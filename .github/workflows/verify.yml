@@ -27,7 +27,7 @@ jobs:
           cache: npm
       - run: npm ci
       # GS-26: dependency scan.
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run audit:prod
       - run: npm run verify
       # GS-58: component inventory for the built revision.
       - run: npm sbom --sbom-format cyclonedx --omit dev > sbom.cdx.json
