@@ -20,7 +20,7 @@ Smart Tap is one multi-tenant Automate IT platform. Automate IT owns/administers
 Customer-facing flow:
 1. End customer taps the business's NFC.
 2. A public branded landing/form opens.
-3. Customer submits required name + phone, optional birthday, and required explicit WhatsApp consent; email is collected only when that business enables email campaigns/follow-up.
+3. Customer submits required name + phone, optional birthday, and optional explicit WhatsApp consent (D-042: separate, unchecked, never a condition of registering); email is collected only when that business enables email campaigns/follow-up.
 4. Smart Tap records the customer and qualifying visit.
 5. The end customer does **not** receive dashboard access.
 
@@ -85,7 +85,7 @@ Approved flow:
 3. Clicking **Enviar WhatsApp** opens WhatsApp/WhatsApp Web with customer number + prefilled message.
 4. The business owner/staff member presses **Send**.
 
-The customer-facing registration requires explicit WhatsApp consent naming the business; opt-out must remain available afterward.
+WhatsApp consent is optional (D-042, replaces D-035): a separate unchecked box naming the business and leading with the benefit. Registration never depends on it. Customers without consent get no WhatsApp button. Opt-out remains available afterward.
 
 Base package does **not** include Meta Business Platform/API setup, automatic outbound WhatsApp campaigns, approved-template management, or third-party WhatsApp messaging costs.
 
@@ -120,7 +120,7 @@ The MVP direction is:
 - follow-up queue;
 - four opportunity categories;
 - WhatsApp click-to-chat with prefilled message;
-- required explicit WhatsApp consent for registration;
+- optional explicit WhatsApp consent (D-042);
 - one owner-approved offer per category;
 - no automated Meta API messaging in base scope;
 - no CRM integration in base scope;

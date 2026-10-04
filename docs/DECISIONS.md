@@ -140,7 +140,7 @@ The customer-facing NFC form requires name and phone. Birthday is optional and s
 
 Email is not part of the default form. It is added only when the business chooses email campaigns/follow-up and has approved purpose/consent copy.
 
-## D-035 — WhatsApp consent is required for Smart Tap registration (CEO, 2026-10-04)
+## D-035 — WhatsApp consent is required for Smart Tap registration (CEO, 2026-10-04) — SUPERSEDED by D-042
 
 The customer must explicitly accept WhatsApp follow-up from the named business before completing Smart Tap registration. Opt-out must remain available afterward.
 
@@ -167,3 +167,7 @@ Before Smart Tap is activated, the business owner must approve the final configu
 ## D-041 — Billing cycle starts from the initial payment date (CEO, 2026-10-04)
 
 At purchase, the client pays **$278 total**: $199 setup + the first $79 monthly payment. That $79 is month 1 of service. The next $79 monthly charge occurs **30 days after the initial $278 payment**, and subsequent monthly charges continue on that billing cadence. The billing anchor is the initial payment date, **not** the Smart Tap go-live/activation date.
+
+## D-042 — WhatsApp consent stays optional and prominent (CEO, 2026-10-04)
+
+Replaces D-035. The WhatsApp box stays separate, optional and unchecked, as implemented and verified under D-021; a visit is registered without it. Its label leads with the customer benefit (offers, birthday gifts) and names the business. Reasons: consent obtained as a condition of registration is lower quality, invites fake numbers, and raises spam reports that can get the business's WhatsApp number restricted; marketing-consent rules (TCPA, Florida FTSA) expect voluntary consent. The Reviewer flagged the legal point as unverified, not as legal advice. Customers without consent appear in the follow-up queue without a WhatsApp button.

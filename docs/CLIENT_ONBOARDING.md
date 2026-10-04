@@ -44,7 +44,7 @@ Approved minimum customer fields:
 - **Phone: required.**
 - **Birthday: optional.**
 - **Email: not collected by default.** It is added only when that business specifically wants email campaigns/follow-up.
-- **WhatsApp consent: required to complete Smart Tap registration.** The consent must be explicit, identify the business by name, and clearly state that the customer agrees to receive subsequent WhatsApp messages from that business.
+- **WhatsApp consent: optional, separate and unchecked (D-042).** Registration never depends on it. The label names the business, leads with the benefit and clearly states that the customer agrees to receive WhatsApp messages from that business.
 
 The birthday field should explain the benefit so the customer has a reason to complete it. Approved intent: communicate that sharing the birthday may allow the business to send discounts, gifts or birthday benefits. Recommended customer-facing copy:
 
@@ -55,7 +55,7 @@ Do not make birthday mandatory and do not promise a specific gift or discount un
 
 If email is enabled for a business, its purpose and consent copy must be configured for that business before collection. Do not add email silently to the default form.
 
-WhatsApp consent must not be implied merely because the customer supplied a phone number. The form must present an explicit required acceptance whose wording names the business and makes clear that WhatsApp follow-up may include the approved categories used by that business, such as offers, birthday benefits, welcome/return messages and relevant customer follow-up. The final wording must also provide a clear way to stop future WhatsApp communications, and opt-out requests must be honored.
+WhatsApp consent must not be implied merely because the customer supplied a phone number. The form must present an explicit, optional acceptance whose wording names the business and makes clear that WhatsApp follow-up may include the approved categories used by that business, such as offers, birthday benefits, welcome/return messages and relevant customer follow-up. The final wording must also provide a clear way to stop future WhatsApp communications, and opt-out requests must be honored.
 
 ## Included NFC allocation
 
