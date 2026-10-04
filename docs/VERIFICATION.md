@@ -453,7 +453,7 @@ Pending: the link inside the email points to the Supabase Site URL; test the ful
 
 ### Migration and cron
 
-- One new file: `supabase/migrations/20261004143000_privacy_notice.sql`.
+- One new file: `supabase/migrations/20261004190428_privacy_notice.sql`.
 - The SQL ran to completion in PGlite. The availability guard skips extension installation there because PGlite does not provide `pg_cron`.
 - On Supabase, the migration creates `pg_cron` when available and schedules `smart-tap-daily-privacy-purge` at `17 3 * * *`.
 - Migration remains unapplied; Codex ran no migration and no `db push`.
@@ -465,3 +465,31 @@ Pending: the link inside the email points to the Supabase Site URL; test the ful
 - `npm run audit:prod`: 0 vulnerabilities.
 - `npm run verify`: 0 Astro errors, warnings or hints; 11 files and 94/94 tests; standalone Node build complete.
 - PR #4 implementation commit `fc84603`: GitHub Actions `verify` passed in run `37212786746`.
+
+## Reviewer pass — PR #4 privacy notice + Terms (Claude Code, 2026-10-04)
+
+Diff reviewed at `08486a0`. Local gate: `npm ci` / `audit:prod` 0 vulnerabilities, `astro check` 0 diagnostics, 12 files and 108/108 tests.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004190428_privacy_notice` (file renamed). Hosted checks, each inside a transaction that was rolled back (no data left behind):
+
+| Check | Result |
+|---|---|
+| Café Luna after migration | active, contact `automateit@yourbizupgraded.com`, `privacy_url` null (uses `/privacy/cafe-luna`), not cancelled, 3 customers kept |
+| pg_cron | job `smart-tap-daily-privacy-purge`, `17 3 * * *`, active, runs `private.purge_inactive_customers()` as `postgres` |
+| Purge: customer of business cancelled 91 days ago | deleted |
+| Purge: customer of business cancelled 89 days ago | kept |
+| Purge: last visit 25 months ago | deleted, visits cascaded |
+| Purge: created 26 months ago, visit 1 month ago | kept |
+| Purge: new customer | kept |
+| Purge audit | one row per business, `details` = `{"deletedCount": 1}` only |
+| `record_terms_acceptance` for a non-member | rejected `terms_business_access_denied` |
+| First acceptance / duplicate / new version | inserted / no-op / inserted; 2 rows and 2 audits with `{"version": …}` only |
+| Function privileges | purge: no execute for anon, authenticated, service_role; terms: service_role only |
+| `terms_acceptances` | RLS on; authenticated has no insert |
+| Security advisor | only the known leaked-password WARN |
+
+Defect found and fixed: `service_role` still had INSERT/UPDATE/DELETE on `terms_acceptances` through Supabase default grants (PGlite has no such defaults, so the local test did not see it). Revoked live as `20261004190717_terms_acceptances_write_via_function_only` (file added); after the revoke `service_role` direct insert is rejected and the security-definer function still records acceptances.
+
+Not exercised against the hosted project: the HTTP routes (`/privacy/[slug]`, `/terms/accept`, CSV export, 410 after the window), because the Reviewer environment holds no server key. They are covered by the 108 local tests; repeat as part of the post-deploy smoke on Render.
+
+Verdict: **PR #4 approved by the Reviewer.** The CEO merges.

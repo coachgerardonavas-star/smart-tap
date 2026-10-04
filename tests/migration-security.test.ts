@@ -6,7 +6,7 @@ const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.me
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
 const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances"];
-const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004143000_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
+const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004190428_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
   it.each(exposedTables)("enables RLS on %s", (table) => {

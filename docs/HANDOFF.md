@@ -19,7 +19,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after aligning D-044 with D-045,
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
-| `codex/privacy-notice` | **Current Builder branch and PR #4.** Implements D-044 and D-045, including the three export/cancellation fixes requested by the Reviewer. Migration `20261004143000_privacy_notice.sql` remains unapplied for Reviewer inspection. |
+| `codex/privacy-notice` | **Current Builder branch and PR #4.** Implements D-044 and D-045, including the three export/cancellation fixes requested by the Reviewer. Migration `20261004190428_privacy_notice.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -51,7 +51,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages an
 - Added a daily `pg_cron` schedule at 03:17 UTC. `anon`, `authenticated` and `service_role` have no execute permission on the purge function.
 - Added a distinct AAL2 platform-admin cancellation action and a POST-only CSV export with name, phone, birthday, visit count, last visit and WhatsApp opt-in. The export paginates customers and aggregates beyond Supabase's 1,000-row response limit, stays available until 30 days after cancellation, then returns HTTP 410. Validated E.164 phones remain unchanged; other cells still neutralize spreadsheet formulas. Export auditing stores empty details.
 - The server now sets `PRIVACY_NOTICE_VERSION = 2026-10-04` and strips any browser-supplied version. The required consent says `Tengo 13 años o más`; the form and server reject a birthday younger than 13.
-- New migration: `20261004143000_privacy_notice.sql`. It has not been applied and no `db push` ran.
+- New migration: `20261004190428_privacy_notice.sql`. It has not been applied and no `db push` ran.
 - Local evidence: migration and cascade tests passed in PGlite; exact 390×844 capture at `docs/evidence/privacy-cafe-luna-390x844.png` was produced with the production component and a local business fixture, without Supabase changes.
 - PR #4: `https://github.com/coachgerardonavas-star/smart-tap/pull/4`, open, non-draft and mergeable from `codex/privacy-notice` to `main`. Implementation commit `acf0459` passed GitHub Actions `verify` in run `37225896122`.
 
@@ -64,7 +64,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages an
 - `/terms/accept` uses an unchecked required box and sends no version from the browser. Login, dashboard and each business privacy page link to `/terms`.
 - Cross-tenant, idempotency, version-change, audit-content, RLS and direct-write denial passed in PGlite. Middleware and source-coverage tests prove every current dashboard/API route has the acceptance gate.
 - Exact mobile evidence: `docs/evidence/terms-accept-390x844.png`, 390×844, visually checked without horizontal clipping. The local capture used the production component with a data fixture; no bypass or fixture route remains in the tree.
-- Migration remains `supabase/migrations/20261004143000_privacy_notice.sql`. It has not been applied to hosted Supabase and no `db push` ran.
+- Migration remains `supabase/migrations/20261004190428_privacy_notice.sql`. It has not been applied to hosted Supabase and no `db push` ran.
 
 ## Onboarding configuration — Builder implementation, 2026-10-04
 
@@ -130,7 +130,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages an
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Reviewer: inspect and apply `20261004143000_privacy_notice.sql`, then run the hosted D-044/D-045 privacy, retention, export and terms-acceptance smoke before real customer data.
+- Reviewer: inspect and apply `20261004190428_privacy_notice.sql`, then run the hosted D-044/D-045 privacy, retention, export and terms-acceptance smoke before real customer data.
 - Physical NFC writing.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
@@ -173,3 +173,5 @@ Decision D-046: **customizable styles, not bespoke design per client.** 3–4 st
 Route: design the styles with Claude Design → CEO approval → Builder implements as a theme system with new admin fields. Scheduled after the privacy/terms PR.
 
 Constraints every style must keep: WhatsApp box unchecked and optional (D-042); no SMS; privacy acceptance separate from marketing; no visit-reward counter unless a rewards feature is approved and built; Instagram/social links only if added as a configured field; images optimized for fast load on mobile data; Nombre visible without scroll at 390×844; contrast readable in sunlight.
+
+Reviewer pass on PR #4 complete (see VERIFICATION): migrations `20261004190428_privacy_notice` and `20261004190717_terms_acceptances_write_via_function_only` live; PR #4 approved, awaiting CEO merge.
