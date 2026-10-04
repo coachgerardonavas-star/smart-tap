@@ -8,6 +8,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after integrating `origin/claude
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
+- **CEO-approved commercial/product decisions from the current ChatGPT session:** `docs/CHATGPT_COORDINATION_NOTE.md`. Codex, Claude Code and ChatGPT should read it before changing Smart Tap scope, pricing behavior, CRM/WhatsApp assumptions, location rules or onboarding.
 
 ## Branches — which one is current
 
@@ -61,7 +62,7 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 
 ## Activation documents
 
-`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`.
+`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`, `docs/CHATGPT_COORDINATION_NOTE.md`.
 
 ## Real blockers
 
@@ -72,9 +73,13 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 - Physical NFC writing.
 - Reviewer approval and application of `20261004035554_follow_up_queue.sql`, followed by hosted Follow-up Queue smoke testing.
 
+- Synchronize the newly approved Smart Tap commercial rules (D-025 to D-029) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
+- Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
+- Owner-defined offer library (D-028) is approved but not built yet; the queue still uses the fixed messages of `docs/FOLLOW_UP_QUEUE.md`.
+
 ## Coordination rule
 
-Work happens on the PR branch, never directly on `main`. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+**Single working branch until PR #1 merges: `codex/live-smoke-mfa`** (CEO instruction, 2026-10-04, supersedes the earlier `claude/mfa-review` instruction). Every agent — Codex, ChatGPT, Claude — commits there; after the merge, all work goes through pull requests to `main`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
 
 ## Reviewer status — 2026-10-04 (after a6526f2)
 

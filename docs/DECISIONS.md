@@ -82,7 +82,7 @@ D-019 guarded `/admin` only. A platform admin also reaches every tenant through 
 
 ## D-021 — Assisted WhatsApp follow-up, no Meta API (CEO, 2026-10-04)
 
-The MVP detects follow-up opportunities (inactive, birthday, frequent, new) and shows them in a dashboard queue. "Enviar WhatsApp" opens WhatsApp with the customer's number and a suggested message; the owner presses Send. Smart Tap never sends messages. WhatsApp marketing consent is a separate, optional, unchecked box at check-in, recorded with its own text version. Meta Business Platform, templates and automated sending are a later add-on outside $199 + $79/month. CRM integration is a separately quoted project. Specification: `docs/FOLLOW_UP_QUEUE.md`.
+The MVP detects follow-up opportunities (inactive, birthday, frequent, new) and shows them in a dashboard queue. "Enviar WhatsApp" opens WhatsApp with the customer's number and a suggested message; the owner presses Send. Smart Tap never sends messages. WhatsApp marketing consent is a separate, optional, unchecked box at check-in, recorded with its own text version. Meta Business Platform, templates and automated sending are outside the Smart Tap base product. CRM integration is not part of Smart Tap and is handled through Plan Asistente or higher depending on scope. Specification: `docs/FOLLOW_UP_QUEUE.md`.
 
 ## D-022 — Production recovery must resist email prefetch (2026-10-03)
 
@@ -98,3 +98,23 @@ Closed (Reviewer, 2026-10-04): `http-cache-semantics@4.3.0` was published on 202
 ## D-024 — Supabase Pro and a separate production project at the first signed client (CEO, 2026-10-04)
 
 The free project `vrouyhxzxrfkuuqfslrc` stays for demo and testing. When the first business signs, the organization moves to Supabase Pro and a separate production project is created with daily backups. Until then no real customer data is loaded. This schedules GS-25 (backups) and GS-29 (separate environments); both stay open and block real data until done.
+
+## D-025 — Commercial package and commitment (CEO, 2026-10-04)
+
+Smart Tap remains $199 setup + $79/month, with $278 initial checkout when setup and the first month are charged together. The minimum commitment is 3 monthly payments. If the client cancels earlier, all three monthly payments remain due. After the minimum term, cancellation requires 30 days notice. Access ends at the end of the paid service period. The client receives a 30-day export window and data is retained for 90 days before deletion according to the final retention workflow.
+
+## D-026 — NFC and location pricing (CEO, 2026-10-04)
+
+The base package covers one business location and includes 3 configured NFC tags. Additional configured tags cost $10 each. Each additional location is $79/month. Its setup is $99 when contracted before the prior location of the same franchise/business group generates its second monthly payment; after that threshold, the regular $199 setup applies.
+
+## D-027 — Support boundary (CEO, 2026-10-04)
+
+The $79 monthly fee includes normal platform operation, basic support and up to 2 simple configuration changes every 2 weeks. Examples include editing an offer, text, logo, phone number, business data or a suggested message. New automations, integrations, automated WhatsApp/API work, custom features and custom CRM work are outside this allowance and must be separately scoped, normally as Plan Asistente or higher.
+
+## D-028 — Offers are owner-defined and system-recommended (CEO, 2026-10-04)
+
+The business owner defines the set of allowed offers during onboarding. Smart Tap may recommend which approved offer fits each opportunity type (inactive, birthday, frequent/VIP, new/welcome), but it must not invent or authorize discounts on its own. The owner approves the suggestion before opening WhatsApp and manually sending the message.
+
+## D-029 — Onboarding starts with form plus verification meeting (CEO, 2026-10-04)
+
+After successful payment, the client completes a mandatory onboarding form. Automate IT then performs a short verification meeting with the owner or responsible manager. That verification may be by phone/video call or in person. Detailed onboarding fields and operating sequence remain under active design in `docs/CLIENT_ONBOARDING.md`.
