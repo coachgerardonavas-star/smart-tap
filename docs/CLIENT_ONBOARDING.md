@@ -41,6 +41,7 @@ Approved minimum customer fields:
 - **Name: required.**
 - **Phone: required.**
 - **Birthday: optional.**
+- **Email: not collected by default.** It is added only when that business specifically wants email campaigns/follow-up.
 
 The birthday field should explain the benefit so the customer has a reason to complete it. Approved intent: communicate that sharing the birthday may allow the business to send discounts, gifts or birthday benefits. Recommended customer-facing copy:
 
@@ -48,6 +49,8 @@ The birthday field should explain the benefit so the customer has a reason to co
 > Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.
 
 Do not make birthday mandatory and do not promise a specific gift or discount unless that business has approved such an offer.
+
+If email is enabled for a business, its purpose and consent copy must be configured for that business before collection. Do not add email silently to the default form.
 
 ## Information to collect
 
@@ -65,11 +68,13 @@ Required:
 - privacy-policy URL or approved privacy notice;
 - number/labels of NFC tags to configure;
 - owner-defined list of allowed offers/promotions Smart Tap may recommend;
-- confirmation of the single location covered by the base package.
+- confirmation of the single location covered by the base package;
+- whether the business wants email collection/campaigns enabled.
 
 Optional:
 - secondary color;
 - birthday-specific offer/benefit wording approved by the owner;
+- email-specific purpose/consent copy when email collection is enabled;
 - internal label for counters/tables or multiple tags inside the same location.
 
 ## Offer configuration
@@ -85,17 +90,18 @@ The owner defines which offers are permitted. Smart Tap may recommend one of tho
 5. Confirm the owner-selected dashboard users (maximum 2 included).
 6. Create business in Smart Tap admin.
 7. Configure name, branding, timezone, privacy URL and inactivity threshold.
-8. Load the owner-approved offers.
-9. Create NFC tag record(s) and labels.
-10. Invite the approved dashboard users.
-11. Confirm invite delivery and account activation.
-12. Copy the exact production NFC URL for each physical tag.
-13. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-14. Run a customer capture test verifying required name + phone and optional birthday behavior.
-15. Confirm the test customer appears in the correct dashboard.
-16. Confirm follow-up queue behavior for at least one safe test case.
-17. Remove test data when appropriate.
-18. Deliver credentials/instructions and record delivery date.
+8. Confirm whether email collection/campaigns are enabled for that business; if yes, configure purpose/consent copy before collection.
+9. Load the owner-approved offers.
+10. Create NFC tag record(s) and labels.
+11. Invite the approved dashboard users.
+12. Confirm invite delivery and account activation.
+13. Copy the exact production NFC URL for each physical tag.
+14. Program and test each tag using `docs/NFC_OPERATIONS.md`.
+15. Run a customer capture test verifying required name + phone, optional birthday, and email only when explicitly enabled.
+16. Confirm the test customer appears in the correct dashboard.
+17. Confirm follow-up queue behavior for at least one safe test case.
+18. Remove test data when appropriate.
+19. Deliver credentials/instructions and record delivery date.
 
 ## Do not include by default
 
@@ -109,7 +115,8 @@ Base Smart Tap does not silently include:
 - custom software development;
 - advanced loyalty/Wallet work;
 - additional locations inside the base $79 monthly fee;
-- more than 2 included business-side dashboard users.
+- more than 2 included business-side dashboard users;
+- customer email collection/campaigns unless the business has chosen that channel and its purpose/consent configuration is approved.
 
 CRM integration or broader automation is handled through Plan Asistente or higher depending on scope.
 
@@ -129,6 +136,7 @@ A customer is considered configured when:
 - owner-approved offers are recorded;
 - NFC opens the intended production landing page;
 - customer form requires name and phone and leaves birthday optional with benefit-oriented copy;
+- email is absent by default or explicitly enabled with approved purpose/consent copy;
 - one test capture succeeds;
 - dashboard receives the customer/visit;
 - tenant access is limited to that business;
