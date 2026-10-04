@@ -34,6 +34,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       phone: form.get("phone"),
       birthday: form.get("birthday"),
       consent: form.get("consent") === "on",
+      whatsappOptIn: form.get("whatsappOptIn") === "on",
       consentVersion: "2026-10-01",
       website: form.get("website"),
     };
@@ -97,6 +98,10 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       <label className="consent">
         <input name="consent" type="checkbox" required />
         <span>Acepto que {businessName} guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href={privacyUrl} target="_blank" rel="noreferrer">política de privacidad</a>.</span>
+      </label>
+      <label className="consent whatsapp-consent">
+        <input name="whatsappOptIn" type="checkbox" />
+        <span>Quiero recibir mensajes y promociones de {businessName} por WhatsApp. Puedo pedir que paren en cualquier momento.</span>
       </label>
       {error && <div className="form-alert" role="alert">{error}</div>}
       <button type="submit" disabled={pending} style={{ backgroundColor: primaryColor }}>

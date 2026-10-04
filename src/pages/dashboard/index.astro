@@ -3,6 +3,7 @@ import Base from "../../layouts/Base.astro";
 import MetricCard from "../../components/MetricCard.astro";
 import { assertBusinessAccess, requireDataAccess } from "../../lib/auth";
 import { dashboardData } from "../../lib/data";
+import { FOLLOW_UP_KIND_LABELS, FOLLOW_UP_KINDS } from "../../lib/follow-up";
 
 const identity = await requireDataAccess(Astro.request, Astro.cookies);
 const data = await dashboardData(identity, Astro.url.searchParams.get("business"));
@@ -10,6 +11,11 @@ const { businesses, business, metrics } = data;
 const canManage = business ? await assertBusinessAccess(identity, business.id, false).then(() => true).catch(() => false) : false;
 const dateFormat = new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" });
 const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
+  kind,
+  label: FOLLOW_UP_KIND_LABELS[kind],
+  items: metrics.followUps.filter((item) => item.kind === kind),
+})).filter((group) => group.items.length > 0) : [];
 ---
 
 <Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin}>
@@ -41,7 +47,55 @@ const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "
         <MetricCard label="Clientes" value={metrics.totalCustomers} note="Registrados" />
         <MetricCard label="Visitas" value={metrics.totalVisits} note="Acumuladas" />
         <MetricCard label="Clientes frecuentes" value={metrics.repeatCustomers} note="Más de una visita" />
-        <MetricCard label="Sin regresar" value={metrics.inactiveCustomers} note={`Más de ${business.inactivity_days} días`} />
+        <MetricCard label="Sin regresar" value={metrics.inactiveCustomers} note={`${business.inactivity_days} días o más`} />
+      </section>
+
+      <section class="card follow-up-card" aria-labelledby="follow-up-title">
+        <div class="card-head">
+          <div><h2 id="follow-up-title">Para contactar hoy</h2><p>Oportunidades activas: {metrics.followUps.length}</p></div>
+        </div>
+        {followUpGroups.length ? (
+          <div class="follow-up-groups">
+            {followUpGroups.map((group) => (
+              <section class="follow-up-group" aria-labelledby={`follow-up-${group.kind}`}>
+                <h3 id={`follow-up-${group.kind}`}>{group.label} <span class="group-count">{group.items.length}</span></h3>
+                <div class="follow-up-list">
+                  {group.items.map((opportunity) => (
+                    <article class="follow-up-row">
+                      <div class="follow-up-person">
+                        <strong>{opportunity.customer.full_name}</strong>
+                        <span class="kind-chip">{group.label}</span>
+                        <span>{opportunity.reason}</span>
+                        <small>Última visita: {dateFormat.format(new Date(opportunity.lastVisit))}</small>
+                      </div>
+                      <div class="follow-up-actions">
+                        {!opportunity.customer.whatsapp_opt_in && <span class="permission-label">Sin permiso para WhatsApp</span>}
+                        {canManage && opportunity.customer.whatsapp_opt_in && (
+                          <form action="/api/dashboard/follow-up" method="post">
+                            <input type="hidden" name="businessId" value={business.id} />
+                            <input type="hidden" name="customerId" value={opportunity.customer.id} />
+                            <input type="hidden" name="kind" value={opportunity.kind} />
+                            <input type="hidden" name="action" value="contact" />
+                            <button class="button whatsapp-button" type="submit">Enviar WhatsApp</button>
+                          </form>
+                        )}
+                        {canManage && (
+                          <form action="/api/dashboard/follow-up" method="post">
+                            <input type="hidden" name="businessId" value={business.id} />
+                            <input type="hidden" name="customerId" value={opportunity.customer.id} />
+                            <input type="hidden" name="kind" value={opportunity.kind} />
+                            <input type="hidden" name="action" value="dismiss" />
+                            <button class="dismiss-button" type="submit">Descartar</button>
+                          </form>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : <p class="empty-row">No hay contactos pendientes para hoy.</p>}
       </section>
 
       <section class="dashboard-grid">
@@ -58,7 +112,22 @@ const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "
                       <td>{customer.phone_e164}</td>
                       <td><span class="count">{customer.visitCount}</span></td>
                       <td>{dateFormat.format(new Date(customer.last_seen_at))}</td>
-                      {canManage && <td><form action={`/api/dashboard/customer/${customer.id}/delete`} method="post" onsubmit="return confirm('¿Eliminar este cliente y todas sus visitas? Esta acción no se puede deshacer.')"><input type="hidden" name="businessId" value={business.id} /><button class="delete-button" type="submit">Eliminar</button></form></td>}
+                      {canManage && (
+                        <td>
+                          <div class="customer-actions">
+                            {customer.whatsapp_opt_in && (
+                              <form action={`/api/dashboard/customer/${customer.id}/whatsapp-opt-out`} method="post">
+                                <input type="hidden" name="businessId" value={business.id} />
+                                <button class="opt-out-button" type="submit">Pidió no recibir WhatsApp</button>
+                              </form>
+                            )}
+                            <form action={`/api/dashboard/customer/${customer.id}/delete`} method="post" onsubmit="return confirm('¿Eliminar este cliente y todas sus visitas? Esta acción no se puede deshacer.')">
+                              <input type="hidden" name="businessId" value={business.id} />
+                              <button class="delete-button" type="submit">Eliminar</button>
+                            </form>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -87,13 +156,31 @@ const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "
   .page-head h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 8px 0; }
   .page-head select { min-height: 44px; padding: 0 36px 0 12px; border: 1px solid #d0d5dd; border-radius: 10px; background: #fff; }
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .follow-up-card { margin-bottom: 20px; overflow: hidden; }
+  .follow-up-groups { display: grid; gap: 0; }
+  .follow-up-group { border-top: 1px solid #eaecf0; padding: 18px 22px; }
+  .follow-up-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .93rem; color: #344054; }
+  .group-count { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 20px; background: #eef4ff; color: #3538cd; font-size: .76rem; }
+  .follow-up-list { display: grid; gap: 10px; }
+  .follow-up-row { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 14px; border: 1px solid #eaecf0; border-radius: 12px; }
+  .follow-up-person { display: grid; gap: 3px; }
+  .follow-up-person span { color: #475467; font-size: .9rem; }
+  .follow-up-person .kind-chip { width: fit-content; padding: 2px 7px; border-radius: 999px; background: #f2f4f7; color: #475467; font-size: .7rem; font-weight: 700; }
+  .follow-up-person small { color: #98a2b3; }
+  .follow-up-actions, .customer-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+  .follow-up-actions form, .customer-actions form { margin: 0; }
+  .whatsapp-button { min-height: 38px; padding: 0 13px; background: #087f5b; font-size: .82rem; }
+  .dismiss-button, .opt-out-button, .delete-button { border: 0; background: transparent; font-size: .8rem; font-weight: 700; cursor: pointer; }
+  .dismiss-button { color: #475467; }
+  .opt-out-button { color: #9a6700; }
+  .delete-button { color: #b42318; }
+  .permission-label { color: #667085; font-size: .78rem; }
   .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
   .table-card { overflow: hidden; }
   .card-head { padding: 21px 22px 15px; display: flex; justify-content: space-between; }
   .card-head h2 { font-size: 1.05rem; margin-bottom: 4px; }
   .card-head p { color: #98a2b3; font-size: .78rem; margin: 0; }
   .count { display: inline-grid; place-items: center; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 20px; background: #eef4ff; color: #3538cd; font-weight: 750; }
-  td form { margin: 0; } .delete-button { border: 0; background: transparent; color: #b42318; font-size: .8rem; font-weight: 700; cursor: pointer; }
   .birthdays ul { list-style: none; padding: 0 20px 15px; margin: 0; }
   .birthdays li { display: flex; gap: 12px; align-items: center; padding: 13px 0; border-top: 1px solid #f2f4f7; }
   .birthdays li:first-child { border-top: 0; }
@@ -102,5 +189,6 @@ const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "
   .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #f2f4f7; color: #475467; font-weight: 800; }
   .empty, .empty-row { padding: 36px; }
   @media (max-width: 960px) { .metrics { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .follow-up-row { align-items: start; flex-direction: column; } .follow-up-actions { justify-content: flex-start; } }
   @media (max-width: 560px) { .page-head { align-items: start; flex-direction: column; } .metrics { grid-template-columns: 1fr 1fr; } }
 </style>

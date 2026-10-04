@@ -197,3 +197,18 @@ The merged migration-security test now normalizes CRLF to LF before checking SQL
 `npm audit` reported `GHSA-ch52-4w7c-c8xp` through `http-cache-semantics@4.2.0`, Astro and `@astrojs/node`. The upstream advisory has no patched version as of 2026-10-04. Smart Tap does not use a shared HTTP response cache; the installed Astro distribution imports this package for remote asset build caching. D-023 adds a fail-closed audit gate limited to the exact advisory, dependency chain and version. Any other high or critical finding still fails CI.
 
 Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build. GitHub Actions run `37172436364` passed the same PR gate for commit `9dd0116`.
+## Follow-up Queue local verification — ChatGPT Codex, 2026-10-04
+
+Migration `20261004030000_follow_up_queue.sql` executed only inside PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
+
+Evidence:
+- unchecked WhatsApp consent records the visit, leaves `whatsapp_opt_in = false` and creates no WhatsApp consent row;
+- checked consent records version `whatsapp-2026-10-04`; a later unchecked visit preserves the opt-in;
+- inactive, birthday, frequent and new rules pass, including New York date edges and the 30-day boundary;
+- viewer, another-business member, foreign customer, no opt-in, stale opportunity and AAL1 platform admin paths are rejected; a pre-gate defect that converted guard errors to 500 was fixed so shared middleware returns 403;
+- repeated contact actions keep one database row for the opportunity cycle;
+- the redirect contains an E.164 digits-only path and the encoded server-built message; browser forms contain no phone or message fields;
+- opt-out changes the current flag and appends consent plus audit records in one database function;
+- RLS and grants keep follow-up writes and opt-out service-only.
+
+Final local gate: `npm run audit:prod` passed D-023; `npm run verify` reported 0 Astro diagnostics, 63/63 tests and a complete standalone Node build. The synchronized baseline CI passed in GitHub Actions run `37173173020`. Feature CI remains pending until push.

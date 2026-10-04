@@ -19,6 +19,9 @@ Automate IT gets a separate admin area for business configuration, branding, NFC
 - A first visit creates the customer, consent record, and visit.
 - A later visit with the same phone creates another visit.
 - The business dashboard reflects the activity.
+- WhatsApp consent remains optional and separate from visit consent.
+- The follow-up queue detects inactive, birthday, frequent, and new customers.
+- The WhatsApp action opens a server-built `wa.me` link for the owner; Smart Tap does not send the message.
 - A cross-tenant query returns zero rows.
 - Automate IT can add another business and invite its owner.
 
@@ -28,4 +31,4 @@ Automate IT gets a separate admin area for business configuration, branding, NFC
 
 ## Product limits
 
-The customer list shows the 250 most recently active customers. Counts remain exact. Birthday calculation loads up to 1,000 customers with birthdays, which covers the intended first-stage business size. Larger tenants should move birthday selection into a database query.
+The customer list shows the 250 most recently active customers. Counts remain exact. Birthday and follow-up calculation load up to 1,000 customers; recent-visit detection loads up to 10,000 visits. These limits cover the intended first-stage business size. Larger tenants should move opportunity selection into a paginated database query.

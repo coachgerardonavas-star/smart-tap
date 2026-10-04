@@ -35,6 +35,8 @@ Deliver one configurable multi-tenant platform that lets a local business captur
 - An existing invited user can be assigned without creating a duplicate account.
 - The customer, consent, and visit write succeeds or fails as one transaction.
 - Check-in never requires WhatsApp consent; a customer without it never gets a WhatsApp button.
+- A later unchecked visit keeps an existing opt-in; only the explicit admin opt-out revokes it.
+- Follow-up forms send identifiers and action only. Phone and message come from the server database read.
 
 ## Excluded
 

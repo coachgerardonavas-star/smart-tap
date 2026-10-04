@@ -14,8 +14,8 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after integrating Claude's revie
 | Branch | State |
 |---|---|
 | `main` | Original MVP (`f1ec5d3`). Does not match the live database: its code calls the old 8-argument check-in function, which no role may execute. **Do not deploy or build on `main` until PR #1 is merged.** |
-| `claude/mfa-review` | Reviewer source integrated at `22cebbb`; contains the MFA bypass fixes (D-020) and ops reconciliation. |
-| `codex/live-smoke-mfa` | **Current PR #1 branch.** Contains the hosted smoke evidence and integrates `claude/mfa-review`. |
+| `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
+| `codex/live-smoke-mfa` | **Current PR #1 branch.** Contains hosted smoke evidence, integrates `claude/mfa-review` and implements the Follow-up Queue. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -30,13 +30,23 @@ Advisors: Security — one WARN, leaked-password protection, Pro-plan feature (c
 
 ## Current state
 
-MVP implemented. Security hardening, one visit per customer per day (D-017), admin MFA at `aal2` for `/admin`, `/dashboard`, customer deletion and the Data API (D-019, D-020). The hosted application smoke test exercised capture, dashboard, NFC pause, viewer isolation, member pause and deletion cleanup.
+MVP implemented. Security hardening, one visit per customer per day (D-017), admin MFA at `aal2` for `/admin`, `/dashboard`, customer deletion and the Data API (D-019, D-020). The Follow-up Queue (D-021) adds separate optional WhatsApp consent, four server-computed opportunity kinds, owner-assisted `wa.me` actions, dismissal and an audited opt-out. Smart Tap never sends a message.
 
 Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 MFA passed live enrollment and challenge.
 
-Estimated completion: 96% of the demonstration MVP and 82% of production readiness.
+Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-023 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI passed: GitHub Actions run `37172436364`, job `verify`, commit `9dd0116`.
+Previous local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-023 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI passed: GitHub Actions run `37172436364`, job `verify`, commit `9dd0116`.
+
+## Follow-up Queue implementation — 2026-10-04
+
+- Sections 1–8 of `docs/FOLLOW_UP_QUEUE.md` are implemented locally on PR #1.
+- Capture has a separate optional unchecked WhatsApp consent; the 10-argument check-in preserves a prior opt-in and records consent purpose/version.
+- The dashboard groups inactive, birthday, frequent and new opportunities. Viewer access is read-only. Owner, manager and AAL2 platform admin can contact or dismiss.
+- `/api/dashboard/follow-up` scopes every customer read by business, recomputes the opportunity and builds the `wa.me` URL only from database values. Authorization errors propagate as 403 through the shared middleware.
+- The explicit opt-out is atomic through `record_whatsapp_opt_out`; it updates the customer and appends consent and audit records.
+- New migration: `20261004030000_follow_up_queue.sql`. It is committed only and has not been applied to hosted Supabase.
+- Local gate passed: 0 diagnostics, 63/63 tests and standalone Node build. `npm run audit:prod` passed D-023. PR CI for the feature commit is pending.
 
 ## Builder live smoke and cleanup — 2026-10-03
 
@@ -59,6 +69,7 @@ Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics 
 - Custom SMTP with tracking disabled and a prefetch-safe recovery template before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
+- Reviewer approval and application of `20261004030000_follow_up_queue.sql`, followed by hosted Follow-up Queue smoke testing.
 
 ## Coordination rule
 

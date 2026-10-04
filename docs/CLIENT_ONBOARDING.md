@@ -23,7 +23,7 @@ Required:
 - primary brand color;
 - business timezone;
 - country;
-- preferred inactivity threshold (default 45 days if no business-specific decision is needed);
+- preferred inactivity threshold (default 30 days if no business-specific decision is needed);
 - privacy-policy URL or approved privacy notice;
 - number/labels of NFC tags to configure.
 

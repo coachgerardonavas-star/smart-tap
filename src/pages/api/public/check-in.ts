@@ -47,6 +47,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       p_phone_e164: phone,
       p_birthday: parsed.data.birthday || null,
       p_consent_version: parsed.data.consentVersion,
+      p_whatsapp_opt_in: parsed.data.whatsappOptIn,
       p_ip_hash: hashIdentifier(`ip:${requestIp(request, clientAddress)}`),
       p_phone_hash: hashIdentifier(`phone:${phone}`),
       p_user_agent: request.headers.get("user-agent") || "unknown",
