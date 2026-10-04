@@ -55,6 +55,17 @@ If email is enabled for a business, its purpose and consent copy must be configu
 
 WhatsApp consent must not be implied merely because the customer supplied a phone number. The form must present an explicit required acceptance whose wording names the business and makes clear that WhatsApp follow-up may include the approved categories used by that business, such as offers, birthday benefits, welcome/return messages and relevant customer follow-up. The final wording must also provide a clear way to stop future WhatsApp communications, and opt-out requests must be honored.
 
+## Included NFC allocation
+
+The 3 NFC tags included in the base Smart Tap setup have two approved roles:
+
+- **2 NFC tags for customer capture/registration.** These open the Smart Tap registration/check-in flow.
+- **1 NFC tag for Google Review.** This opens the business's approved Google review destination.
+
+Automate IT recommends the best physical placement for all three NFC tags according to the type and flow of the business. The owner may change the recommended placement before activation.
+
+The two capture NFC tags may be placed in different high-traffic/customer-interaction points inside the same included location. The review NFC should be positioned where asking for a review is contextually appropriate, normally near the end of the customer experience rather than at initial entry.
+
 ## Information to collect
 
 Required:
@@ -67,10 +78,11 @@ Required:
 - primary brand color;
 - business timezone;
 - country;
-- preferred inactivity threshold (default 30 days if no business-specific decision is needed);
+- preferred inactivity threshold, chosen by the business owner during onboarding;
 - privacy-policy URL or approved privacy notice;
-- number/labels of NFC tags to configure;
-- owner-defined list of allowed offers/promotions Smart Tap may recommend;
+- labels/physical placement for the 2 customer-capture NFC tags;
+- Google Review destination and placement for the 1 review NFC tag;
+- one owner-approved offer for each follow-up category: inactive, birthday, frequent/VIP, new/welcome;
 - confirmation of the single location covered by the base package;
 - whether the business wants email collection/campaigns enabled;
 - business-specific WhatsApp consent wording that explicitly names the business and matches the approved follow-up categories.
@@ -79,11 +91,11 @@ Optional:
 - secondary color;
 - birthday-specific offer/benefit wording approved by the owner;
 - email-specific purpose/consent copy when email collection is enabled;
-- internal label for counters/tables or multiple tags inside the same location.
+- alternate owner-approved placement for the included NFC tags.
 
 ## Offer configuration
 
-The owner defines which offers are permitted. Smart Tap may recommend one of those approved offers for inactive customers, birthdays, frequent/VIP customers or new/welcome customers. Smart Tap must not invent an unauthorized discount. The owner approves the suggestion before manually sending the WhatsApp message.
+The owner defines one approved offer for each follow-up category: inactive customer, birthday, frequent/VIP customer and new/welcome customer. Smart Tap uses the offer assigned to that category and must not substitute or invent a different promotion without later owner approval. The owner approves the suggested message before manually sending the WhatsApp message.
 
 ## Automate IT setup sequence
 
@@ -93,20 +105,22 @@ The owner defines which offers are permitted. Smart Tap may recommend one of tho
 4. Obtain final owner approval.
 5. Confirm the owner-selected dashboard users (maximum 2 included).
 6. Create business in Smart Tap admin.
-7. Configure name, branding, timezone, privacy URL and inactivity threshold.
+7. Configure name, branding, timezone, privacy URL and owner-selected inactivity threshold.
 8. Confirm whether email collection/campaigns are enabled for that business; if yes, configure purpose/consent copy before collection.
 9. Configure the required WhatsApp consent text for that business, explicitly naming the business and documenting the opt-out path.
-10. Load the owner-approved offers.
-11. Create NFC tag record(s) and labels.
-12. Invite the approved dashboard users.
-13. Confirm invite delivery and account activation.
-14. Copy the exact production NFC URL for each physical tag.
-15. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-16. Run a customer capture test verifying required name + phone, optional birthday, email only when explicitly enabled, and required explicit WhatsApp consent.
-17. Confirm the test customer appears in the correct dashboard.
-18. Confirm follow-up queue behavior for at least one safe test case.
-19. Remove test data when appropriate.
-20. Deliver credentials/instructions and record delivery date.
+10. Load the four owner-approved category offers.
+11. Create/program two customer-capture NFC tags and one Google Review NFC tag.
+12. Confirm Automate IT's recommended placement and any owner-approved placement changes.
+13. Invite the approved dashboard users.
+14. Confirm invite delivery and account activation.
+15. Copy the exact production URL for each physical tag.
+16. Program and test each tag using `docs/NFC_OPERATIONS.md`.
+17. Run a customer capture test verifying required name + phone, optional birthday, email only when explicitly enabled, and required explicit WhatsApp consent.
+18. Test the Google Review NFC against the approved business review destination.
+19. Confirm the test customer appears in the correct dashboard.
+20. Confirm follow-up queue behavior for at least one safe test case.
+21. Remove test data when appropriate.
+22. Deliver credentials/instructions and record delivery date.
 
 ## Do not include by default
 
@@ -138,8 +152,10 @@ A customer is considered configured when:
 - account access works;
 - branding is correct;
 - privacy link is present;
-- owner-approved offers are recorded;
-- NFC opens the intended production landing page;
+- owner-approved offers are recorded for all four follow-up categories;
+- the 2 customer-capture NFC tags open the intended Smart Tap production landing/check-in flow;
+- the 1 Google Review NFC opens the approved review destination;
+- NFC placement is approved by the owner after Automate IT's recommendation;
 - customer form requires name and phone and leaves birthday optional with benefit-oriented copy;
 - email is absent by default or explicitly enabled with approved purpose/consent copy;
 - customer cannot complete Smart Tap registration without explicit WhatsApp consent naming the business;
