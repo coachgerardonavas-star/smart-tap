@@ -26,6 +26,8 @@ export type Business = {
   hero_image_url: string | null;
   owner_approved_at: string | null;
   owner_approved_name: string | null;
+  owner_approved_terms_version: string | null;
+  term_ends_at: string | null;
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
@@ -52,6 +54,7 @@ export type Visit = {
   customer_id: string;
   tag_id: string | null;
   source: "nfc" | "manual" | "demo";
+  untagged: boolean;
   visited_at: string;
 };
 

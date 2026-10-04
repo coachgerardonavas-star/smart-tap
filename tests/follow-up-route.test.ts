@@ -24,7 +24,7 @@ const baseCustomer: FollowUpCustomer = {
   updated_at: "2026-10-03T12:00:00Z",
   last_seen_at: "2026-10-03T12:00:00Z",
 };
-const visit: Visit = { id: "50000000-0000-4000-8000-000000000001", business_id: baseCustomer.business_id, customer_id: baseCustomer.id, tag_id: null, source: "nfc", visited_at: baseCustomer.last_seen_at };
+const visit: Visit = { id: "50000000-0000-4000-8000-000000000001", business_id: baseCustomer.business_id, customer_id: baseCustomer.id, tag_id: null, source: "nfc", untagged: true, visited_at: baseCustomer.last_seen_at };
 type TestBusiness = {
   id: string;
   slug: string;

@@ -3,6 +3,7 @@ import { changedFieldNames } from "../../../../../lib/audit";
 import { requirePlatformAdmin } from "../../../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
 import { businessUpdateSchema } from "../../../../../lib/validation";
+import { TERMS_VERSION } from "../../../../../lib/terms";
 
 export const POST: APIRoute = async ({ request, cookies, params, redirect }) => {
   const identity = await requirePlatformAdmin(request, cookies);
@@ -14,11 +15,11 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const service = createSupabaseServiceClient();
   const wantsActive = form.get("isActive") === "on";
   const { data: current, error: currentError } = await service.from("businesses")
-    .select("owner_approved_at,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,is_active")
+    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,is_active")
     .eq("id", id).maybeSingle();
   if (currentError || !current) return redirect(`/admin/${id}?error=${encodeURIComponent("Negocio no encontrado.")}`, 303);
-  if (wantsActive && !current.owner_approved_at) {
-    return redirect(`/admin/${id}?error=${encodeURIComponent("Registra la aprobación del dueño antes de activar el negocio.")}`, 303);
+  if (wantsActive && !current.is_active && (!current.owner_approved_at || current.owner_approved_terms_version !== TERMS_VERSION)) {
+    return redirect(`/admin/${id}?error=${encodeURIComponent("Registra la firma vigente y la aprobación del dueño antes de activar el negocio.")}`, 303);
   }
   if (wantsActive && current.cancelled_at) {
     return redirect(`/admin/${id}?error=${encodeURIComponent("Un servicio cancelado no se puede reactivar.")}`, 303);
@@ -43,7 +44,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const { error } = await service.from("businesses").update(updates).eq("id", id);
   if (error) {
     const message = error.code === "23505" ? "Esa URL corta ya está en uso."
-      : error.code === "23514" ? "Registra la aprobación del dueño y un contacto antes de activar el negocio."
+      : error.code === "23514" ? "Registra la firma vigente, la aprobación del dueño y un contacto antes de activar el negocio."
         : "No pudimos guardar los cambios.";
     return redirect(`/admin/${id}?error=${encodeURIComponent(message)}`, 303);
   }

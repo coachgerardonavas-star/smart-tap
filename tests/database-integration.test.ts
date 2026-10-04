@@ -76,6 +76,36 @@ describe("database migration and check-in transaction", () => {
         (select count(*)::int from public.consent_records r join public.customers c on c.id = r.customer_id where c.phone_e164 = '+13055550199' and r.purpose = 'whatsapp') as whatsapp_consents
     `);
     expect(records.rows[0]).toEqual({ customers: 1, visits: 1, consents: 1, whatsapp_opt_in: false, whatsapp_consents: 0 });
+    const tagged = await database.query<{ untagged: boolean }>(`select v.untagged from public.visits v join public.customers c on c.id = v.customer_id where c.phone_e164 = '+13055550199'`);
+    expect(tagged.rows[0]?.untagged).toBe(false);
+  });
+
+  it("records blank, unknown and inactive tag codes as untagged visits", async () => {
+    await database.exec(`
+      insert into public.nfc_tags (business_id, code, label, is_active)
+      values ('10000000-0000-4000-8000-000000000001', 'inactive-tag-code-2026', 'Inactive', false);
+    `);
+    const cases = [
+      { phone: "+13055550201", tag: "", ip: "7" },
+      { phone: "+13055550202", tag: "unknown-tag-code-2026", ip: "8" },
+      { phone: "+13055550203", tag: "inactive-tag-code-2026", ip: "9" },
+    ];
+    for (const item of cases) {
+      const result = await database.query<{ result: { untagged: boolean; visitCount: number } }>(`
+        select public.record_public_check_in(
+          'cafe-luna', '${item.tag}', 'Cliente Sin Etiqueta', '${item.phone}',
+          null, '2026-10-04', false, repeat('${item.ip}', 64), md5('${item.phone}') || md5('${item.phone}'), 'untagged-test'
+        ) as result
+      `);
+      expect(result.rows[0]?.result).toMatchObject({ untagged: true, visitCount: 1 });
+    }
+    const saved = await database.query<{ count: number }>(`
+      select count(*)::int as count from public.visits v
+      join public.customers c on c.id = v.customer_id
+      where c.phone_e164 in ('+13055550201', '+13055550202', '+13055550203')
+        and v.untagged and v.tag_id is null
+    `);
+    expect(saved.rows[0]?.count).toBe(3);
   });
 });
 
@@ -313,8 +343,8 @@ describe("onboarding configuration", () => {
       insert into public.businesses (id, slug, display_name) values ('${businessId}', 'approval-test', 'Approval Test');
     `);
     await expect(database.exec(`update public.businesses set is_active = true where id = '${businessId}'`))
-      .rejects.toThrow(/businesses_activation_requires_approval_check/);
-    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
+      .rejects.toThrow(/activation_current_terms_approval_required/);
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}', '2026-10-04-v2')`))
       .rejects.toThrow(/approval_configuration_incomplete/);
 
     await database.exec(`
@@ -328,22 +358,25 @@ describe("onboarding configuration", () => {
       where id = '${businessId}';
     `);
     await database.query(`select public.upsert_business_member_with_limit('${businessId}', '${actorId}', 'owner')`);
-    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}', '2026-10-04-v2')`))
       .rejects.toThrow(/approval_configuration_incomplete/);
     await database.exec(`update public.businesses set contact_email = 'owner@example.test' where id = '${businessId}'`);
     await database.query(`select public.set_business_member_active_with_limit('${businessId}', '${actorId}', false)`);
-    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
-      .rejects.toThrow(/approval_active_member_required/);
+    await expect(database.query(`select public.record_terms_signature('${actorId}', '${businessId}', '2026-10-04-v2', 'Dueña Prueba', 'Dueña', repeat('a', 64), 'integration-test')`))
+      .rejects.toThrow(/terms_owner_access_denied/);
     await database.query(`select public.set_business_member_active_with_limit('${businessId}', '${actorId}', true)`);
-    await database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`);
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}', '2026-10-04-v2')`))
+      .rejects.toThrow(/approval_current_owner_signature_required/);
+    await database.query(`select public.record_terms_signature('${actorId}', '${businessId}', '2026-10-04-v2', 'Dueña Prueba', 'Dueña', repeat('a', 64), 'integration-test')`);
+    await database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}', '2026-10-04-v2')`);
     await database.exec(`update public.businesses set is_active = true where id = '${businessId}'`);
 
-    const result = await database.query<{ is_active: boolean; owner_approved_name: string; audits: number }>(`
-      select b.is_active, b.owner_approved_name,
+    const result = await database.query<{ is_active: boolean; owner_approved_name: string; owner_approved_terms_version: string; term_set: boolean; audits: number }>(`
+      select b.is_active, b.owner_approved_name, b.owner_approved_terms_version, b.term_ends_at between now() + interval '89 days' and now() + interval '93 days' as term_set,
         (select count(*)::int from public.audit_log where business_id = b.id and action = 'business.owner_approved') as audits
       from public.businesses b where b.id = '${businessId}'
     `);
-    expect(result.rows[0]).toEqual({ is_active: true, owner_approved_name: "Dueña Prueba", audits: 1 });
+    expect(result.rows[0]).toEqual({ is_active: true, owner_approved_name: "Dueña Prueba", owner_approved_terms_version: "2026-10-04-v2", term_set: true, audits: 1 });
 
     const demo = await database.query<{ is_active: boolean; approved: boolean }>(`
       select is_active, owner_approved_at is not null as approved
@@ -431,7 +464,7 @@ describe("privacy retention and cancellation", () => {
     `);
     expect(privileges.rows[0]).toEqual({ anon: false, authenticated: false, service: false });
     await expect(database.exec(`update public.businesses set is_active = true where slug = 'cancelled-test'`))
-      .rejects.toThrow(/businesses_activation_requires_approval_check/);
+      .rejects.toThrow(/activation_current_terms_approval_required/);
   });
 });
 
@@ -530,5 +563,107 @@ describe("Terms of Service acceptance", () => {
       authenticated_insert: false,
       service_insert: false,
     });
+  });
+});
+
+describe("Terms v2 owner signature and contract term", () => {
+  const businessId = "10000000-0000-4000-8000-0000000000e1";
+  const otherBusinessId = "10000000-0000-4000-8000-0000000000e2";
+  const ownerId = "40000000-0000-4000-8000-0000000000e1";
+  const managerId = "40000000-0000-4000-8000-0000000000e2";
+  const adminId = "40000000-0000-4000-8000-0000000000e3";
+
+  it("requires an active owner and stores one private, idempotent signature", async () => {
+    await database.exec(`
+      insert into auth.users (id, email) values
+        ('${ownerId}', 'signature-owner@example.test'),
+        ('${managerId}', 'signature-manager@example.test'),
+        ('${adminId}', 'signature-admin@example.test');
+      insert into public.businesses (id, slug, display_name) values
+        ('${businessId}', 'signature-business', 'Signature Business'),
+        ('${otherBusinessId}', 'signature-other', 'Signature Other');
+      insert into public.business_members (business_id, user_id, role) values
+        ('${businessId}', '${ownerId}', 'owner'),
+        ('${businessId}', '${managerId}', 'manager');
+    `);
+    await expect(database.query(`select public.record_terms_signature('${managerId}', '${businessId}', '2026-10-04-v2', 'Gerente Prueba', 'Gerente', repeat('b', 64), 'test')`))
+      .rejects.toThrow(/terms_owner_access_denied/);
+    await expect(database.query(`select public.record_terms_signature('${ownerId}', '${otherBusinessId}', '2026-10-04-v2', 'Dueña Prueba', 'Dueña', repeat('b', 64), 'test')`))
+      .rejects.toThrow(/terms_owner_access_denied/);
+    await expect(database.query(`select public.record_terms_signature('${ownerId}', '${businessId}', '2026-10-04-v2', 'Dueña Prueba', 'Dueña', 'bad-hash', 'test')`))
+      .rejects.toThrow(/invalid_signature_ip_hash/);
+
+    const first = await database.query<{ recorded: boolean }>(`select public.record_terms_signature('${ownerId}', '${businessId}', '2026-10-04-v2', 'Dueña Prueba', 'Dueña', repeat('b', 64), 'signature-agent') as recorded`);
+    const duplicate = await database.query<{ recorded: boolean }>(`select public.record_terms_signature('${ownerId}', '${businessId}', '2026-10-04-v2', 'Nombre Cambiado', 'Otro', repeat('c', 64), 'other-agent') as recorded`);
+    expect(first.rows[0]?.recorded).toBe(true);
+    expect(duplicate.rows[0]?.recorded).toBe(false);
+
+    const stored = await database.query<{ signer_name: string; signatures: number; acceptances: number; audit_details: string }>(`
+      select s.signer_name,
+        (select count(*)::int from public.terms_signatures where business_id = '${businessId}') as signatures,
+        (select count(*)::int from public.terms_acceptances where business_id = '${businessId}' and terms_version = '2026-10-04-v2') as acceptances,
+        (select details::text from public.audit_log where business_id = '${businessId}' and action = 'terms.signed') as audit_details
+      from public.terms_signatures s where s.business_id = '${businessId}'
+    `);
+    expect(stored.rows[0]).toEqual({ signer_name: "Dueña Prueba", signatures: 1, acceptances: 1, audit_details: '{"version": "2026-10-04-v2"}' });
+  });
+
+  it("keeps signature writes service-only and signature rows visible only to their signer", async () => {
+    const privileges = await database.query<{ anon_execute: boolean; authenticated_execute: boolean; service_execute: boolean; authenticated_insert: boolean; service_insert: boolean }>(`
+      select
+        has_function_privilege('anon', 'public.record_terms_signature(uuid,uuid,text,text,text,text,text)', 'execute') as anon_execute,
+        has_function_privilege('authenticated', 'public.record_terms_signature(uuid,uuid,text,text,text,text,text)', 'execute') as authenticated_execute,
+        has_function_privilege('service_role', 'public.record_terms_signature(uuid,uuid,text,text,text,text,text)', 'execute') as service_execute,
+        has_table_privilege('authenticated', 'public.terms_signatures', 'insert') as authenticated_insert,
+        has_table_privilege('service_role', 'public.terms_signatures', 'insert') as service_insert
+    `);
+    expect(privileges.rows[0]).toEqual({ anon_execute: false, authenticated_execute: false, service_execute: true, authenticated_insert: false, service_insert: false });
+
+    await database.exec(`begin; set local role authenticated; select set_config('request.jwt.claim.sub', '${managerId}', true);`);
+    try {
+      const hidden = await database.query<{ count: number }>("select count(*)::int as count from public.terms_signatures");
+      expect(hidden.rows[0]?.count).toBe(0);
+      await expect(database.exec(`insert into public.terms_signatures (business_id,user_id,terms_version,signer_name,signer_title,ip_hash,user_agent) values ('${businessId}','${managerId}','forged','Manager','Manager',repeat('d',64),'test')`)).rejects.toThrow(/permission denied/);
+    } finally {
+      await database.exec("rollback");
+    }
+  });
+
+  it("requires the current signature for activation, sets three months and audits signed extensions", async () => {
+    await database.exec(`
+      update public.businesses set
+        logo_url = 'https://example.test/logo.png',
+        contact_email = 'signature@example.test',
+        offer_inactive = 'Oferta inactiva',
+        offer_birthday = 'Oferta cumpleaños',
+        offer_frequent = 'Oferta frecuente',
+        offer_new = 'Oferta nueva',
+        google_review_url = 'https://g.page/r/example/review'
+      where id = '${businessId}';
+    `);
+    await database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${adminId}', '2026-10-04-v2')`);
+    await database.exec(`update public.businesses set is_active = true where id = '${businessId}'`);
+    const initial = await database.query<{ is_active: boolean; three_months: boolean }>(`
+      select is_active, term_ends_at between now() + interval '89 days' and now() + interval '93 days' as three_months
+      from public.businesses where id = '${businessId}'
+    `);
+    expect(initial.rows[0]).toEqual({ is_active: true, three_months: true });
+
+    await expect(database.query(`select public.record_term_extension('${businessId}', now() + interval '6 months', '${adminId}', false)`))
+      .rejects.toThrow(/extension_annex_signature_required/);
+    await expect(database.query(`select public.record_term_extension('${businessId}', now() + interval '1 month', '${adminId}', true)`))
+      .rejects.toThrow(/invalid_term_extension/);
+    await database.query(`select public.record_term_extension('${businessId}', now() + interval '6 months', '${adminId}', true)`);
+    const extended = await database.query<{ active: boolean; six_months: boolean; audits: number }>(`
+      select is_active as active,
+        term_ends_at between now() + interval '179 days' and now() + interval '184 days' as six_months,
+        (select count(*)::int from public.audit_log where business_id = '${businessId}' and action = 'business.term_extended') as audits
+      from public.businesses where id = '${businessId}'
+    `);
+    expect(extended.rows[0]).toEqual({ active: true, six_months: true, audits: 1 });
+
+    await database.exec(`update public.businesses set term_ends_at = now() - interval '1 day' where id = '${businessId}'`);
+    const expired = await database.query<{ is_active: boolean }>(`select is_active from public.businesses where id = '${businessId}'`);
+    expect(expired.rows[0]?.is_active).toBe(true);
   });
 });

@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "verify": "npm run check && npm test && npm run build",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
-    "evidence:customer-styles": "node scripts/capture-customer-styles.mjs"
+    "evidence:customer-styles": "node scripts/capture-customer-styles.mjs",
+    "evidence:terms-v2": "node scripts/capture-terms-v2.mjs",
+    "terms:sync": "node scripts/sync-terms-copy.mjs"
   },
   "dependencies": {
     "@astrojs/node": "11.1.6",

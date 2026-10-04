@@ -4,8 +4,13 @@ import MetricCard from "../../components/MetricCard.astro";
 import { assertBusinessAccess, requireDataAccess } from "../../lib/auth";
 import { dashboardData } from "../../lib/data";
 import { FOLLOW_UP_KIND_LABELS, FOLLOW_UP_KINDS } from "../../lib/follow-up";
+import { pendingOwnerSignatureBusiness } from "../../lib/terms-access";
 
 const identity = await requireDataAccess(Astro.request, Astro.cookies);
+const pendingSignatureBusiness = await pendingOwnerSignatureBusiness(identity);
+if (pendingSignatureBusiness) {
+  return Astro.redirect(`/terms/sign?business=${encodeURIComponent(pendingSignatureBusiness)}&next=${encodeURIComponent("/dashboard")}`);
+}
 const data = await dashboardData(identity, Astro.url.searchParams.get("business"));
 const { businesses, business, metrics } = data;
 const canManage = business ? await assertBusinessAccess(identity, business.id, false).then(() => true).catch(() => false) : false;

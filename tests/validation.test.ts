@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { businessInputSchema, businessUpdateSchema, checkInInputSchema, googleReviewUrlSchema, normalizePhone, safeNextPath } from "../src/lib/validation";
+import { businessInputSchema, businessUpdateSchema, checkInInputSchema, googleReviewUrlSchema, normalizePhone, safeNextPath, termExtensionSchema, termsSignatureSchema } from "../src/lib/validation";
 
 describe("public check-in validation", () => {
   afterEach(() => vi.useRealTimers());
@@ -41,6 +41,12 @@ describe("public check-in validation", () => {
 });
 
 describe("admin validation", () => {
+  it("requires explicit owner signature and a signed extension annex", () => {
+    expect(termsSignatureSchema.safeParse({ businessId: "10000000-0000-4000-8000-000000000001", legalName: "Ana Pérez", title: "Dueña", signed: "on" }).success).toBe(true);
+    expect(termsSignatureSchema.safeParse({ businessId: "10000000-0000-4000-8000-000000000001", legalName: "Ana Pérez", title: "Dueña" }).success).toBe(false);
+    expect(termExtensionSchema.safeParse({ termEndsAt: "2027-01-04", annexSigned: "on" }).success).toBe(true);
+    expect(termExtensionSchema.safeParse({ termEndsAt: "2027-01-04" }).success).toBe(false);
+  });
   it("accepts configuration fields and rejects unsafe colors", () => {
     const valid = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "", privacyUrl: "/privacy", primaryColor: "#155EEF", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "us", inactivityDays: "45", ownerEmail: "owner@example.com" };
     expect(businessInputSchema.safeParse(valid).success).toBe(true);

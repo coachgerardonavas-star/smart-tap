@@ -17,7 +17,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   }
 
   const businessId = parsedBusinessId.data;
-  await assertBusinessAccess(identity, businessId);
+  const membership = await assertBusinessAccess(identity, businessId);
+  if (membership.role === "owner") {
+    return redirect(`/terms/sign?business=${encodeURIComponent(businessId)}&next=${encodeURIComponent(next)}`, 303);
+  }
   const service = createSupabaseServiceClient();
   const { data: business, error: businessError } = await service.from("businesses")
     .select("id")

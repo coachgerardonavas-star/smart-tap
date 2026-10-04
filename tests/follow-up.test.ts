@@ -24,7 +24,7 @@ function customer(overrides: Partial<FollowUpCustomer> = {}): FollowUpCustomer {
 }
 
 function visit(id: string, customerId: string, visitedAt: string): Visit {
-  return { id, business_id: "10000000-0000-4000-8000-000000000001", customer_id: customerId, tag_id: null, source: "nfc", visited_at: visitedAt };
+  return { id, business_id: "10000000-0000-4000-8000-000000000001", customer_id: customerId, tag_id: null, source: "nfc", untagged: true, visited_at: visitedAt };
 }
 
 describe("follow-up opportunity rules", () => {

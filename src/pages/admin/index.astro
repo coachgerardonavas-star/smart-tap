@@ -9,6 +9,18 @@ const service = createSupabaseServiceClient();
 const { data, error } = await service.from("businesses").select("*").order("created_at", { ascending: false });
 if (error) throw error;
 const businesses = (data ?? []) as Business[];
+const businessesWithCounts = await Promise.all(businesses.map(async (business) => {
+  const { count, error: countError } = await service.from("visits")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", business.id)
+    .eq("untagged", true);
+  if (countError) throw countError;
+  return { ...business, untaggedVisits: count ?? 0 };
+}));
+const expiryLimit = Date.now() + 15 * 86_400_000;
+const expiringBusinesses = businessesWithCounts.filter((business) =>
+  business.term_ends_at && !business.cancelled_at && new Date(business.term_ends_at).getTime() <= expiryLimit
+);
 const message = Astro.url.searchParams.get("message");
 const formError = Astro.url.searchParams.get("error");
 ---
@@ -17,6 +29,12 @@ const formError = Astro.url.searchParams.get("error");
   <header class="page-head"><div><p class="eyebrow">Automate IT Admin</p><h1>Negocios</h1><p class="muted">Configura un negocio y genera su primer enlace NFC.</p></div></header>
   {message && <div class="alert success">{message}</div>}
   {formError && <div class="alert">{formError}</div>}
+  {expiringBusinesses.length > 0 && (
+    <section class="card expiry-card" aria-labelledby="expiry-title">
+      <div><p class="eyebrow">Atención</p><h2 id="expiry-title">Plazos que vencen en 15 días o menos</h2></div>
+      <ul>{expiringBusinesses.map((business) => <li><a href={`/admin/${business.id}`}><strong>{business.display_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium" }).format(new Date(business.term_ends_at!))}</span></a></li>)}</ul>
+    </section>
+  )}
   <div class="admin-grid">
     <section class="card form-card">
       <h2>Nuevo negocio</h2>
@@ -48,7 +66,7 @@ const formError = Astro.url.searchParams.get("error");
     </section>
     <section class="card list-card">
       <div class="list-head"><h2>Negocios activos</h2><span>{businesses.length}</span></div>
-      {businesses.length ? <ul>{businesses.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug}</small></div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
+      {businessesWithCounts.length ? <ul>{businessesWithCounts.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug} · Sin etiqueta: {business.untaggedVisits}</small>{business.term_ends_at && <small>Vence: {new Intl.DateTimeFormat("es-US", { dateStyle: "medium" }).format(new Date(business.term_ends_at))}</small>}</div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
     </section>
   </div>
 </Base>
@@ -56,6 +74,10 @@ const formError = Astro.url.searchParams.get("error");
 <style>
   .page-head { margin-bottom: 28px; } .page-head h1 { font-size: 2.7rem; margin: 8px 0; }
   .admin-grid { display: grid; grid-template-columns: minmax(420px, .9fr) minmax(380px, 1.1fr); gap: 22px; margin-top: 20px; }
+  .expiry-card { display: flex; justify-content: space-between; gap: 22px; align-items: start; padding: 22px; border-color: #fdb022; }
+  .expiry-card h2 { margin: 4px 0 0; font-size: 1.15rem; }
+  .expiry-card ul { min-width: min(100%, 420px); }
+  .expiry-card li a { grid-template-columns: 1fr auto; border: 0; padding: 8px 0; gap: 18px; }
   .form-card { padding: 26px; } .form-card form { display: grid; gap: 17px; margin-top: 22px; }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .split.compact { grid-template-columns: 1fr 1fr 1.2fr; }
   input[type="color"] { padding: 5px; }

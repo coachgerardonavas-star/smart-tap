@@ -91,4 +91,28 @@ describe("terms acceptance gate", () => {
     expect(page).toContain('type="checkbox" name="accepted" required');
     expect(page).not.toMatch(/type="checkbox"[^>]+checked/);
   });
+
+  it("requires owner electronic signature with server-set evidence", () => {
+    const route = readFileSync(join(process.cwd(), "src/pages/api/terms/sign.ts"), "utf8");
+    const page = readFileSync(join(process.cwd(), "src/components/TermsSignatureCard.astro"), "utf8");
+    const signPage = readFileSync(join(process.cwd(), "src/pages/terms/sign.astro"), "utf8");
+    expect(TERMS_VERSION).toBe("2026-10-04-v2");
+    expect(route).toContain('membership.role !== "owner"');
+    expect(route).toContain("p_terms_version: TERMS_VERSION");
+    expect(route).toContain("hashIdentifier(`terms-signature:${requestIp(request, clientAddress)}`)");
+    expect(route).toContain('request.headers.get("user-agent")');
+    expect(page).toContain('type="checkbox" name="signed" required');
+    expect(page).toContain("Firmo estos Términos de servicio");
+    expect(page).not.toMatch(/type="checkbox"[^>]+checked/);
+    expect(signPage).toContain("<TermsNotice />");
+  });
+
+  it("routes owners to signature and keeps manager acceptance separate", () => {
+    const page = readFileSync(join(process.cwd(), "src/pages/terms/accept.astro"), "utf8");
+    const route = readFileSync(join(process.cwd(), "src/pages/api/terms/accept.ts"), "utf8");
+    const dashboard = readFileSync(join(process.cwd(), "src/pages/dashboard/index.astro"), "utf8");
+    expect(page).toContain('membership.role === "owner"');
+    expect(route).toContain('membership.role === "owner"');
+    expect(dashboard).toContain("pendingOwnerSignatureBusiness");
+  });
 });
