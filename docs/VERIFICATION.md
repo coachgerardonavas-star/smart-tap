@@ -585,4 +585,4 @@ Scope: exact attorney text, owner e-signature, current-version activation gate, 
 | Final local gate | `npm ci`: 334 packages, 0 vulnerabilities; strict production audit: 0 vulnerabilities; `astro check`: 0 errors/warnings/hints; Vitest: 13 files, 131/131 passed; standalone build complete |
 | Mobile evidence | `terms-sign-v2-390x844.png` and `terms-v2-390x844.png`, both opened and visually checked |
 
-GitHub Actions result is added after the branch is committed and pushed.
+GitHub Actions `verify` passed on PR #7 in run `37244778853` (37 seconds). No merge or deploy followed.
