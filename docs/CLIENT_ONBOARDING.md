@@ -42,6 +42,7 @@ Approved minimum customer fields:
 - **Phone: required.**
 - **Birthday: optional.**
 - **Email: not collected by default.** It is added only when that business specifically wants email campaigns/follow-up.
+- **WhatsApp consent: required to complete Smart Tap registration.** The consent must be explicit, identify the business by name, and clearly state that the customer agrees to receive subsequent WhatsApp messages from that business.
 
 The birthday field should explain the benefit so the customer has a reason to complete it. Approved intent: communicate that sharing the birthday may allow the business to send discounts, gifts or birthday benefits. Recommended customer-facing copy:
 
@@ -51,6 +52,8 @@ The birthday field should explain the benefit so the customer has a reason to co
 Do not make birthday mandatory and do not promise a specific gift or discount unless that business has approved such an offer.
 
 If email is enabled for a business, its purpose and consent copy must be configured for that business before collection. Do not add email silently to the default form.
+
+WhatsApp consent must not be implied merely because the customer supplied a phone number. The form must present an explicit required acceptance whose wording names the business and makes clear that WhatsApp follow-up may include the approved categories used by that business, such as offers, birthday benefits, welcome/return messages and relevant customer follow-up. The final wording must also provide a clear way to stop future WhatsApp communications, and opt-out requests must be honored.
 
 ## Information to collect
 
@@ -69,7 +72,8 @@ Required:
 - number/labels of NFC tags to configure;
 - owner-defined list of allowed offers/promotions Smart Tap may recommend;
 - confirmation of the single location covered by the base package;
-- whether the business wants email collection/campaigns enabled.
+- whether the business wants email collection/campaigns enabled;
+- business-specific WhatsApp consent wording that explicitly names the business and matches the approved follow-up categories.
 
 Optional:
 - secondary color;
@@ -91,17 +95,18 @@ The owner defines which offers are permitted. Smart Tap may recommend one of tho
 6. Create business in Smart Tap admin.
 7. Configure name, branding, timezone, privacy URL and inactivity threshold.
 8. Confirm whether email collection/campaigns are enabled for that business; if yes, configure purpose/consent copy before collection.
-9. Load the owner-approved offers.
-10. Create NFC tag record(s) and labels.
-11. Invite the approved dashboard users.
-12. Confirm invite delivery and account activation.
-13. Copy the exact production NFC URL for each physical tag.
-14. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-15. Run a customer capture test verifying required name + phone, optional birthday, and email only when explicitly enabled.
-16. Confirm the test customer appears in the correct dashboard.
-17. Confirm follow-up queue behavior for at least one safe test case.
-18. Remove test data when appropriate.
-19. Deliver credentials/instructions and record delivery date.
+9. Configure the required WhatsApp consent text for that business, explicitly naming the business and documenting the opt-out path.
+10. Load the owner-approved offers.
+11. Create NFC tag record(s) and labels.
+12. Invite the approved dashboard users.
+13. Confirm invite delivery and account activation.
+14. Copy the exact production NFC URL for each physical tag.
+15. Program and test each tag using `docs/NFC_OPERATIONS.md`.
+16. Run a customer capture test verifying required name + phone, optional birthday, email only when explicitly enabled, and required explicit WhatsApp consent.
+17. Confirm the test customer appears in the correct dashboard.
+18. Confirm follow-up queue behavior for at least one safe test case.
+19. Remove test data when appropriate.
+20. Deliver credentials/instructions and record delivery date.
 
 ## Do not include by default
 
@@ -137,6 +142,8 @@ A customer is considered configured when:
 - NFC opens the intended production landing page;
 - customer form requires name and phone and leaves birthday optional with benefit-oriented copy;
 - email is absent by default or explicitly enabled with approved purpose/consent copy;
+- customer cannot complete Smart Tap registration without explicit WhatsApp consent naming the business;
+- opt-out instructions are clear and the system can honor a later opt-out;
 - one test capture succeeds;
 - dashboard receives the customer/visit;
 - tenant access is limited to that business;
