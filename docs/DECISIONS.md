@@ -163,3 +163,7 @@ The dedicated Google Review NFC must open the business's direct Google review UR
 ## D-040 — Owner go-live approval scope (CEO, 2026-10-04)
 
 Before Smart Tap is activated, the business owner must approve the final configuration covering: branding, selected dashboard users, the four category-specific offers, inactivity threshold, recommended/final NFC placement, WhatsApp message/consent text, and the direct Google Review URL. Activation must not proceed until that approval is recorded.
+
+## D-041 — Billing cycle starts from the initial payment date (CEO, 2026-10-04)
+
+At purchase, the client pays **$278 total**: $199 setup + the first $79 monthly payment. That $79 is month 1 of service. The next $79 monthly charge occurs **30 days after the initial $278 payment**, and subsequent monthly charges continue on that billing cadence. The billing anchor is the initial payment date, **not** the Smart Tap go-live/activation date.
