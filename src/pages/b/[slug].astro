@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import CheckInForm from "../../components/CheckInForm";
+import { businessPrivacyUrl } from "../../lib/privacy";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 
@@ -10,7 +11,7 @@ let business: Business | null = null;
 
 try {
   const service = createSupabaseServiceClient();
-  const result = await service.from("businesses").select("*").eq("slug", slug).eq("is_active", true).maybeSingle();
+  const result = await service.from("businesses").select("*").eq("slug", slug).eq("is_active", true).is("cancelled_at", null).maybeSingle();
   business = result.data as Business | null;
 } catch {
   business = null;
@@ -32,7 +33,7 @@ if (!business) Astro.response.status = 404;
       <section class="form-card">
         <h2>Cuéntanos quién eres</h2>
         <p class="lead">En tus próximas visitas podremos reconocerte por tu teléfono.</p>
-        <CheckInForm client:load slug={business.slug} tagCode={tagCode} businessName={business.display_name} primaryColor={business.primary_color} privacyUrl={business.privacy_url || "/privacy"} />
+        <CheckInForm client:load slug={business.slug} tagCode={tagCode} businessName={business.display_name} primaryColor={business.primary_color} privacyUrl={businessPrivacyUrl(business.slug, business.privacy_url)} />
       </section>
       <footer>Registro seguro operado por Smart Tap</footer>
     </div>

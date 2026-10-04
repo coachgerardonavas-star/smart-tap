@@ -1,6 +1,6 @@
 # Smart Tap — Glasswing Shield v1.0 control matrix
 
-Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with hosted smoke and onboarding evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc` with the app running locally against H. There is no production environment yet.
+Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-044 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc` with the app running locally against H. There is no production environment yet.
 
 **Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
 
@@ -28,7 +28,7 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
-| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164, slug, colors, URLs, birthday, next path; Google Review accepts only HTTPS on four approved exact hosts; offers trim to 1–200 chars | — |
+| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
 | GS-10 Anti-abuse | Yes | VERIFICADO (H) for check-in; IMPLEMENTADO NO VERIFICADO for login/recovery | DB counters (multi-instance safe); login/recovery rely on Supabase Auth limits | Confirm Auth rate limits in dashboard |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
@@ -42,7 +42,7 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-19 SSRF | No | NO APLICA JUSTIFICADO | Server fetches only Supabase | — |
 | GS-20 Own API keys | No | NO APLICA JUSTIFICADO | No API keys issued | — |
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
-| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Hosted opt-out and owner approval audit passed; hosted business update stored five changed field names without values | — |
+| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) + L D-044 | Hosted opt-out/approval/update audits passed; local purge writes count-only rows and CSV export writes empty details | Hosted D-044 smoke after Reviewer migration |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
@@ -55,28 +55,28 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-32 Proxies/IP | Yes | VERIFICADO LOCALMENTE | Spoofed XFF ignored (tests) | Set TRUSTED_IP_HEADER at deploy |
 | GS-33 Request limits | Yes | VERIFICADO LOCALMENTE | Byte-counted 12 KB limit on check-in; customer list 250, birthdays 1000 | Admin form posts rely on platform limits (low) |
 | GS-34 Content integrity | No | NO APLICA JUSTIFICADO | No files or signed documents | — |
-| GS-35 Immutable versions | Partial | VERIFICADO LOCALMENTE | Visit and WhatsApp consent purposes use append-only rows with exact text versions; no update path | — |
+| GS-35 Immutable versions | Partial | VERIFICADO LOCALMENTE | Visit and WhatsApp consent purposes use append-only rows; server fixes privacy version `2026-10-04` and strips browser input | — |
 | GS-36 Least-privilege agents | Yes | VERIFICADO | Agents never receive the secret key (Codex prompt rule) | — |
 | GS-37 Prompt injection | No | NO APLICA JUSTIFICADO | No AI in product | — |
-| GS-38 Secure defaults | Yes | VERIFICADO LOCALMENTE | Missing env fails closed; private schema; new businesses default inactive; database constraint blocks activation without approval | — |
+| GS-38 Secure defaults | Yes | VERIFICADO LOCALMENTE | Missing env fails closed; new businesses default inactive; activation requires approval, business contact and no cancellation timestamp | — |
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403 | — |
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
 | GS-42 Account attacks | Yes | IMPLEMENTADO NO VERIFICADO EN VIVO | Generic responses; prefetch-safe callback verifies token_hash only after the user presses Continuar (D-022) | Paste repository templates; verify hosted flow; confirm Auth limits |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
-| GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
+| GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path, including cancellation and CSV export, requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; customer query filters business_id + id; foreign customer returns 404 locally | — |
-| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Hosted PR #3 smoke returned a server-built 303 using database phone, message and matching business offer; browser form accepts only ids, kind and action | — |
+| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
 | GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Name, phone, birthday and WhatsApp consent are confidential PII; follow-up kind/status are internal operational data | Add handling rules to production privacy notice |
-| GS-51 Retention/deletion | Yes | PARCIAL (H) + local migration | Customer deletion cascades visits, consent and follow_ups; opt-out history and audit are retained. No retention period | CEO + D-011 |
+| GS-51 Retention/deletion | Yes | IMPLEMENTADO Y PROBADO LOCALMENTE | Private daily function deletes at 24 months without a visit and 30 days after cancellation; cascades and count-only audits passed in PGlite | Reviewer applies migration and repeats hosted smoke |
 | GS-52 Encryption keys | No | NO APLICA JUSTIFICADO | No app-level encryption | — |
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 78/78 permanent tests; hosted Follow-up smoke; hosted onboarding admin smoke with scoped cleanup; exact 390×844 before/after captures | — |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 94/94 permanent tests; hosted prior flows; D-044 migration/cascade tests; exact 390×844 privacy capture | Hosted D-044 after migration |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -113,3 +113,11 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 - GS-22: hosted `business.updated` audit contained only the five changed column names and no offer values.
 - GS-46: hosted WhatsApp suggestion used the New offer loaded from the approved business row.
 - GS-56: local gate passed 78/78; exact 390×844 before/after images are committed; hosted cleanup left only Café Luna and the expected admin.
+
+## Update 2026-10-04 (Builder, D-044 privacy notice)
+
+- GS-08 / GS-38: E.164/email contact validation, minimum age 13 and activation contact/cancellation constraints passed locally.
+- GS-22 / GS-51: PGlite executed 24-month and 30-day purges, cascades and exact count-only audits; private execute permissions were denied to application roles.
+- GS-35 / GS-46: server fixes privacy version `2026-10-04`; browser input is absent and injected values are stripped.
+- GS-41 / GS-44: CSV export and cancellation are POST-only and require the AAL2 platform-admin guard.
+- GS-56: final local gate passed 94/94 with a complete standalone build. Migration remains unapplied for Reviewer inspection.

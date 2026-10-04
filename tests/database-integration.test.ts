@@ -312,9 +312,14 @@ describe("onboarding configuration", () => {
         google_review_url = 'https://g.page/r/example/review'
       where id = '${businessId}';
     `);
+    await database.query(`select public.upsert_business_member_with_limit('${businessId}', '${actorId}', 'owner')`);
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
+      .rejects.toThrow(/approval_configuration_incomplete/);
+    await database.exec(`update public.businesses set contact_email = 'owner@example.test' where id = '${businessId}'`);
+    await database.query(`select public.set_business_member_active_with_limit('${businessId}', '${actorId}', false)`);
     await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
       .rejects.toThrow(/approval_active_member_required/);
-    await database.query(`select public.upsert_business_member_with_limit('${businessId}', '${actorId}', 'owner')`);
+    await database.query(`select public.set_business_member_active_with_limit('${businessId}', '${actorId}', true)`);
     await database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`);
     await database.exec(`update public.businesses set is_active = true where id = '${businessId}'`);
 
@@ -330,5 +335,79 @@ describe("onboarding configuration", () => {
       from public.businesses where id = '10000000-0000-4000-8000-000000000001'
     `);
     expect(demo.rows[0]).toEqual({ is_active: true, approved: true });
+  });
+});
+
+describe("privacy retention and cancellation", () => {
+  it("purges stale and cancelled customer data with count-only audits", async () => {
+    const staleBusiness = "10000000-0000-4000-8000-0000000000c1";
+    const cancelledBusiness = "10000000-0000-4000-8000-0000000000c2";
+    const staleCustomer = "30000000-0000-4000-8000-0000000000c1";
+    const recentCustomer = "30000000-0000-4000-8000-0000000000c2";
+    const cancelledCustomer = "30000000-0000-4000-8000-0000000000c3";
+    await database.exec(`
+      insert into public.businesses (id, slug, display_name, contact_email) values
+        ('${staleBusiness}', 'retention-test', 'Retention Test', 'privacy@example.test'),
+        ('${cancelledBusiness}', 'cancelled-test', 'Cancelled Test', 'privacy@example.test');
+      update public.businesses set cancelled_at = now() - interval '31 days' where id = '${cancelledBusiness}';
+      insert into public.customers (id, business_id, full_name, phone_e164, consent_current, consent_at, created_at, last_seen_at) values
+        ('${staleCustomer}', '${staleBusiness}', 'Stale Customer', '+13055556001', true, now() - interval '25 months', now() - interval '25 months', now() - interval '25 months'),
+        ('${recentCustomer}', '${staleBusiness}', 'Recent Customer', '+13055556002', true, now() - interval '25 months', now() - interval '25 months', now()),
+        ('${cancelledCustomer}', '${cancelledBusiness}', 'Cancelled Customer', '+13055556003', true, now(), now(), now());
+      insert into public.visits (business_id, customer_id, source, visited_at) values
+        ('${staleBusiness}', '${staleCustomer}', 'demo', now() - interval '25 months'),
+        ('${staleBusiness}', '${recentCustomer}', 'demo', now() - interval '1 day'),
+        ('${cancelledBusiness}', '${cancelledCustomer}', 'demo', now());
+      insert into public.consent_records (business_id, customer_id, consented, text_version) values
+        ('${staleBusiness}', '${staleCustomer}', true, '2026-10-04'),
+        ('${cancelledBusiness}', '${cancelledCustomer}', true, '2026-10-04');
+      insert into public.follow_ups (business_id, customer_id, kind, period_key, status) values
+        ('${staleBusiness}', '${staleCustomer}', 'inactive', 'retention', 'dismissed'),
+        ('${cancelledBusiness}', '${cancelledCustomer}', 'new', 'first', 'dismissed');
+    `);
+
+    const result = await database.query<{ result: { inactiveDeleted: number; cancelledDeleted: number } }>(
+      "select private.purge_inactive_customers() as result",
+    );
+    expect(result.rows[0]?.result).toEqual({ inactiveDeleted: 1, cancelledDeleted: 1 });
+
+    const remaining = await database.query<{ id: string }>(`
+      select id::text as id from public.customers
+      where id in ('${staleCustomer}', '${recentCustomer}', '${cancelledCustomer}')
+      order by id
+    `);
+    expect(remaining.rows).toEqual([{ id: recentCustomer }]);
+    const cascades = await database.query<{ visits: number; consents: number; follow_ups: number }>(`
+      select
+        (select count(*)::int from public.visits where customer_id in ('${staleCustomer}', '${cancelledCustomer}')) as visits,
+        (select count(*)::int from public.consent_records where customer_id in ('${staleCustomer}', '${cancelledCustomer}')) as consents,
+        (select count(*)::int from public.follow_ups where customer_id in ('${staleCustomer}', '${cancelledCustomer}')) as follow_ups
+    `);
+    expect(cascades.rows[0]).toEqual({ visits: 0, consents: 0, follow_ups: 0 });
+
+    const audits = await database.query<{ action: string; deleted_count: number; details: string }>(`
+      select action, (details ->> 'deletedCount')::int as deleted_count,
+        details::text as details
+      from public.audit_log
+      where business_id in ('${staleBusiness}', '${cancelledBusiness}')
+        and action in ('customers.retention_purged', 'customers.cancellation_purged')
+      order by action
+    `);
+    expect(audits.rows).toEqual([
+      { action: "customers.cancellation_purged", deleted_count: 1, details: '{"deletedCount": 1}' },
+      { action: "customers.retention_purged", deleted_count: 1, details: '{"deletedCount": 1}' },
+    ]);
+  });
+
+  it("keeps the purge private and prevents reactivation after cancellation", async () => {
+    const privileges = await database.query<{ anon: boolean; authenticated: boolean; service: boolean }>(`
+      select
+        has_function_privilege('anon', 'private.purge_inactive_customers()', 'execute') as anon,
+        has_function_privilege('authenticated', 'private.purge_inactive_customers()', 'execute') as authenticated,
+        has_function_privilege('service_role', 'private.purge_inactive_customers()', 'execute') as service
+    `);
+    expect(privileges.rows[0]).toEqual({ anon: false, authenticated: false, service: false });
+    await expect(database.exec(`update public.businesses set is_active = true where slug = 'cancelled-test'`))
+      .rejects.toThrow(/businesses_activation_requires_approval_check/);
   });
 });

@@ -391,3 +391,48 @@ Verdict: **PR #3 approved by the Reviewer.** The CEO merges.
 | Replies | CEO adding `smarttap@` as a Google Workspace alias of the admin mailbox (not yet confirmed) |
 
 Pending: the link inside the email points to the Supabase Site URL; test the full click-through after the Render deploy sets Site URL to `https://smarttap.yourbizupgraded.com`. Repeat key + SMTP + templates in the production project (D-024).
+
+## D-044 customer privacy notice — ChatGPT Codex, 2026-10-04
+
+### Page and approved copy
+
+- `src/lib/privacy.ts` holds version `2026-10-04`, dates and all approved Spanish/English text with server substitutions.
+- `/privacy/[slug]` selects an active, uncancelled business and requires a configured phone or email; every other path returns 404.
+- `/privacy` renders the same copy with `el negocio donde te registraste` / `the business where you registered`.
+- Live landing links use `/privacy/{slug}` unless `privacy_url` contains an override.
+- `tests/privacy.test.ts` checks approved retention, rights, age and fallback language.
+- `docs/evidence/privacy-cafe-luna-390x844.png`: exact 390×844 local CDP capture. Source business response was local and temporary; Supabase was not changed.
+
+### Contact, consent and age
+
+- Contact phone is accepted only in canonical E.164 form through libphonenumber-js; contact email uses Zod email validation. Database checks provide a second layer.
+- Owner approval requires at least one contact. Activation requires approval, contact and a null cancellation timestamp.
+- Browser payload no longer contains `consentVersion`; Zod strips an injected value; `/api/public/check-in` always sends `PRIVACY_NOTICE_VERSION` to PostgreSQL.
+- The required consent adds `Tengo 13 años o más.` The date input limits selection and the server returns `Debes tener 13 años o más.` for younger birthdays.
+
+### Retention, cancellation and export
+
+| Rule | Evidence | Result |
+|---|---|---|
+| 24 months from latest visit, or creation with no visit | PGlite inserts stale and recent customers, executes `private.purge_inactive_customers()` | PASSED |
+| Cascade visits, consent and follow-ups | Counts after purge are all zero for deleted customers | PASSED |
+| One count-only audit per affected business | Exact JSON is `{\"deletedCount\": 1}` for retention and cancellation actions | PASSED |
+| Cancelled business deletion after 30 days | Recent customer under a 31-day cancelled business is deleted | PASSED |
+| Private function permissions | `has_function_privilege` is false for anon, authenticated and service_role | PASSED |
+| Cancellation cannot reactivate | Database activation constraint rejects the update | PASSED |
+| CSV fields and formula safety | Unit test covers six columns and leading `=`, `+` neutralization | PASSED |
+| AAL2 admin routes | Automatic admin-route guard test covers cancel and export; export uses POST | PASSED |
+
+### Migration and cron
+
+- One new file: `supabase/migrations/20261004143000_privacy_notice.sql`.
+- The SQL ran to completion in PGlite. The availability guard skips extension installation there because PGlite does not provide `pg_cron`.
+- On Supabase, the migration creates `pg_cron` when available and schedules `smart-tap-daily-privacy-purge` at `17 3 * * *`.
+- Migration remains unapplied; Codex ran no migration and no `db push`.
+
+### Gate
+
+- Targeted privacy, validation, migration and database suite: 59/59 passed.
+- `npm ci`: 326 packages; 0 vulnerabilities.
+- `npm run audit:prod`: 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 11 files and 94/94 tests; standalone Node build complete.

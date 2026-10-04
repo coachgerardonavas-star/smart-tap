@@ -5,6 +5,8 @@ export type Business = {
   legal_name: string | null;
   logo_url: string | null;
   privacy_url: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
   primary_color: string;
   secondary_color: string;
   timezone: string;
@@ -18,6 +20,7 @@ export type Business = {
   google_review_url: string | null;
   owner_approved_at: string | null;
   owner_approved_name: string | null;
+  cancelled_at: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing the onboarding configuration on `codex/onboarding-config`.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-044 on `codex/privacy-notice`.
 
 ## Project identity
 
@@ -8,24 +8,25 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing the onboardin
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
-- **CEO-approved commercial/product decisions D-025 through D-042 from the current ChatGPT session:** `docs/CHATGPT_COORDINATION_NOTE.md`. Codex, Claude Code and ChatGPT should read it before changing Smart Tap scope, pricing behavior, CRM/WhatsApp assumptions, location rules or onboarding.
+- **CEO-approved commercial/product decisions D-025 through D-044:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md` and `docs/PRIVACY_NOTICE.md`.
 
 ## Branches — which one is current
 
 | Branch | State |
 |---|---|
-| `main` | Reviewed MVP at merge `7a6310a`; PR #1 is merged. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
+| `main` | Reviewed onboarding MVP at merge `a9ebc37`; PR #3 is merged. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
-| `codex/onboarding-config` | **Current PR #3 branch.** Reviewer applied the onboarding migration; Builder finished the NFC mobile page, changed-field audit and hosted admin smoke. Awaiting final Reviewer pass. |
+| `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
+| `codex/privacy-notice` | **Current Builder branch.** Implements D-044. Migration `20261004143000_privacy_notice.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
 Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`.
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -39,7 +40,19 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 78/78 tests and a complete standalone Node build.
+Current local gate on `codex/privacy-notice`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 94/94 tests and a complete standalone Node build.
+
+## Customer privacy notice — Builder implementation, 2026-10-04
+
+- Implemented D-044 from `docs/PRIVACY_NOTICE.md` without changing the approved Spanish or English wording. `/privacy/[slug]` renders both languages from the active, uncancelled business row; unknown, inactive, cancelled or contactless records return 404. `/privacy` keeps the generic fallback.
+- Real check-in pages use `/privacy/{slug}` by default. A configured `privacy_url` still overrides it.
+- Added nullable `contact_phone` and `contact_email`, E.164/email validation, admin fields and database-backed owner-approval/activation requirements. The Café Luna seed uses `automateit@yourbizupgraded.com` as its demo contact.
+- Added private `security definer` retention function: customer data older than 24 months by latest visit, or creation when no visit exists, is deleted with cascades. Cancelled-business customer data is deleted after 30 days. Each affected business receives one count-only audit row.
+- Added a daily `pg_cron` schedule at 03:17 UTC. `anon`, `authenticated` and `service_role` have no execute permission on the purge function.
+- Added a distinct AAL2 platform-admin cancellation action and a POST-only CSV export with name, phone, birthday, visit count, last visit and WhatsApp opt-in. Export auditing stores empty details; CSV cells neutralize spreadsheet formulas.
+- The server now sets `PRIVACY_NOTICE_VERSION = 2026-10-04` and strips any browser-supplied version. The required consent says `Tengo 13 años o más`; the form and server reject a birthday younger than 13.
+- New migration: `20261004143000_privacy_notice.sql`. It has not been applied and no `db push` ran.
+- Local evidence: migration and cascade tests passed in PGlite; exact 390×844 capture at `docs/evidence/privacy-cafe-luna-390x844.png` was produced with a local mock business, without Supabase changes.
 
 ## Onboarding configuration — Builder implementation, 2026-10-04
 
@@ -105,9 +118,8 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Business privacy notice and retention (D-011).
+- Reviewer: inspect and apply `20261004143000_privacy_notice.sql`, then run the hosted D-044 smoke before real customer data.
 - Physical NFC writing.
-- Reviewer: complete the final PR #3 pass over the NFC mobile layout, audit detail and hosted-smoke evidence.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
 - Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
@@ -115,7 +127,7 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 
 ## Coordination
 
-PR #1 is merged. All new work starts from updated `main`, uses a feature branch and reaches `main` only through a pull request with `verify` green. Current branch: `codex/onboarding-config`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+PR #3 is merged. All new work starts from updated `main`, uses a feature branch and reaches `main` only through a pull request with `verify` green. Current branch: `codex/privacy-notice`. Read `docs/CHATGPT_COORDINATION_NOTE.md` and `docs/PRIVACY_NOTICE.md` before changing product or privacy assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`).
 
 ## Reviewer and Builder status — 2026-10-04 (after 0eb3b6d)
 

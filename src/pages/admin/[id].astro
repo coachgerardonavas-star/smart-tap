@@ -43,7 +43,9 @@ const formError = Astro.url.searchParams.get("error");
         <div class="split"><div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" value={business.display_name} required /></div><div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" value={business.slug} required /></div></div>
         <div class="field"><label for="legalName">Razón social</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /></div>
         <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
-        <div class="field"><label for="privacyUrl">Política de privacidad</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? "/privacy"} /></div>
+        <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /></div>
+        <div class="split"><div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" value={business.contact_phone ?? ""} placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div><div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
+        <p class="muted compact-note">El aviso usa estos datos. Configura al menos uno antes de registrar la aprobación del dueño.</p>
         <div class="triple"><div class="field"><label for="primaryColor">Principal</label><input id="primaryColor" name="primaryColor" type="color" value={business.primary_color} /></div><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
         <div class="split"><div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value={business.timezone} /></div><div class="field"><label for="defaultCountry">País</label><input id="defaultCountry" name="defaultCountry" value={business.default_country} maxlength="2" /></div></div>
         <fieldset>
@@ -57,8 +59,9 @@ const formError = Astro.url.searchParams.get("error");
           <legend>NFC de Google Review — grabar esta URL directamente en el chip</legend>
           <div class="field"><label for="googleReviewUrl">URL directa de Google Review</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /></div>
         </fieldset>
-        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={!business.owner_approved_at} /> Negocio activo</label>
+        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={!business.owner_approved_at || Boolean(business.cancelled_at)} /> Negocio activo</label>
         {!business.owner_approved_at && <p class="muted compact-note">Registra la aprobación del dueño para habilitar la activación.</p>}
+        {business.cancelled_at && <p class="alert">El servicio fue cancelado y ya no puede activarse.</p>}
         <button class="button" type="submit">Guardar cambios</button>
       </form>
     </section>
@@ -92,6 +95,19 @@ const formError = Astro.url.searchParams.get("error");
           <button class="button secondary" type="submit">Registrar aprobación del dueño</button>
         </form>
       </section>
+
+      <section class="card panel danger-zone">
+        <h2>Cancelación y copia de clientes</h2>
+        <p class="muted">Descarga la copia del negocio antes de cancelar. El archivo contiene nombre, teléfono, cumpleaños, visitas y permiso de WhatsApp.</p>
+        <form action={`/api/admin/business/${business.id}/export.csv`} method="post"><button class="button secondary" type="submit">Descargar CSV</button></form>
+        {business.cancelled_at ? (
+          <p class="approval-state"><strong>Servicio cancelado</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.cancelled_at))}</span><span>Los datos de clientes se borran al cumplir 30 días.</span></p>
+        ) : (
+          <form action={`/api/admin/business/${business.id}/cancel`} method="post" onsubmit="return confirm('¿Cancelar el servicio? El negocio se desactiva ahora y los datos de clientes se borran a los 30 días.')">
+            <button class="button danger" type="submit">Cancelar servicio</button>
+          </form>
+        )}
+      </section>
     </div>
   </div>
 </Base>
@@ -106,6 +122,8 @@ const formError = Astro.url.searchParams.get("error");
   input[type="color"] { padding: 5px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
   .compact-note { margin: -8px 0 0; } .review-link { display: grid; gap: 8px; margin: -4px 0 20px; padding: 14px; border: 1px solid #eaecf0; border-radius: 11px; overflow-wrap: anywhere; }
   .approval-state { display: grid; gap: 5px; margin: 0 0 18px; } .approval-state span { color: #667085; }
+  .danger-zone { border-color: #fda29b; } .danger-zone > form { margin-bottom: 18px; }
+  .button.danger { background: #b42318; }
   .records { list-style: none; padding: 0; margin: -5px 0 20px; border: 1px solid #eaecf0; border-radius: 11px; overflow: hidden; }
   .records li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border-bottom: 1px solid #eaecf0; } .records li:last-child { border: 0; }
   .records li div { min-width: 0; display: grid; gap: 4px; } .records small { color: #98a2b3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

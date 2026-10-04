@@ -6,6 +6,7 @@ const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.me
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
 const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups"];
+const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004143000_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
   it.each(exposedTables)("enables RLS on %s", (table) => {
@@ -56,5 +57,27 @@ describe("database security migration", () => {
   });
   it("uses an invoker-security aggregate view", () => {
     expect(sql).toContain("create view public.customer_visit_counts\nwith (security_invoker = true)");
+  });
+
+  it("keeps the daily purge private and schedules it through pg_cron", () => {
+    expect(privacyMigration).toContain("create or replace function private.purge_inactive_customers()\nreturns");
+    expect(privacyMigration).toMatch(/security definer\nset search_path = ''/);
+    expect(privacyMigration).toMatch(/revoke all on function private\.purge_inactive_customers\(\)[\s\S]+from public, anon, authenticated, service_role/);
+    expect(privacyMigration).toContain("create extension if not exists pg_cron");
+    expect(privacyMigration).toContain("smart-tap-daily-privacy-purge");
+    expect(privacyMigration).toContain("17 3 * * *");
+  });
+
+  it("uses count-only purge audits and the two approved retention windows", () => {
+    expect(privacyMigration).toContain("interval '24 months'");
+    expect(privacyMigration).toContain("interval '30 days'");
+    expect(privacyMigration).toContain("jsonb_build_object('deletedcount', v_row.deleted_count)");
+    expect(privacyMigration).not.toMatch(/customers\.(retention|cancellation)_purged[\s\S]{0,300}(full_name|phone_e164)/);
+  });
+
+  it("requires a contact and prevents activation after cancellation", () => {
+    expect(privacyMigration).toContain("and cancelled_at is null");
+    expect(privacyMigration).toContain("contact_phone is not null or contact_email is not null");
+    expect(privacyMigration).toContain("or (v_business.contact_phone is null and v_business.contact_email is null)");
   });
 });

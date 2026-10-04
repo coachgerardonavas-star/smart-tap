@@ -1,0 +1,46 @@
+---
+import { buildPrivacyNoticeCopy } from "../lib/privacy";
+
+type Props = { businessNameEs: string; businessNameEn: string; contactEs: string; contactEn: string };
+const copy = buildPrivacyNoticeCopy(Astro.props);
+---
+
+<article class="privacy-notice">
+  <section lang="es">
+    <p class="eyebrow">Smart Tap</p>
+    <h1>{copy.es.title}</h1>
+    {copy.es.sections.map((section) => (
+      <section class="notice-section">
+        <h2>{section.heading}</h2>
+        {section.paragraphs?.map((paragraph) => <p>{paragraph}</p>)}
+        {section.items && <ul>{section.items.map((item) => <li>{item}</li>)}</ul>}
+      </section>
+    ))}
+    <p class="updated">{copy.es.updated}</p>
+  </section>
+  <hr />
+  <section lang="en">
+    <p class="eyebrow">Smart Tap</p>
+    <h1>{copy.en.title}</h1>
+    {copy.en.sections.map((section) => (
+      <section class="notice-section">
+        <h2>{section.heading}</h2>
+        {section.paragraphs?.map((paragraph) => <p>{paragraph}</p>)}
+        {section.items && <ul>{section.items.map((item) => <li>{item}</li>)}</ul>}
+      </section>
+    ))}
+    <p class="updated">{copy.en.updated}</p>
+  </section>
+</article>
+
+<style>
+  .privacy-notice { display: grid; gap: 42px; }
+  .privacy-notice > section { min-width: 0; }
+  h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.08; margin: 10px 0 30px; }
+  h2 { margin: 28px 0 8px; font-size: 1.1rem; }
+  p, li { color: #475467; line-height: 1.72; }
+  ul { padding-left: 22px; }
+  li + li { margin-top: 5px; }
+  hr { width: 100%; border: 0; border-top: 1px solid #e4e7ec; }
+  .updated { margin-top: 36px; font-size: .85rem; color: #667085; }
+</style>

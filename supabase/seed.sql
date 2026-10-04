@@ -1,11 +1,12 @@
 insert into public.businesses (
-  id, slug, display_name, legal_name, privacy_url, primary_color, secondary_color, timezone,
+  id, slug, display_name, legal_name, privacy_url, contact_email, primary_color, secondary_color, timezone,
   default_country, inactivity_days, is_active, owner_approved_at, owner_approved_name
 ) values (
-  '10000000-0000-4000-8000-000000000001', 'cafe-luna', 'Café Luna', 'Café Luna Demo LLC', '/privacy',
+  '10000000-0000-4000-8000-000000000001', 'cafe-luna', 'Café Luna', 'Café Luna Demo LLC', null, 'automateit@yourbizupgraded.com',
   '#B45309', '#1C1917', 'America/New_York', 'US', 30, true, now(), 'Aprobación demo'
 ) on conflict (id) do update set
   display_name = excluded.display_name,
+  contact_email = excluded.contact_email,
   primary_color = excluded.primary_color,
   secondary_color = excluded.secondary_color;
 
