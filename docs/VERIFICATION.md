@@ -115,3 +115,32 @@ Targeted tests in `tests/admin-mfa.test.ts` prove:
 Hosted enrollment, QR scanning, TOTP challenge, cookie refresh and the complete live smoke test remain pending until the local `.env` contains the Supabase secret key and the dashboard settings are complete.
 
 The first PR run found two Gitleaks false positives in commit `6d53ba9`: the same Supabase publishable browser key documented twice in `docs/CODEX_NEXT.md`. `.gitleaksignore` contains only those two exact historical fingerprints. New findings, different files, lines, commits or rules continue to fail CI.
+
+## Hosted application smoke test — 2026-10-03
+
+Target: hosted Supabase project `vrouyhxzxrfkuuqfslrc` with the standalone Node build running locally from runtime environment variables at `127.0.0.1:4321`. No production deployment was made.
+
+| Step | Result | Evidence |
+|---|---|---|
+| Admin login and MFA | PASSED | TOTP factor enrolled and verified; `/admin` opened only after AAL2. An AAL1 admin is blocked by the shared guard and tests. |
+| Create `review-live` | PASSED | Business, one NFC tag and admin page created through the application. |
+| Public check-in | PASSED | Fictitious customer created with one visit and one birthday. A repeated same-day phone submission returned `alreadyCounted: true`; visit count stayed at 1 and consent history reached 2. |
+| Dashboard | PASSED | `Review Live` showed 1 customer, 1 visit and the October 15 birthday. |
+| NFC emergency stop | PASSED | Paused tag made the check-in API answer 404 `Este NFC no está activo.`; reactivation restored it. |
+| Viewer isolation | PASSED | Real second account accepted the invite. It saw only `Review Live`, had no Delete action, and `/admin` displayed `Acceso denegado`. |
+| Viewer pause | PASSED | Membership changed from active to paused; refresh displayed `Aún no tienes un negocio asignado`. |
+| Password recovery | PARTIAL / EXTERNAL BLOCKER | Three default email links immediately returned `otp_expired`. Supabase documents email prefetch as a cause. A fresh server-generated one-time recovery token opened directly, reached `/set-password`, changed the password, cleared the recovery marker and returned to the paused viewer dashboard. D-020 records the production fix required. |
+| Customer deletion | PASSED | Before delete: 1 visit and 2 consent records. After delete: customer 0, visits 0, consents 0. The audit event remains. |
+| Cleanup | PASSED | `review-live`, its membership, NFC, customers, consents and visits all count 0; viewer Auth user absent. Café Luna count 1 and the platform admin still exists. |
+
+Hosted Auth configuration observed:
+
+- new user signup disabled and email confirmation enabled;
+- Site URL `http://localhost:4321`;
+- allowed redirect `http://localhost:4321/auth/callback`;
+- TOTP enrolled and enforced for the platform admin;
+- default Supabase mailer in use; the dashboard requires custom SMTP before templates can be edited;
+- MFA for the CEO's Supabase dashboard account was requested but was not independently observable;
+- minimum password policy was not independently observable.
+
+PR #1 is open against `main`. GitHub Actions run `36980341980` completed `verify` successfully after `.gitleaksignore` was narrowed to two exact historical public-key fingerprints.

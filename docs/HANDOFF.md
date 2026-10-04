@@ -1,23 +1,24 @@
 # Smart Tap handoff
 
-Updated: 2026-10-02 (Builder implementation of platform-admin MFA in progress)
+Updated: 2026-10-03 (hosted smoke test and cleanup complete)
 
 ## Project identity
 
 - Absolute path: `C:\automate-it\smart-tap`
 - Git repository: local repository initialized in the project root
 - Branch: `codex/live-smoke-mfa`, based on `origin/claude/review-hardening`
+- Pull request: #1, `https://github.com/coachgerardonavas-star/smart-tap/pull/1`, open against `main`
 - Builder: ChatGPT Codex
 - Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 
 ## Current state
 
-The complete executable MVP is implemented. Public demo routes work without credentials. The live data path, Auth, invitations, dashboard, and admin require a Supabase project and environment values. No production project or deploy was changed because credentials and a target were not supplied.
+The complete executable MVP is implemented and the main hosted data path was exercised against Supabase. Mandatory TOTP MFA for `platform_admin`, public capture, same-day idempotency, dashboard reads, NFC pause/reactivation, invitations, viewer isolation, member pause and customer cascade deletion all passed live. Test data and the viewer account were removed after verification; Café Luna and the administrator remain.
 
-The current Builder branch adds mandatory TOTP MFA for `platform_admin`. All protected `/admin` pages and `/api/admin` routes require a server-verified `aal2` claim. `/admin/mfa` handles enrollment and challenge at `aal1`. Local policy and response tests pass; the hosted QR flow and live smoke test still require the dashboard configuration listed in `docs/CODEX_NEXT.md`.
+The default recovery email path is blocked by link prefetch: three new messages reached Supabase as already consumed. Recovery itself passed with a fresh server-generated one-time token. D-020 and `docs/VERIFICATION.md` record the production requirement for custom SMTP, disabled tracking and a two-step recovery template.
 
-Estimated completion: 90% of the commercial MVP. Code review is complete; the remaining work is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing. The earlier 92% estimate did not account for a build defect that would have prevented any live deploy (see review below).
+Estimated completion: 96% of the demonstration MVP and 82% of production readiness. Code and hosted application behavior are verified. Commercial launch still needs SMTP/recovery hardening, backups, a separate production project, a host/domain decision, business privacy text and physical NFC writing.
 
 ## What works
 
@@ -112,15 +113,13 @@ Smart Tap is under Glasswing Shield v1.0 (ADN `Glasswing_Shield.md`). Matrix: `d
 
 ## Hosted Supabase status
 
-Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Both migrations and the seed are applied, and the live RLS, rate-limit and privilege checks passed (see `docs/VERIFICATION.md`). Three migrations are applied (the third is `one_visit_per_day`). Pending in the dashboard: Auth settings, SMTP, templates, redirect URLs, bootstrap admin user, and copying the secret key to the host.
+Project `smart-tap`, URL `https://vrouyhxzxrfkuuqfslrc.supabase.co`. Three migrations and the seed are applied. Live RLS, rate-limit, privilege, Auth, MFA and application smoke checks passed as recorded in `docs/VERIFICATION.md`. The Site URL and callback redirect are configured. The platform admin remains; the `review-live` business and viewer user were removed. Custom SMTP and editable prefetch-safe templates remain open.
 
 ## Real blockers
 
-Apply `supabase/migrations/` in name order — there are now two files.
-
-- Supabase project URL, publishable key, secret key, and Auth access.
-- Production SMTP configuration.
-- Production host, domain, and deployment credentials.
-- Business-specific logo, colors, privacy notice, and NFC hardware.
-
-Continue with `docs/SETUP.md` when these inputs are available.
+- GS-25: the Supabase free plan has no managed backups; choose Pro or implement and restore-test scheduled exports before real customer data.
+- GS-29: staging and production still share one Supabase project; provision a separate production project before real customer data.
+- Configure production SMTP, disable link tracking and install the prefetch-safe recovery template from D-020.
+- Enable `main` branch protection with required pull requests and the `verify` status check.
+- Production host/domain, business privacy text and physical NFC programming remain outside this no-deploy task.
+- Optional cleanup: drop the revoked eight-argument `record_public_check_in` function in the Supabase SQL Editor.
