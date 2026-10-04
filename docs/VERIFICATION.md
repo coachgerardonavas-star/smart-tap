@@ -196,4 +196,4 @@ The merged migration-security test now normalizes CRLF to LF before checking SQL
 
 `npm audit` reported `GHSA-ch52-4w7c-c8xp` through `http-cache-semantics@4.2.0`, Astro and `@astrojs/node`. The upstream advisory has no patched version as of 2026-10-04. Smart Tap does not use a shared HTTP response cache; the installed Astro distribution imports this package for remote asset build caching. D-022 adds a fail-closed audit gate limited to the exact advisory, dependency chain and version. Any other high or critical finding still fails CI.
 
-Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build.
+Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build. GitHub Actions run `37172436364` passed the same PR gate for commit `9dd0116`.

@@ -36,7 +36,7 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 96% of the demonstration MVP and 82% of production readiness.
 
-Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-022 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI is pending.
+Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-022 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI passed: GitHub Actions run `37172436364`, job `verify`, commit `9dd0116`.
 
 ## Builder live smoke and cleanup — 2026-10-03
 
