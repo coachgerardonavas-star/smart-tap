@@ -35,6 +35,7 @@ const next = Astro.url.searchParams.get("next") || "/dashboard";
         <button class="button" type="submit">Ingresar</button>
         <a class="forgot" href="/forgot-password">Olvidé mi contraseña</a>
       </form>
+      <footer class="legal-links"><a href="/terms">Términos de servicio</a></footer>
     </section>
   </div>
 </Base>
@@ -49,5 +50,6 @@ const next = Astro.url.searchParams.get("next") || "/dashboard";
   .login-card h2 { margin-bottom: 8px; }
   form { display: grid; gap: 18px; margin-top: 26px; }
   .forgot { color: #667085; font-size: .88rem; text-align: center; }
+  .legal-links { margin-top: 24px; text-align: center; font-size: .82rem; color: #667085; }
   @media (max-width: 800px) { .login-shell { grid-template-columns: 1fr; gap: 36px; } .logo { margin-bottom: 48px; } }
 </style>

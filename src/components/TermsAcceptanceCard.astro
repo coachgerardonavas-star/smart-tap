@@ -1,0 +1,50 @@
+---
+type Props = {
+  businessName: string | null;
+  businessId?: string;
+  next?: string;
+  error?: boolean;
+  termsVersion: string;
+};
+
+const { businessName, businessId = "", next = "/dashboard", error = false, termsVersion } = Astro.props;
+---
+
+<section class="accept-card card">
+  <p class="eyebrow">Smart Tap</p>
+  <h1>Términos de servicio</h1>
+  {businessName ? (
+    <>
+      <p class="lead">Para entrar al panel de <strong>{businessName}</strong>, revisa y acepta la versión vigente.</p>
+      <p class="version">Versión {termsVersion}</p>
+      <p><a class="terms-link" href="/terms" target="_blank" rel="noreferrer">Leer los Términos en español e inglés</a></p>
+      {error && <div class="alert" role="alert">Debes aceptar los Términos para continuar.</div>}
+      <form action="/api/terms/accept" method="post">
+        <input type="hidden" name="businessId" value={businessId} />
+        <input type="hidden" name="next" value={next} />
+        <label class="acceptance">
+          <input type="checkbox" name="accepted" required />
+          <span>Acepto los Términos de servicio</span>
+        </label>
+        <button class="button" type="submit">Aceptar y entrar al panel</button>
+      </form>
+    </>
+  ) : (
+    <>
+      <p class="lead">Aún no tienes un negocio activo asignado.</p>
+      <p class="muted">Pide al administrador de Automate IT que agregue tu cuenta.</p>
+    </>
+  )}
+</section>
+
+<style>
+  .accept-card { width: min(620px, 100%); margin: 8vh auto; padding: clamp(24px, 6vw, 48px); }
+  h1 { font-size: clamp(2rem, 7vw, 3rem); margin: 10px 0 18px; }
+  .lead { color: #475467; font-size: 1.05rem; line-height: 1.65; }
+  .version { color: #667085; font-size: .88rem; }
+  .terms-link { color: #155eef; font-weight: 700; }
+  form { display: grid; gap: 20px; margin-top: 28px; }
+  .acceptance { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid #d0d5dd; border-radius: 12px; color: #344054; font-weight: 700; }
+  .acceptance input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: #155eef; }
+  .button { width: 100%; }
+</style>

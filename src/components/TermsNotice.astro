@@ -1,0 +1,39 @@
+---
+import { TERMS_COPY } from "../lib/terms";
+---
+
+<article class="terms-notice">
+  <section lang="es">
+    <p class="eyebrow">Smart Tap</p>
+    <h1>{TERMS_COPY.es.title}</h1>
+    {TERMS_COPY.es.sections.map((section) => (
+      <section class="terms-section">
+        <h2>{section.heading}</h2>
+        <p>{section.text}</p>
+      </section>
+    ))}
+    <p class="version">{TERMS_COPY.es.version}</p>
+  </section>
+  <hr />
+  <section lang="en">
+    <p class="eyebrow">Smart Tap</p>
+    <h1>{TERMS_COPY.en.title}</h1>
+    {TERMS_COPY.en.sections.map((section) => (
+      <section class="terms-section">
+        <h2>{section.heading}</h2>
+        <p>{section.text}</p>
+      </section>
+    ))}
+    <p class="version">{TERMS_COPY.en.version}</p>
+  </section>
+</article>
+
+<style>
+  .terms-notice { display: grid; gap: 42px; }
+  .terms-notice > section { min-width: 0; }
+  h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.08; margin: 10px 0 30px; }
+  h2 { margin: 28px 0 8px; font-size: 1.1rem; }
+  p { color: #475467; line-height: 1.72; }
+  hr { width: 100%; border: 0; border-top: 1px solid #e4e7ec; }
+  .version { margin-top: 36px; font-size: .85rem; color: #667085; }
+</style>

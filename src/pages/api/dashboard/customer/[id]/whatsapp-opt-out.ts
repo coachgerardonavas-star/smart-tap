@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { assertBusinessAccess, requireDataAccess } from "../../../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
+import { assertCurrentTermsAccepted } from "../../../../../lib/terms-access";
 import { businessIdSchema } from "../../../../../lib/validation";
 
 export const POST: APIRoute = async ({ request, cookies, params, redirect }) => {
@@ -11,6 +12,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const businessId = parsedBusinessId.data;
   const customerId = params.id ?? "";
   await assertBusinessAccess(identity, businessId, false);
+  await assertCurrentTermsAccepted(identity, businessId);
 
   const service = createSupabaseServiceClient();
   const [{ data: customer, error: customerError }, { data: business, error: businessError }] = await Promise.all([

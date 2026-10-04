@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
-const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups"];
+const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances"];
 const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004143000_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
@@ -70,9 +70,20 @@ describe("database security migration", () => {
 
   it("uses count-only purge audits and the two approved retention windows", () => {
     expect(privacyMigration).toContain("interval '24 months'");
-    expect(privacyMigration).toContain("interval '30 days'");
+    expect(privacyMigration).toContain("interval '90 days'");
     expect(privacyMigration).toContain("jsonb_build_object('deletedcount', v_row.deleted_count)");
     expect(privacyMigration).not.toMatch(/customers\.(retention|cancellation)_purged[\s\S]{0,300}(full_name|phone_e164)/);
+  });
+
+  it("keeps terms acceptance tenant-scoped and service-route only", () => {
+    expect(privacyMigration).toContain("create table public.terms_acceptances");
+    expect(privacyMigration).toContain("alter table public.terms_acceptances enable row level security");
+    expect(privacyMigration).toMatch(/create policy terms_acceptances_select_own[\s\S]+user_id = \(select auth\.uid\(\)\)[\s\S]+private\.is_business_member\(business_id\)/);
+    expect(privacyMigration).toMatch(/revoke all on table public\.terms_acceptances from public, anon, authenticated/);
+    expect(privacyMigration).toMatch(/revoke all on function public\.record_terms_acceptance\(uuid, uuid, text\)[\s\S]+from public, anon, authenticated/);
+    expect(privacyMigration).toMatch(/grant execute on function public\.record_terms_acceptance\(uuid, uuid, text\)[\s\S]+to service_role/);
+    expect(privacyMigration).toContain("'terms.accepted'");
+    expect(privacyMigration).toContain("jsonb_build_object('version', p_terms_version)");
   });
 
   it("requires a contact and prevents activation after cancellation", () => {

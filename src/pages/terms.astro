@@ -1,0 +1,14 @@
+---
+import TermsNotice from "../components/TermsNotice.astro";
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Términos de servicio | Smart Tap" description="Términos de servicio de Smart Tap.">
+  <main class="legal card">
+    <TermsNotice />
+  </main>
+</Base>
+
+<style>
+  .legal { width: min(820px, calc(100% - 28px)); margin: 28px auto; padding: clamp(22px, 6vw, 54px); }
+</style>

@@ -342,28 +342,36 @@ describe("privacy retention and cancellation", () => {
   it("purges stale and cancelled customer data with count-only audits", async () => {
     const staleBusiness = "10000000-0000-4000-8000-0000000000c1";
     const cancelledBusiness = "10000000-0000-4000-8000-0000000000c2";
+    const graceBusiness = "10000000-0000-4000-8000-0000000000c3";
     const staleCustomer = "30000000-0000-4000-8000-0000000000c1";
     const recentCustomer = "30000000-0000-4000-8000-0000000000c2";
     const cancelledCustomer = "30000000-0000-4000-8000-0000000000c3";
+    const graceCustomer = "30000000-0000-4000-8000-0000000000c4";
     await database.exec(`
       insert into public.businesses (id, slug, display_name, contact_email) values
         ('${staleBusiness}', 'retention-test', 'Retention Test', 'privacy@example.test'),
-        ('${cancelledBusiness}', 'cancelled-test', 'Cancelled Test', 'privacy@example.test');
-      update public.businesses set cancelled_at = now() - interval '31 days' where id = '${cancelledBusiness}';
+        ('${cancelledBusiness}', 'cancelled-test', 'Cancelled Test', 'privacy@example.test'),
+        ('${graceBusiness}', 'cancellation-grace-test', 'Cancellation Grace Test', 'privacy@example.test');
+      update public.businesses set cancelled_at = now() - interval '91 days' where id = '${cancelledBusiness}';
+      update public.businesses set cancelled_at = now() - interval '31 days' where id = '${graceBusiness}';
       insert into public.customers (id, business_id, full_name, phone_e164, consent_current, consent_at, created_at, last_seen_at) values
         ('${staleCustomer}', '${staleBusiness}', 'Stale Customer', '+13055556001', true, now() - interval '25 months', now() - interval '25 months', now() - interval '25 months'),
         ('${recentCustomer}', '${staleBusiness}', 'Recent Customer', '+13055556002', true, now() - interval '25 months', now() - interval '25 months', now()),
-        ('${cancelledCustomer}', '${cancelledBusiness}', 'Cancelled Customer', '+13055556003', true, now(), now(), now());
+        ('${cancelledCustomer}', '${cancelledBusiness}', 'Cancelled Customer', '+13055556003', true, now(), now(), now()),
+        ('${graceCustomer}', '${graceBusiness}', 'Grace Customer', '+13055556004', true, now(), now(), now());
       insert into public.visits (business_id, customer_id, source, visited_at) values
         ('${staleBusiness}', '${staleCustomer}', 'demo', now() - interval '25 months'),
         ('${staleBusiness}', '${recentCustomer}', 'demo', now() - interval '1 day'),
-        ('${cancelledBusiness}', '${cancelledCustomer}', 'demo', now());
+        ('${cancelledBusiness}', '${cancelledCustomer}', 'demo', now()),
+        ('${graceBusiness}', '${graceCustomer}', 'demo', now());
       insert into public.consent_records (business_id, customer_id, consented, text_version) values
         ('${staleBusiness}', '${staleCustomer}', true, '2026-10-04'),
-        ('${cancelledBusiness}', '${cancelledCustomer}', true, '2026-10-04');
+        ('${cancelledBusiness}', '${cancelledCustomer}', true, '2026-10-04'),
+        ('${graceBusiness}', '${graceCustomer}', true, '2026-10-04');
       insert into public.follow_ups (business_id, customer_id, kind, period_key, status) values
         ('${staleBusiness}', '${staleCustomer}', 'inactive', 'retention', 'dismissed'),
-        ('${cancelledBusiness}', '${cancelledCustomer}', 'new', 'first', 'dismissed');
+        ('${cancelledBusiness}', '${cancelledCustomer}', 'new', 'first', 'dismissed'),
+        ('${graceBusiness}', '${graceCustomer}', 'new', 'first', 'dismissed');
     `);
 
     const result = await database.query<{ result: { inactiveDeleted: number; cancelledDeleted: number } }>(
@@ -373,10 +381,10 @@ describe("privacy retention and cancellation", () => {
 
     const remaining = await database.query<{ id: string }>(`
       select id::text as id from public.customers
-      where id in ('${staleCustomer}', '${recentCustomer}', '${cancelledCustomer}')
+      where id in ('${staleCustomer}', '${recentCustomer}', '${cancelledCustomer}', '${graceCustomer}')
       order by id
     `);
-    expect(remaining.rows).toEqual([{ id: recentCustomer }]);
+    expect(remaining.rows).toEqual([{ id: recentCustomer }, { id: graceCustomer }]);
     const cascades = await database.query<{ visits: number; consents: number; follow_ups: number }>(`
       select
         (select count(*)::int from public.visits where customer_id in ('${staleCustomer}', '${cancelledCustomer}')) as visits,
@@ -409,5 +417,103 @@ describe("privacy retention and cancellation", () => {
     expect(privileges.rows[0]).toEqual({ anon: false, authenticated: false, service: false });
     await expect(database.exec(`update public.businesses set is_active = true where slug = 'cancelled-test'`))
       .rejects.toThrow(/businesses_activation_requires_approval_check/);
+  });
+});
+
+describe("Terms of Service acceptance", () => {
+  const businessA = "10000000-0000-4000-8000-0000000000d1";
+  const businessB = "10000000-0000-4000-8000-0000000000d2";
+  const userA = "40000000-0000-4000-8000-0000000000d1";
+  const userB = "40000000-0000-4000-8000-0000000000d2";
+
+  it("records each version once, audits only its version and requires a new acceptance", async () => {
+    await database.exec(`
+      insert into auth.users (id, email) values
+        ('${userA}', 'terms-a@example.test'),
+        ('${userB}', 'terms-b@example.test');
+      insert into public.businesses (id, slug, display_name) values
+        ('${businessA}', 'terms-a', 'Terms A'),
+        ('${businessB}', 'terms-b', 'Terms B');
+      insert into public.business_members (business_id, user_id, role) values
+        ('${businessA}', '${userA}', 'owner'),
+        ('${businessB}', '${userB}', 'owner');
+    `);
+
+    const first = await database.query<{ recorded: boolean }>(
+      `select public.record_terms_acceptance('${userA}', '${businessA}', '2026-09-01') as recorded`,
+    );
+    const duplicate = await database.query<{ recorded: boolean }>(
+      `select public.record_terms_acceptance('${userA}', '${businessA}', '2026-09-01') as recorded`,
+    );
+    expect(first.rows[0]?.recorded).toBe(true);
+    expect(duplicate.rows[0]?.recorded).toBe(false);
+
+    const beforeCurrent = await database.query<{ count: number }>(`
+      select count(*)::int as count from public.terms_acceptances
+      where user_id = '${userA}' and business_id = '${businessA}' and terms_version = '2026-10-04'
+    `);
+    expect(beforeCurrent.rows[0]?.count).toBe(0);
+    await database.query(`select public.record_terms_acceptance('${userA}', '${businessA}', '2026-10-04')`);
+
+    const records = await database.query<{ terms_version: string }>(`
+      select terms_version from public.terms_acceptances
+      where user_id = '${userA}' and business_id = '${businessA}' order by terms_version
+    `);
+    expect(records.rows).toEqual([{ terms_version: "2026-09-01" }, { terms_version: "2026-10-04" }]);
+    const audits = await database.query<{ details: string }>(`
+      select details::text as details from public.audit_log
+      where actor_user_id = '${userA}' and business_id = '${businessA}' and action = 'terms.accepted'
+      order by created_at
+    `);
+    expect(audits.rows).toEqual([
+      { details: '{"version": "2026-09-01"}' },
+      { details: '{"version": "2026-10-04"}' },
+    ]);
+  });
+
+  it("blocks a user from accepting or reading terms for another business", async () => {
+    await expect(database.query(
+      `select public.record_terms_acceptance('${userA}', '${businessB}', '2026-10-04')`,
+    )).rejects.toThrow(/terms_business_access_denied/);
+
+    await database.exec(`
+      begin;
+      set local role authenticated;
+      select set_config('request.jwt.claim.sub', '${userB}', true);
+    `);
+    try {
+      const visible = await database.query<{ count: number }>("select count(*)::int as count from public.terms_acceptances");
+      expect(visible.rows[0]?.count).toBe(0);
+      await expect(database.exec(`
+        insert into public.terms_acceptances (user_id, business_id, terms_version)
+        values ('${userB}', '${businessB}', 'forged')
+      `)).rejects.toThrow(/permission denied/);
+    } finally {
+      await database.exec("rollback");
+    }
+  });
+
+  it("allows only the service role to execute the acceptance function and denies direct inserts", async () => {
+    const privileges = await database.query<{
+      anon_execute: boolean;
+      authenticated_execute: boolean;
+      service_execute: boolean;
+      authenticated_insert: boolean;
+      service_insert: boolean;
+    }>(`
+      select
+        has_function_privilege('anon', 'public.record_terms_acceptance(uuid,uuid,text)', 'execute') as anon_execute,
+        has_function_privilege('authenticated', 'public.record_terms_acceptance(uuid,uuid,text)', 'execute') as authenticated_execute,
+        has_function_privilege('service_role', 'public.record_terms_acceptance(uuid,uuid,text)', 'execute') as service_execute,
+        has_table_privilege('authenticated', 'public.terms_acceptances', 'insert') as authenticated_insert,
+        has_table_privilege('service_role', 'public.terms_acceptances', 'insert') as service_insert
+    `);
+    expect(privileges.rows[0]).toEqual({
+      anon_execute: false,
+      authenticated_execute: false,
+      service_execute: true,
+      authenticated_insert: false,
+      service_insert: false,
+    });
   });
 });

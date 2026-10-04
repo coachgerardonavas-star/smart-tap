@@ -1,6 +1,7 @@
 import { assertBusinessAccess, enforcePlatformAdminMfa, type AuthIdentity } from "./auth";
 import { buildFollowUpOpportunities, type FollowUpActionRecord, type FollowUpCustomer } from "./follow-up";
 import { createSupabaseServiceClient } from "./supabase";
+import { assertCurrentTermsAccepted } from "./terms-access";
 import type { Business, Customer, Visit } from "./types";
 
 export async function accessibleBusinesses(identity: AuthIdentity): Promise<Business[]> {
@@ -30,6 +31,7 @@ export async function dashboardData(identity: AuthIdentity, requestedSlug?: stri
   const business = businesses.find((item) => item.slug === requestedSlug) ?? businesses[0] ?? null;
   if (!business) return { businesses, business: null, metrics: null };
   await assertBusinessAccess(identity, business.id);
+  await assertCurrentTermsAccepted(identity, business.id);
 
   const service = createSupabaseServiceClient();
   const now = new Date();

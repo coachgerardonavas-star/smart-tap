@@ -2,6 +2,33 @@
 
 Updated: 2026-10-04. Sections below are chronological; the Reviewer's reconciliation at the end is the current state.
 
+## PR #4 D-045 alignment and Terms of Service — ChatGPT Codex, 2026-10-04
+
+Base: `codex/privacy-notice` merged with `origin/claude/launch-prep` through `6aec739`. No rebase, force-push, deploy, hosted migration or `db push` occurred.
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| Approved privacy text | PASSED | `tests/privacy.test.ts` reconstructs both rendered languages and compares them word for word with `docs/PRIVACY_NOTICE.md`; the cancellation sentence now states a 30-day download window and deletion at 90 days. |
+| Cancellation purge | PASSED | PGlite deletes customer data at 91 days, preserves it at 31 days, cascades visits/consents/follow-ups and writes count-only audits. |
+| Export beyond 1,000 | PASSED | `fetchAllPages` retrieved and serialized 2,105 customer-shaped rows over three ranges; the route pages both customers and visit-count rows with stable ordering. |
+| Export window | PASSED | Active businesses and the exact 30-day boundary pass; one second beyond the boundary fails. The route returns HTTP 410 with `La ventana de descarga de 30 días terminó.` |
+| E.164 CSV phone | PASSED | `+13055550100` remains unchanged; formula-like customer names still receive the spreadsheet-neutralizing prefix. |
+| Approved Terms text | PASSED | `tests/terms.test.ts` reconstructs `/terms` in Spanish and English and compares it word for word with `docs/TERMS_OF_SERVICE.md`. |
+| Acceptance before dashboard | PASSED | Missing current acceptance redirects HTML to `/terms/accept` and returns 403 JSON for dashboard APIs. Every current dashboard data/API route has the gate; platform admins are exempt. |
+| Current server version | PASSED | The POST route sends `TERMS_VERSION`; the browser form has no version field and its required checkbox starts unchecked. |
+| Idempotency and new version | PASSED | PGlite records the same user/business/version once; an older row does not satisfy the current version and the current version creates a separate row. |
+| Cross-tenant and RLS | PASSED | The service-only function rejects another business, authenticated direct insert is denied, and another tenant reads zero acceptance rows. |
+| Audit data | PASSED | Each first acceptance writes one `terms.accepted` audit; `details` contains only `version`. |
+
+Commands and results:
+
+- Targeted gate: 4 files, 59/59 tests; Astro check 0 errors, warnings or hints.
+- Full pre-clean-install suite: 12 files, 107/107 tests; the final privilege regression raised the suite to 108 tests.
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- `npm run audit:prod`: strict production audit; 0 vulnerabilities.
+- Final `npm run verify`: 0 Astro errors, warnings or hints; 12 files and 108/108 tests; standalone Node build complete.
+- Screenshots: `docs/evidence/privacy-cafe-luna-390x844.png` and `docs/evidence/terms-accept-390x844.png`, each measured at exactly 390×844 and visually checked without horizontal clipping. The production components were rendered with local data fixtures because the migration intentionally remains unapplied; all fixture routes and capture scripts were removed afterward.
+
 ## Existing local gate
 
 Last recorded full local gate: 2026-10-01.

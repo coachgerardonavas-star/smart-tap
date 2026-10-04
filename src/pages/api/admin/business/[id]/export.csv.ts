@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { requirePlatformAdmin } from "../../../../../lib/auth";
 import { buildCustomerExportCsv } from "../../../../../lib/csv";
+import { customerExportIsAvailable, fetchAllPages } from "../../../../../lib/pagination";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
 import { businessIdSchema } from "../../../../../lib/validation";
 
@@ -10,16 +11,34 @@ export const POST: APIRoute = async ({ request, cookies, params }) => {
   if (!parsedId.success) return new Response("Negocio no encontrado.", { status: 404 });
 
   const service = createSupabaseServiceClient();
-  const [businessResult, customersResult, countsResult] = await Promise.all([
-    service.from("businesses").select("slug").eq("id", parsedId.data).maybeSingle(),
-    service.from("customers").select("id,full_name,phone_e164,birthday,whatsapp_opt_in").eq("business_id", parsedId.data).order("created_at"),
-    service.from("customer_visit_counts").select("customer_id,visit_count,last_visit_at").eq("business_id", parsedId.data),
-  ]);
+  const businessResult = await service.from("businesses").select("slug,cancelled_at").eq("id", parsedId.data).maybeSingle();
   if (businessResult.error || !businessResult.data) return new Response("Negocio no encontrado.", { status: 404 });
-  if (customersResult.error || countsResult.error) return new Response("No pudimos preparar el archivo.", { status: 500 });
+  if (!customerExportIsAvailable(businessResult.data.cancelled_at)) {
+    return new Response("La ventana de descarga de 30 días terminó.", { status: 410 });
+  }
 
-  const counts = new Map((countsResult.data ?? []).map((row) => [row.customer_id, row]));
-  const csv = buildCustomerExportCsv((customersResult.data ?? []).map((customer) => {
+  let customers;
+  let countsRows;
+  try {
+    [customers, countsRows] = await Promise.all([
+      fetchAllPages((from, to) => service.from("customers")
+        .select("id,full_name,phone_e164,birthday,whatsapp_opt_in")
+        .eq("business_id", parsedId.data)
+        .order("created_at")
+        .order("id")
+        .range(from, to)),
+      fetchAllPages((from, to) => service.from("customer_visit_counts")
+        .select("customer_id,visit_count,last_visit_at")
+        .eq("business_id", parsedId.data)
+        .order("customer_id")
+        .range(from, to)),
+    ]);
+  } catch {
+    return new Response("No pudimos preparar el archivo.", { status: 500 });
+  }
+
+  const counts = new Map(countsRows.map((row) => [row.customer_id, row]));
+  const csv = buildCustomerExportCsv(customers.map((customer) => {
     const count = counts.get(customer.id);
     return {
       fullName: customer.full_name,

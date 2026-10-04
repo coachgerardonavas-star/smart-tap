@@ -39,6 +39,81 @@ alter table public.businesses
 create index businesses_cancelled_at_idx on public.businesses (cancelled_at)
 where cancelled_at is not null;
 
+create table public.terms_acceptances (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  terms_version text not null check (char_length(terms_version) between 1 and 40),
+  accepted_at timestamptz not null default now(),
+  primary key (user_id, business_id, terms_version)
+);
+
+create index terms_acceptances_business_id_idx
+  on public.terms_acceptances (business_id);
+
+alter table public.terms_acceptances enable row level security;
+revoke all on table public.terms_acceptances from public, anon, authenticated;
+grant select on table public.terms_acceptances to authenticated;
+grant select on table public.terms_acceptances to service_role;
+
+create policy terms_acceptances_select_own
+on public.terms_acceptances for select to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select private.is_business_member(business_id))
+);
+
+create or replace function public.record_terms_acceptance(
+  p_user_id uuid,
+  p_business_id uuid,
+  p_terms_version text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_inserted boolean;
+begin
+  if nullif(btrim(p_terms_version), '') is null or char_length(p_terms_version) > 40 then
+    raise exception using errcode = '22023', message = 'invalid_terms_version';
+  end if;
+
+  if not exists (
+    select 1 from public.business_members
+    where user_id = p_user_id
+      and business_id = p_business_id
+      and is_active
+  ) then
+    raise exception using errcode = '42501', message = 'terms_business_access_denied';
+  end if;
+
+  with inserted as (
+    insert into public.terms_acceptances (user_id, business_id, terms_version)
+    values (p_user_id, p_business_id, p_terms_version)
+    on conflict do nothing
+    returning 1
+  )
+  select exists(select 1 from inserted) into v_inserted;
+
+  if v_inserted then
+    insert into public.audit_log (
+      actor_user_id, business_id, action, entity_type, entity_id, details
+    ) values (
+      p_user_id, p_business_id, 'terms.accepted', 'business', p_business_id::text,
+      jsonb_build_object('version', p_terms_version)
+    );
+  end if;
+
+  return v_inserted;
+end;
+$$;
+
+revoke all on function public.record_terms_acceptance(uuid, uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.record_terms_acceptance(uuid, uuid, text)
+  to service_role;
+
 create or replace function public.record_business_owner_approval(
   p_business_id uuid,
   p_owner_name text,
@@ -130,7 +205,7 @@ begin
       using public.businesses b
       where c.business_id = b.id
         and b.cancelled_at is not null
-        and b.cancelled_at < now() - interval '30 days'
+        and b.cancelled_at < now() - interval '90 days'
       returning c.business_id
     )
     select business_id, count(*)::bigint as deleted_count

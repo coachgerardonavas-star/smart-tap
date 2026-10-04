@@ -1,31 +1,46 @@
 import { defineMiddleware } from "astro:middleware";
 import { AuthorizationError } from "./lib/auth";
+import { TermsAcceptanceRequiredError } from "./lib/terms-access";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   let response: Response;
   try {
     response = await next();
   } catch (error) {
-    if (!(error instanceof AuthorizationError)) throw error;
-    if (error.status === 401) {
-      if (context.url.pathname.startsWith("/api/")) {
-        response = new Response(JSON.stringify({ error: "Debes iniciar sesión." }), { status: 401, headers: { "content-type": "application/json" } });
+    if (error instanceof TermsAcceptanceRequiredError) {
+      if (context.url.pathname.startsWith("/api/dashboard")) {
+        response = new Response(JSON.stringify({ error: "Debes aceptar los Términos de servicio vigentes." }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        });
       } else {
-        const login = new URL("/login", context.url);
-        login.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
-        response = context.redirect(login.toString(), 302);
+        const accept = new URL("/terms/accept", context.url);
+        accept.searchParams.set("business", error.businessId);
+        accept.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
+        response = context.redirect(accept.toString(), 302);
       }
-    } else if (error.reason === "mfa_required" && !context.url.pathname.startsWith("/api/")) {
-      const mfa = new URL("/admin/mfa", context.url);
-      mfa.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
-      response = context.redirect(mfa.toString(), 302);
-    } else if (error.reason === "mfa_required") {
-      response = new Response(JSON.stringify({ error: "Debes confirmar el segundo factor." }), {
-        status: 403,
-        headers: { "content-type": "application/json" },
-      });
     } else {
-      response = new Response("Acceso denegado", { status: 403 });
+      if (!(error instanceof AuthorizationError)) throw error;
+      if (error.status === 401) {
+        if (context.url.pathname.startsWith("/api/")) {
+          response = new Response(JSON.stringify({ error: "Debes iniciar sesión." }), { status: 401, headers: { "content-type": "application/json" } });
+        } else {
+          const login = new URL("/login", context.url);
+          login.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
+          response = context.redirect(login.toString(), 302);
+        }
+      } else if (error.reason === "mfa_required" && !context.url.pathname.startsWith("/api/")) {
+        const mfa = new URL("/admin/mfa", context.url);
+        mfa.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
+        response = context.redirect(mfa.toString(), 302);
+      } else if (error.reason === "mfa_required") {
+        response = new Response(JSON.stringify({ error: "Debes confirmar el segundo factor." }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        });
+      } else {
+        response = new Response("Acceso denegado", { status: 403 });
+      }
     }
   }
   response.headers.set("X-Content-Type-Options", "nosniff");

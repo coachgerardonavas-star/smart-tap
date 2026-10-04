@@ -28,5 +28,5 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     details: {},
   });
   if (auditError) return redirect(`/admin/${parsedId.data}?error=${encodeURIComponent("El servicio se canceló, pero no pudimos registrar la auditoría.")}`, 303);
-  return redirect(`/admin/${parsedId.data}?message=${encodeURIComponent("Servicio cancelado. Los datos de clientes se borrarán a los 30 días.")}`, 303);
+  return redirect(`/admin/${parsedId.data}?message=${encodeURIComponent("Servicio cancelado. La lista se puede descargar durante 30 días y los datos de clientes se borrarán a los 90 días.")}`, 303);
 };

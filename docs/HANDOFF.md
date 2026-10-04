@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-044 on `codex/privacy-notice`.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after aligning D-044 with D-045, fixing the Reviewer findings and implementing D-045 on `codex/privacy-notice`.
 
 ## Project identity
 
@@ -8,7 +8,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-044 on `cod
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
-- **CEO-approved commercial/product decisions D-025 through D-044:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md` and `docs/PRIVACY_NOTICE.md`.
+- **CEO-approved commercial/product decisions D-025 through D-046:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md` and `docs/TERMS_OF_SERVICE.md`.
 
 ## Branches — which one is current
 
@@ -19,7 +19,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-044 on `cod
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
-| `codex/privacy-notice` | **Current Builder branch.** Implements D-044. Migration `20261004143000_privacy_notice.sql` remains unapplied for Reviewer inspection. |
+| `codex/privacy-notice` | **Current Builder branch and PR #4.** Implements D-044 and D-045, including the three export/cancellation fixes requested by the Reviewer. Migration `20261004143000_privacy_notice.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -40,20 +40,31 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Current local gate on `codex/privacy-notice`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 94/94 tests and a complete standalone Node build.
+Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 108/108 tests and a complete standalone Node build.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04
 
 - Implemented D-044 from `docs/PRIVACY_NOTICE.md` without changing the approved Spanish or English wording. `/privacy/[slug]` renders both languages from the active, uncancelled business row; unknown, inactive, cancelled or contactless records return 404. `/privacy` keeps the generic fallback.
 - Real check-in pages use `/privacy/{slug}` by default. A configured `privacy_url` still overrides it.
 - Added nullable `contact_phone` and `contact_email`, E.164/email validation, admin fields and database-backed owner-approval/activation requirements. The Café Luna seed uses `automateit@yourbizupgraded.com` as its demo contact.
-- Added private `security definer` retention function: customer data older than 24 months by latest visit, or creation when no visit exists, is deleted with cascades. Cancelled-business customer data is deleted after 30 days. Each affected business receives one count-only audit row.
+- Added private `security definer` retention function: customer data older than 24 months by latest visit, or creation when no visit exists, is deleted with cascades. Cancelled-business customer data is deleted after 90 days. Each affected business receives one count-only audit row.
 - Added a daily `pg_cron` schedule at 03:17 UTC. `anon`, `authenticated` and `service_role` have no execute permission on the purge function.
-- Added a distinct AAL2 platform-admin cancellation action and a POST-only CSV export with name, phone, birthday, visit count, last visit and WhatsApp opt-in. Export auditing stores empty details; CSV cells neutralize spreadsheet formulas.
+- Added a distinct AAL2 platform-admin cancellation action and a POST-only CSV export with name, phone, birthday, visit count, last visit and WhatsApp opt-in. The export paginates customers and aggregates beyond Supabase's 1,000-row response limit, stays available until 30 days after cancellation, then returns HTTP 410. Validated E.164 phones remain unchanged; other cells still neutralize spreadsheet formulas. Export auditing stores empty details.
 - The server now sets `PRIVACY_NOTICE_VERSION = 2026-10-04` and strips any browser-supplied version. The required consent says `Tengo 13 años o más`; the form and server reject a birthday younger than 13.
 - New migration: `20261004143000_privacy_notice.sql`. It has not been applied and no `db push` ran.
-- Local evidence: migration and cascade tests passed in PGlite; exact 390×844 capture at `docs/evidence/privacy-cafe-luna-390x844.png` was produced with a local mock business, without Supabase changes.
+- Local evidence: migration and cascade tests passed in PGlite; exact 390×844 capture at `docs/evidence/privacy-cafe-luna-390x844.png` was produced with the production component and a local business fixture, without Supabase changes.
 - PR #4: `https://github.com/coachgerardonavas-star/smart-tap/pull/4`, open from `codex/privacy-notice` to `main`; implementation commit `fc84603` passed GitHub Actions `verify`.
+
+## Terms of Service and D-045 alignment — Builder implementation, 2026-10-04
+
+- Merged `origin/claude/launch-prep` at `6aec739` into PR #4 without rebase or force-push. This brought the CEO-approved D-045 text and the D-046 design decision; D-046 was left unchanged and remains a later task.
+- `/terms` renders the approved Spanish text first and English second. A regression test reconstructs both rendered versions and compares them word for word with `docs/TERMS_OF_SERVICE.md`.
+- Added `terms_acceptances` in the existing unapplied migration with a per-user, per-business, per-version primary key, RLS for own-row reads and no authenticated writes. The service-only database function verifies active membership, records each version once and writes `terms.accepted` with only the version in `details`.
+- Business users without the current server-set `TERMS_VERSION` are redirected from `/dashboard` to `/terms/accept`; all existing `/api/dashboard` mutations return HTTP 403 until acceptance. Platform admins are exempt. A version change requires a new row and a new acceptance.
+- `/terms/accept` uses an unchecked required box and sends no version from the browser. Login, dashboard and each business privacy page link to `/terms`.
+- Cross-tenant, idempotency, version-change, audit-content, RLS and direct-write denial passed in PGlite. Middleware and source-coverage tests prove every current dashboard/API route has the acceptance gate.
+- Exact mobile evidence: `docs/evidence/terms-accept-390x844.png`, 390×844, visually checked without horizontal clipping. The local capture used the production component with a data fixture; no bypass or fixture route remains in the tree.
+- Migration remains `supabase/migrations/20261004143000_privacy_notice.sql`. It has not been applied to hosted Supabase and no `db push` ran.
 
 ## Onboarding configuration — Builder implementation, 2026-10-04
 
@@ -119,7 +130,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` found 0 vulnerabilities; 
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Reviewer: inspect and apply `20261004143000_privacy_notice.sql`, then run the hosted D-044 smoke before real customer data.
+- Reviewer: inspect and apply `20261004143000_privacy_notice.sql`, then run the hosted D-044/D-045 privacy, retention, export and terms-acceptance smoke before real customer data.
 - Physical NFC writing.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).

@@ -149,6 +149,7 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
       </section>
     </>
   )}
+  <footer class="legal-footer"><a href="/terms">Términos de servicio</a></footer>
 </Base>
 
 <style>
@@ -188,6 +189,7 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
   .birthdays small { color: #98a2b3; }
   .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #f2f4f7; color: #475467; font-weight: 800; }
   .empty, .empty-row { padding: 36px; }
+  .legal-footer { margin-top: 34px; text-align: center; font-size: .82rem; color: #667085; }
   @media (max-width: 960px) { .metrics { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
   @media (max-width: 700px) { .follow-up-row { align-items: start; flex-direction: column; } .follow-up-actions { justify-content: flex-start; } }
   @media (max-width: 560px) { .page-head { align-items: start; flex-direction: column; } .metrics { grid-template-columns: 1fr 1fr; } }

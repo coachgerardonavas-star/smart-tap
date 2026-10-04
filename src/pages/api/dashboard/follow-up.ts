@@ -3,6 +3,7 @@ import { assertBusinessAccess, AuthorizationError, requireDataAccess } from "../
 import { executeFollowUpAction, FollowUpActionError } from "../../../lib/follow-up-handler";
 import type { FollowUpCustomer } from "../../../lib/follow-up";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
+import { assertCurrentTermsAccepted } from "../../../lib/terms-access";
 import type { Visit } from "../../../lib/types";
 import { followUpActionSchema } from "../../../lib/validation";
 
@@ -20,7 +21,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const service = createSupabaseServiceClient();
   try {
     const result = await executeFollowUpAction(identity, parsed.data, {
-      authorize: (currentIdentity, businessId) => assertBusinessAccess(currentIdentity, businessId, false),
+      authorize: async (currentIdentity, businessId) => {
+        await assertBusinessAccess(currentIdentity, businessId, false);
+        await assertCurrentTermsAccepted(currentIdentity, businessId);
+      },
       store: {
         async getBusiness(businessId) {
           const { data, error } = await service
