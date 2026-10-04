@@ -86,16 +86,26 @@ export async function requirePlatformAdmin(request: Request, cookies: AstroCooki
   return enforcePlatformAdminMfa(await requirePlatformAdminRole(request, cookies));
 }
 
-export async function assertBusinessAccess(userId: string, businessId: string, allowViewer = true) {
-  const service = createSupabaseServiceClient();
-  const { data: profile } = await service.from("profiles").select("platform_role").eq("id", userId).maybeSingle();
-  if (profile?.platform_role === "platform_admin") return { role: "platform_admin" as const };
+// Customer-data routes. A platform admin reaches every tenant through this path, so
+// the same aal2 requirement as /admin applies; members are unaffected.
+export async function requireDataAccess(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
+  const identity = await requireAuth(request, cookies);
+  if (identity.isPlatformAdmin) enforcePlatformAdminMfa(identity);
+  return identity;
+}
 
+export async function assertBusinessAccess(identity: AuthIdentity, businessId: string, allowViewer = true) {
+  if (identity.isPlatformAdmin) {
+    enforcePlatformAdminMfa(identity);
+    return { role: "platform_admin" as const };
+  }
+
+  const service = createSupabaseServiceClient();
   let query = service
     .from("business_members")
     .select("role")
     .eq("business_id", businessId)
-    .eq("user_id", userId)
+    .eq("user_id", identity.id)
     .eq("is_active", true);
   if (!allowViewer) query = query.in("role", ["owner", "manager"]);
   const { data } = await query.maybeSingle();

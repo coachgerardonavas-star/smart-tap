@@ -115,3 +115,14 @@ Targeted tests in `tests/admin-mfa.test.ts` prove:
 Hosted enrollment, QR scanning, TOTP challenge, cookie refresh and the complete live smoke test remain pending until the local `.env` contains the Supabase secret key and the dashboard settings are complete.
 
 The first PR run found two Gitleaks false positives in commit `6d53ba9`: the same Supabase publishable browser key documented twice in `docs/CODEX_NEXT.md`. `.gitleaksignore` contains only those two exact historical fingerprints. New findings, different files, lines, commits or rules continue to fail CI.
+
+## Review of PR #1 (MFA) — Claude Code, 2026-10-04
+
+Reviewed `3de6fac` and `f08ff95`. Two MFA bypasses found and fixed (D-020):
+
+1. HIGH — `/dashboard` and `/api/dashboard/customer/[id]/delete` used `requireAuth`; a platform admin at `aal1` listed and deleted customers of every business. Now `requireDataAccess` + `assertBusinessAccess(identity)`; tests in `tests/admin-mfa.test.ts`.
+2. HIGH — `private.is_platform_admin()` ignored AAL; an `aal1` admin token read all tenants through PostgREST. Hosted proof before the fix: aal1 admin saw 3 customers of a business it is not a member of. After the fix (hosted): aal1 → 0 customers and 0 businesses; aal2 → 3. Regression test `grants the platform-admin bypass only with a second factor` fails without the migration and passes with it.
+
+`npm run verify`: 0 diagnostics, 41 of 41 tests. Migration applied to hosted Supabase as `admin_rls_requires_aal2`; test rows rolled back.
+
+Accepted for this phase: an admin who has never enrolled a factor can enroll one at `aal1`, so the first enrollment must happen right after the account is created.

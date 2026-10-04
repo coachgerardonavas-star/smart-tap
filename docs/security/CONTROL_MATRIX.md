@@ -80,3 +80,9 @@ Revision: branch `claude/review-hardening` after `482bf27`, 2026-10-02. Prepared
 | GS-58 Inventory | Yes | IMPLEMENTADO NO VERIFICADO | Lockfile; CycloneDX SBOM artifact in CI | CI first run |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
 | GS-60 Acceptance criteria | Yes | IMPLEMENTADO | This matrix is part of done | — |
+
+## Update 2026-10-04 (Claude Code review of PR #1)
+
+- GS-03: IMPLEMENTADO NO VERIFICADO en vivo. MFA now covers `/admin`, `/dashboard`, customer deletion and the Data API bypass (D-020). Remaining: live QR enrollment.
+- GS-02: VERIFICADO EN EL ENTORNO OBJETIVO for the admin RLS path at aal1/aal2.
+- GS-56: two new permanent regression tests (app guard, SQL helper).
