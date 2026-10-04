@@ -139,3 +139,7 @@ Onboarding configuration reviewed; migration applied live as `20261004130503_onb
 Builder follow-up complete: NFC page polish, changed-field audit, exact 390×844 evidence and the full hosted admin smoke are done. PR #3 remains open for the Reviewer's final pass; no deploy or merge occurred.
 
 PR #3 merged to main (a9ebc37). Next: custom SMTP done on the test project; privacy notice approved (D-044), Builder implements it on `codex/privacy-notice` from `claude/launch-prep`.
+
+## Pending — customer-facing visual design (CEO, 2026-10-04)
+
+The CEO wants the NFC customer screens (welcome, registration, confirmation) to look closer to an early ChatGPT mockup (photo-led hero, business logo, benefit list, branded inputs with icons, celebratory confirmation). Not started; to be scheduled after the privacy/terms PR. Proposed route: design the three screens as a reusable per-business template (logo, colors, optional hero photo) with Claude Design, CEO approves, then the Builder implements against the approved design. Constraints any design must keep: WhatsApp box unchecked and optional (D-042); no SMS; privacy acceptance separate from marketing; no visit-reward counter unless a rewards feature is approved and built; images light enough for fast load on mobile data; Nombre visible without scroll at 390×844.
