@@ -95,6 +95,7 @@ Reviewer (2026-10-04): the application half is done. `/auth/callback` no longer 
 The production dependency gate permits one temporary exception for `GHSA-ch52-4w7c-c8xp` in `http-cache-semantics@4.2.0`, reached through Astro. The advisory has no patched release as of this date, and Smart Tap does not run a shared HTTP response cache; Astro imports the package for remote asset build caching. `scripts/audit-dependencies.mjs` accepts only that advisory, package chain and exact installed version. Any other high or critical finding fails the gate. Remove the exception when an upstream patch is available.
 
 Closed (Reviewer, 2026-10-04): `http-cache-semantics@4.3.0` was published on 2026-10-04 and fixes the advisory. The lockfile now resolves 4.3.0 (Astro allows `^4.2.0`), `npm audit` reports 0 vulnerabilities, and the exception script was removed. `npm run audit:prod` is plain `npm audit --omit=dev --audit-level=high` again. Before removal, reachability had been checked: the package was used only by Astro's build-time remote image cache and never reached `dist/server`.
+
 ## D-024 — Supabase Pro and a separate production project at the first signed client (CEO, 2026-10-04)
 
 The free project `vrouyhxzxrfkuuqfslrc` stays for demo and testing. When the first business signs, the organization moves to Supabase Pro and a separate production project is created with daily backups. Until then no real customer data is loaded. This schedules GS-25 (backups) and GS-29 (separate environments); both stay open and block real data until done.
@@ -154,3 +155,7 @@ During onboarding, the owner defines one approved offer for each follow-up categ
 ## D-038 — Included NFC allocation and placement (CEO, 2026-10-04)
 
 The base Smart Tap setup includes 3 configured NFC tags with fixed roles: **2 tags for customer capture/registration** and **1 tag for Google Review**. Automate IT recommends the best physical placement according to the type and customer flow of the business, and the owner may change that placement before activation.
+
+## D-039 — Google Review NFC opens Google directly (CEO, 2026-10-04)
+
+The dedicated Google Review NFC must open the business's direct Google review URL immediately. No Smart Tap interstitial, rating screen, review gating, or pre-qualification step is inserted before Google.
