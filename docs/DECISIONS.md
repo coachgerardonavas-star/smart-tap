@@ -183,3 +183,7 @@ Approved text in `docs/PRIVACY_NOTICE.md`. One notice per business at `/privacy/
 ## D-045 — Smart Tap Terms of Service for businesses (CEO, 2026-10-04)
 
 Approved text in `docs/TERMS_OF_SERVICE.md`. Liability capped at fees paid in the prior 12 months, no indirect damages; best-effort availability with no uptime guarantee; no guaranteed results; the business is responsible for the messages and offers it sends and indemnifies Automate IT for them; suspension 7 days after a failed-payment notice (data kept); term changes notified by email 30 days ahead with penalty-free cancellation; mediation first, then Orange County, Florida courts under Florida law; Spanish and English, Spanish prevails. Full $278 refund if the business cancels before activation. Retention after cancellation stays as D-025 (30-day export, deletion at 90 days); D-044 corrected to match. No AI notice: Smart Tap uses no AI; add one only if AI is introduced. Not legal advice: attorney review before the first real client.
+
+## D-046 — Branded customer screens through customizable styles (CEO, 2026-10-04)
+
+Customer-facing NFC screens are personalized per business through 3–4 pre-designed styles plus per-business data (logo, colors, hero photo, tagline, benefits), not bespoke design or code per client. Styles are designed once (Claude Design), approved by the CEO and built once. Details and constraints in HANDOFF.
