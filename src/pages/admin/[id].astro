@@ -43,6 +43,21 @@ const formError = Astro.url.searchParams.get("error");
         <div class="split"><div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" value={business.display_name} required /></div><div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" value={business.slug} required /></div></div>
         <div class="field"><label for="legalName">Razón social</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /></div>
         <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
+        <fieldset>
+          <legend>Pantalla del cliente</legend>
+          <div class="field"><label for="theme">Estilo</label><select id="theme" name="theme" required>
+            <option value="elegante" selected={business.theme === "elegante"}>Elegante</option>
+            <option value="calido" selected={business.theme === "calido"}>Cálido</option>
+            <option value="moderno" selected={business.theme === "moderno"}>Moderno</option>
+            <option value="colorido" selected={business.theme === "colorido"}>Colorido</option>
+          </select></div>
+          <div class="field"><label for="tagline">Frase de marca (opcional)</label><input id="tagline" name="tagline" value={business.tagline ?? ""} maxlength="80" /></div>
+          <div class="field"><label for="heroImageUrl">URL HTTPS de la foto principal (opcional)</label><input id="heroImageUrl" name="heroImageUrl" type="url" value={business.hero_image_url ?? ""} maxlength="500" placeholder="https://..." /></div>
+          <p class="muted compact-note">Escribe los tres beneficios o deja los tres vacíos para usar los textos estándar.</p>
+          <div class="field"><label for="benefit1">Beneficio 1</label><input id="benefit1" name="benefit1" value={business.benefits?.[0] ?? ""} maxlength="40" placeholder="Ofertas para clientes" /></div>
+          <div class="field"><label for="benefit2">Beneficio 2</label><input id="benefit2" name="benefit2" value={business.benefits?.[1] ?? ""} maxlength="40" placeholder="Sorpresas en tu cumpleaños" /></div>
+          <div class="field"><label for="benefit3">Beneficio 3</label><input id="benefit3" name="benefit3" value={business.benefits?.[2] ?? ""} maxlength="40" placeholder="Te reconocemos al volver" /></div>
+        </fieldset>
         <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /></div>
         <div class="split"><div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" value={business.contact_phone ?? ""} placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div><div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
         <p class="muted compact-note">El aviso usa estos datos. Configura al menos uno antes de registrar la aprobación del dueño.</p>

@@ -493,3 +493,66 @@ Defect found and fixed: `service_role` still had INSERT/UPDATE/DELETE on `terms_
 Not exercised against the hosted project: the HTTP routes (`/privacy/[slug]`, `/terms/accept`, CSV export, 410 after the window), because the Reviewer environment holds no server key. They are covered by the 108 local tests; repeat as part of the post-deploy smoke on Render.
 
 Verdict: **PR #4 approved by the Reviewer.** The CEO merges.
+
+## First Render deploy — production smoke (Claude Code + CEO, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Render Blueprint `render-smart-tap`, service `smart-tap` (Virginia, `0.5c-512mb`), deploys `main` | Live at `smart-tap-y8gd.onrender.com` |
+| DNS `smarttap` CNAME → `smart-tap-y8gd.onrender.com`, DNS only (Cloudflare API) | Resolves; Render domain Verified, certificate issued |
+| `/demo`, `/b/cafe-luna`, `/privacy/cafe-luna`, `/terms`, `/login` over HTTPS on the custom domain | 200; CSP, X-Frame-Options DENY, nosniff present |
+| Form POSTs behind Render's TLS proxy | Were 403 for every form; fixed by `security.allowedDomains` (PR #5). After redeploy: same-origin 303, cross-site 403 |
+| Supabase Auth URL configuration | Site URL `https://smarttap.yourbizupgraded.com`, redirect `https://smarttap.yourbizupgraded.com/**` |
+| Recovery template | Was still Supabase's default (`ConfirmationURL`, consumed on GET). Replaced with `supabase/templates/recovery.html`; Invite template confirmed as the repository version |
+| Recovery email requested by the CEO from `/forgot-password` | Arrived in the inbox (not spam), Spanish template; Gmail's scan of the link did not consume the token (no `/verify` in the auth log) |
+| DMARC | `_dmarc` CNAME to `dmarc.ionos.com` (`p=none`) was proxied, so TXT did not resolve; set to DNS only, now resolves |
+
+Pending on the deployed app: click-through of the recovery button, the IP-identity check for rate limits (two phones on different networks), and physical NFC tests. The app uses the test Supabase project until the first client (D-047).
+
+## D-046 / D-048 customer styles — ChatGPT Codex, 2026-10-04
+
+Target: local branch `codex/customer-styles` from `origin/claude/deploy-evidence` at `534da86`. No deploy, Supabase migration or `db push` ran.
+
+PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
+
+### Automated gate
+
+| Check | Result |
+|---|---|
+| `npm ci` | 334 packages installed; 0 vulnerabilities |
+| `npm run audit:prod` | 0 vulnerabilities |
+| `npm run verify` | 0 Astro errors, warnings or hints; 13 files and 121/121 tests; standalone Node build complete |
+| Database migration | All migrations, including `20261004212542_customer_styles.sql`, ran in PGlite; valid style data saved; invalid theme, partial benefits and HTTP hero URL were rejected |
+| Button contrast | Sampled 4,096 RGB colors; computed black/white label reached at least 4.5:1 for every sample |
+| Fixed body palettes | Every approved foreground/background pair tested at 4.5:1 or higher |
+| Approved copy | Exact birthday, required consent, optional WhatsApp and confirmation strings covered; WhatsApp input has no `checked` state |
+| Font delivery | Latin WOFF2 assets come from local `@fontsource-variable` packages; page CSS emits only the selected style's two families; no Google Fonts or CSP change |
+
+### Viewport and visual evidence
+
+The repeatable CDP runner is `scripts/capture-customer-styles.mjs`. It uses the production demo component, submits the real React form in demo mode and captures the resulting confirmation state.
+
+| Style | Nombre input bottom at 390×844 | Hero height | Form capture | Confirmation capture |
+|---|---:|---:|---|---|
+| elegante | 417 px | 209 px | `docs/evidence/customer-elegante-form-390x844.png` | `docs/evidence/customer-elegante-confirmation-390x844.png` |
+| calido | 425 px | 221 px | `docs/evidence/customer-calido-form-390x844.png` | `docs/evidence/customer-calido-confirmation-390x844.png` |
+| moderno | 414 px | 209 px | `docs/evidence/customer-moderno-form-390x844.png` | `docs/evidence/customer-moderno-confirmation-390x844.png` |
+| colorido | 425 px | 219 px | `docs/evidence/customer-colorido-form-390x844.png` | `docs/evidence/customer-colorido-confirmation-390x844.png` |
+
+Desktop evidence: `docs/evidence/customer-elegante-form-1440x900.png`, with hero and form side by side. All nine images were opened and visually checked. The review link appears in the confirmation captures because the demo config includes a valid Google Review URL; source and regression coverage confirm it is omitted when the value is null.
+
+### Data and admin path
+
+- One migration adds `theme`, `tagline`, `benefits` and `hero_image_url` with database checks. It remains unapplied.
+- `/admin/[id]` exposes all fields. The existing update route validates them, updates the row and includes their database column names in `business.updated.details.changedFields`.
+- `/b/[slug]` and `/demo/capture` both render `CustomerCapture.astro`; the demo can select all four styles.
+
+## Reviewer pass — PR #6 customer styles (Claude Code, 2026-10-04)
+
+Diff reviewed at `9dcd07c`: user-supplied URLs render only through React-escaped `src`/`href`; `primary_color` stays a validated hex used as a CSS variable; button label color computed for contrast; fonts self-hosted, CSP unchanged. Local gate: 13 files, 121/121 tests, build complete, `audit:prod` 0 vulnerabilities.
+
+Reviewer screenshots at 390×844 of `/demo/capture?theme=` for the four styles (built server): no horizontal overflow; Nombre input bottom at 417 / 425 / 414 / 425 px; each page loaded only its two font families.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004212542_customer_styles` (file renamed). Hosted checks inside a rolled-back transaction: Café Luna defaulted to `calido` and stayed active; a valid style update passed; unknown theme, two benefits, `http://` and `javascript:` hero URLs and an 81-character tagline were rejected.
+
+Verdict: **PR #6 approved by the Reviewer.** After merge, Render redeploys and the Reviewer checks `/demo/capture` on the production domain.

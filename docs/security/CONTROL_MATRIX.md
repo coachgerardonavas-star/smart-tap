@@ -1,6 +1,6 @@
 # Smart Tap — Glasswing Shield v1.0 control matrix
 
-Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-044/D-045 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc` with the app running locally against H. There is no production environment yet.
+Revision: branch `codex/customer-styles`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-046/D-048 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc`; P = existing Render service. Customer styles have not been deployed.
 
 **Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
 
@@ -29,7 +29,7 @@ Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Re
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
-| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts | — |
+| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts; theme enum, 80-char tagline, exactly three 40-char benefits and HTTPS hero URL have app and DB checks | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
 | GS-10 Anti-abuse | Yes | VERIFICADO (H) for check-in; IMPLEMENTADO NO VERIFICADO for login/recovery | DB counters (multi-instance safe); login/recovery rely on Supabase Auth limits | Confirm Auth rate limits in dashboard |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
@@ -47,7 +47,7 @@ Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Re
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
-| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile resolves http-cache-semantics@4.3.0; strict npm audit reports 0 vulnerabilities; D-023 exception removed | — |
+| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile resolves http-cache-semantics@4.3.0 and eight local latin variable-font packages; strict npm audit reports 0 vulnerabilities; D-023 exception removed | — |
 | GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; Follow-up Queue PR run 37174554236 passed | — |
 | GS-28 Secure Build Gate | Yes | PENDIENTE | verify workflow is blocking only with branch protection | Enable branch protection on main |
 | GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
@@ -68,7 +68,7 @@ Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Re
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path, including cancellation and CSV export, requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; customer queries filter business_id + id; terms function rejects acceptance for another business | — |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
-| GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
+| GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; PGlite rejects invalid theme, partial benefits and non-HTTPS hero URL; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
 | GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Name, phone, birthday and WhatsApp consent are confidential PII; follow-up kind/status are internal operational data | Add handling rules to production privacy notice |
@@ -77,7 +77,7 @@ Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Re
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 108/108 permanent tests; hosted prior flows; D-044/D-045 migration, RLS, version and export tests; exact 390×844 privacy and terms captures | Hosted D-044/D-045 after migration |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 121/121 permanent tests; hosted prior flows; D-044/D-045 migration, RLS, version and export tests; D-046/D-048 validation, contrast, migration and route tests; nine customer-style captures | Hosted D-046/D-048 after Reviewer migration |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -130,3 +130,10 @@ Revision: branch `codex/privacy-notice`, 2026-10-04. Prepared by Claude Code (Re
 - GS-41: acceptance is POST-only and remains under Astro's same-origin check; the unchecked box is required.
 - GS-51: cancellation retention now matches D-045: CSV for 30 days, purge after 90 days. PGlite preserves day-31 data and purges day-91 data.
 - GS-56: clean-install gate passed 108/108 tests, zero diagnostics, complete build and strict audit with zero vulnerabilities; both 390×844 captures were visually checked. Migration remains unapplied for Reviewer inspection.
+
+## Update 2026-10-04 (Builder, D-046/D-048 customer styles)
+
+- GS-08 / GS-47: app and database checks constrain theme, tagline, benefits and HTTPS hero URL; invalid values were rejected in unit and PGlite tests.
+- GS-12: local fonts stay on the existing same-origin policy; hero images use the existing HTTPS image allowance. The CSP was not widened.
+- GS-26: eight `@fontsource-variable` packages provide local latin WOFF2 assets; clean install and strict production audit found 0 vulnerabilities.
+- GS-56: final local gate passed 121/121 with zero diagnostics and a complete build. Eight 390×844 captures prove Nombre remains in the first viewport; one 1440×900 capture proves the desktop two-column layout.

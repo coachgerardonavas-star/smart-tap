@@ -18,4 +18,12 @@ describe("business update audit details", () => {
     expect(route).toContain("details: { changedFields }");
     expect(route).not.toMatch(/details:\s*\{[^}]*updates/);
   });
+
+  it("includes the customer style fields in the audited update", () => {
+    const route = readFileSync(join(process.cwd(), "src/pages/api/admin/business/[id]/update.ts"), "utf8");
+    for (const field of ["theme", "tagline", "benefits", "hero_image_url"]) {
+      expect(route).toContain(field);
+    }
+    expect(route).toContain("changedFieldNames(current, updates)");
+  });
 });

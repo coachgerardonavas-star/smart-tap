@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after aligning D-044 with D-045, fixing the Reviewer findings and implementing D-045 on `codex/privacy-notice`.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-046 and D-048 on `codex/customer-styles` without deployment.
 
 ## Project identity
 
@@ -8,25 +8,26 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after aligning D-044 with D-045,
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
-- **CEO-approved commercial/product decisions D-025 through D-046:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md` and `docs/TERMS_OF_SERVICE.md`.
+- **CEO-approved commercial/product decisions D-025 through D-048:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
 
 ## Branches — which one is current
 
 | Branch | State |
 |---|---|
-| `main` | Reviewed onboarding MVP at merge `a9ebc37`; PR #3 is merged. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
+| `main` | Includes merged PR #5 at `19e3260`; Render deploy evidence is recorded on the reviewed base. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
-| `codex/privacy-notice` | **Current Builder branch and PR #4.** Implements D-044 and D-045, including the three export/cancellation fixes requested by the Reviewer. Migration `20261004190428_privacy_notice.sql` remains unapplied for Reviewer inspection. |
+| `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
+| `codex/customer-styles` | **Current Builder branch and PR #6.** Starts at Reviewer-approved `534da86`; implementation commit `ad2d0eb` adds the four D-046/D-048 customer styles. Migration `20261004212542_customer_styles.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
 Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`.
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -40,7 +41,7 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 108/108 tests and a complete standalone Node build.
+Current local gate on `codex/customer-styles`: `npm ci` installed 334 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 121/121 tests and a complete standalone Node build.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04
 
@@ -130,7 +131,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` installed 326 packages an
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Reviewer: inspect and apply `20261004190428_privacy_notice.sql`, then run the hosted D-044/D-045 privacy, retention, export and terms-acceptance smoke before real customer data.
+- Reviewer: inspect and apply `20261004212542_customer_styles.sql`, then run the hosted D-046/D-048 admin and capture smoke. The earlier privacy/terms migrations are already live under the names listed above.
 - Physical NFC writing.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
@@ -164,14 +165,20 @@ Builder follow-up complete: NFC page polish, changed-field audit, exact 390×844
 
 PR #3 merged to main (a9ebc37). Next: custom SMTP done on the test project; privacy notice approved (D-044), Builder implements it on `codex/privacy-notice` from `claude/launch-prep`.
 
-## Pending — customer-facing visual design (CEO, 2026-10-04, D-046)
+## Customer-facing visual design — Builder implementation (2026-10-04, D-046/D-048)
 
-The CEO wants each business's NFC screens (welcome, registration, confirmation) to look branded and attractive, like an early ChatGPT mockup (photo-led hero, business logo, tagline, benefit list with icons, branded inputs, celebratory "¡Listo!" confirmation), instead of a plain white page.
+The four approved styles are implemented for `/b/[slug]` and `/demo/capture`: `elegante`, `calido`, `moderno` and `colorido`. Each uses the approved colors, type families and radii with one combined hero/form page.
 
-Decision D-046: **customizable styles, not bespoke design per client.** 3–4 styles are designed once (e.g. dark elegant, warm light, modern, colorful family), approved by the CEO, built once by the Builder. At onboarding each business gets a style plus its logo, colors, hero photo, tagline and benefits — data only, no per-client code. Configuring a client takes minutes and support changes stay simple (D-027).
+`public.businesses` receives `theme`, `tagline`, `benefits` and `hero_image_url` through the single unapplied migration `20261004212542_customer_styles.sql`. The admin validates and audits all four values. A null benefits array uses the three approved defaults.
 
-Route: design the styles with Claude Design → CEO approval → Builder implements as a theme system with new admin fields. Scheduled after the privacy/terms PR.
+The capture component computes black or white button text from WCAG relative luminance. Exhaustive sampled-color coverage proves a ratio of at least 4.5:1. Hero images have explicit dimensions and a solid fallback. The CSP was not widened.
 
-Constraints every style must keep: WhatsApp box unchecked and optional (D-042); no SMS; privacy acceptance separate from marketing; no visit-reward counter unless a rewards feature is approved and built; Instagram/social links only if added as a configured field; images optimized for fast load on mobile data; Nombre visible without scroll at 390×844; contrast readable in sunlight.
+The eight mobile captures and one desktop capture are under `docs/evidence/customer-*.png`. Measured at 390×844: Nombre input bottom is 417 px (elegante), 425 px (calido), 414 px (moderno) and 425 px (colorido); hero height is 209–221 px. All are inside the first viewport and below the 360 px hero limit.
+
+The exact consent, birthday and WhatsApp text remains unchanged; WhatsApp stays optional and unchecked. Confirmation uses the three exact approved lines and displays the Google review link only when configured. Fonts use eight local latin variable packages; the rendered page references only the two families assigned to its selected style.
+
+No Supabase migration, `db push`, deploy or hosted-data change ran in this Builder task. Claude Code must review and apply `20261004212542_customer_styles.sql` before hosted tests.
+
+PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`, open from `codex/customer-styles` to `main`, with no merge or deploy. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
 
 Reviewer pass on PR #4 complete (see VERIFICATION): migrations `20261004190428_privacy_notice` and `20261004190717_terms_acceptances_write_via_function_only` live; PR #4 approved, awaiting CEO merge.
