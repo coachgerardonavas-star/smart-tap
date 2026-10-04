@@ -278,7 +278,7 @@ The smoke ran on `face24b`; the subsequent fast-forward to `0eb3b6d` changed onl
 
 Branch: `codex/onboarding-config`, created from `main` after confirming merge `7a6310a` for PR #1.
 
-Migration `20261004190000_onboarding_config.sql` ran only in PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
+Migration `20261004130503_onboarding_config.sql` ran only in PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
 
 | Requirement | Result | Evidence |
 |---|---|---|
@@ -300,3 +300,24 @@ Commands and results:
 - `npm run audit:prod`: strict production audit, 0 vulnerabilities.
 - `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 75/75 tests; standalone Node build complete.
 - GitHub Actions run `37203888837`: `verify` passed in 35 seconds for PR #3 implementation commit `4f864d7`.
+
+## Reviewer: PR #3 onboarding configuration — 2026-10-04
+
+Reviewed `b885958`. Code matches `docs/ONBOARDING_CONFIG.md`; `npm run audit:prod` 0 vulnerabilities; `npm run verify` 0 diagnostics, 75/75.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004130503_onboarding_config` (file renamed to that live version). Hosted checks in a rolled-back block:
+
+| Check | Result |
+|---|---|
+| Café Luna after migration | active and approved |
+| New business default | inactive |
+| Activate without approval | rejected by `businesses_activation_requires_approval_check` |
+| Third active member / reactivation with 2 active | `active_member_limit` / `active_member_limit` |
+| Pausing a member frees a slot | yes |
+| Approval with missing offers, logo or review URL | `approval_configuration_incomplete` |
+| Review URL on another host | rejected by `businesses_google_review_url_check` |
+| Approval complete, then activation | active; 1 `business.owner_approved` audit row |
+| authenticated / anon execute the new functions | false / false |
+| Security advisor | only the known leaked-password WARN |
+
+Residual (accepted for MVP): an approval stays valid if the admin later edits offers or branding; those edits are normal support changes (D-027). The next Builder task adds the changed field names to the `business.updated` audit row so every post-approval change is traceable.

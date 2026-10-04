@@ -51,7 +51,7 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - Kept the inactivity threshold per business and changed its admin label to state that the owner defines it.
 - New businesses default to inactive. Activation has an app check plus a database constraint requiring recorded owner approval. The approval function checks branding, four offers, inactivity days, Google Review URL and an active member, then writes the approval and audit row atomically. The migration preserves already active rows such as Café Luna.
 - Updated `docs/NFC_OPERATIONS.md` to specify two Smart Tap capture tags and one direct Google Review tag.
-- New migration: `20261004190000_onboarding_config.sql`. It has not been applied to hosted Supabase and no `db push` ran; the Reviewer applies and may rename it to the live version.
+- New migration: `20261004130503_onboarding_config.sql`. It has not been applied to hosted Supabase and no `db push` ran; the Reviewer applies and may rename it to the live version.
 - Targeted gate: 58/58 tests. Final local gate: 75/75 tests, zero Astro diagnostics, complete build and zero production audit findings.
 - PR #3: `https://github.com/coachgerardonavas-star/smart-tap/pull/3`, open from `codex/onboarding-config` to `main`, non-draft and mergeable. GitHub Actions run `37203888837` passed `verify` for implementation commit `4f864d7`.
 
@@ -97,7 +97,7 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
-- Reviewer: inspect the onboarding branch and apply `20261004190000_onboarding_config.sql` to hosted Supabase only after approving its SQL.
+- Reviewer: inspect the onboarding branch and apply `20261004130503_onboarding_config.sql` to hosted Supabase only after approving its SQL.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
 - Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
@@ -121,3 +121,7 @@ PR #1 is merged. All new work starts from updated `main`, uses a feature branch 
 - `TRUSTED_IP_HEADER=x-forwarded-for` is set in the blueprint. The production smoke test must confirm the rate-limit identity is the visitor's IP (two phones on different networks are limited independently) before the first client goes live; if the domain is proxied through Cloudflare, switch to `cf-connecting-ip` and block direct `onrender.com` traffic.
 - Runbooks: `docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`.
 - Draft PR #2 (`ops/reconcile-live-2026-10-03`) is fully merged into PR #1 and can be closed.
+
+## Reviewer status — PR #3 (2026-10-04)
+
+Onboarding configuration reviewed; migration applied live as `20261004130503_onboarding_config`; hosted checks passed (see VERIFICATION). Next Builder task: NFC page polish + audit detail (see `docs/CODEX_NEXT.md`), then the CEO merges PR #3.
