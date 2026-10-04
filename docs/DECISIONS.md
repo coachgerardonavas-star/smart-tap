@@ -122,3 +122,11 @@ After successful payment, the client completes a mandatory onboarding form. Auto
 ## D-030 — Production host: Render (CEO, 2026-10-03)
 
 Render Web Service (Virginia, `0.5c-512mb`, paid tier because the free tier sleeps and an NFC tap must open immediately), defined in `render.yaml`, Node 22.22.0, domain `smarttap.yourbizupgraded.com`. Supabase stays the backend. Closes the open host choice of D-009. Reviewer conditions: create the service only after PR #1 merges; point it at the production Supabase project of D-024; verify `TRUSTED_IP_HEADER` in the production smoke test.
+
+## D-031 — Owner approval required before activation (CEO, 2026-10-04)
+
+The mandatory onboarding form may be completed by the business owner or an authorized responsible manager. An authorized manager may also participate in the verification session, but Smart Tap must not be activated until the business owner gives final approval.
+
+## D-032 — Base package includes at most two dashboard users (CEO, 2026-10-04)
+
+The base Smart Tap package includes a maximum of 2 business-side dashboard users total. The owner decides who occupies those two slots. The owner may use one slot personally, or may choose not to have a dashboard login and assign both included slots to authorized employees. Pricing/policy for any additional users is not yet approved and must not be invented.
