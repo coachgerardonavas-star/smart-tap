@@ -1,3 +1,5 @@
+import type { CustomerTheme } from "./customer-theme";
+
 export type Business = {
   id: string;
   slug: string;
@@ -18,6 +20,10 @@ export type Business = {
   offer_frequent: string | null;
   offer_new: string | null;
   google_review_url: string | null;
+  theme: CustomerTheme;
+  tagline: string | null;
+  benefits: string[] | null;
+  hero_image_url: string | null;
   owner_approved_at: string | null;
   owner_approved_name: string | null;
   cancelled_at: string | null;

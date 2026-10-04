@@ -1,26 +1,42 @@
 ---
 import Base from "../../layouts/Base.astro";
-import CheckInForm from "../../components/CheckInForm";
+import CustomerCapture from "../../components/CustomerCapture.astro";
+import { customerThemes, defaultCustomerBenefits, isCustomerTheme } from "../../lib/customer-theme";
+
+const requestedTheme = Astro.url.searchParams.get("theme");
+const theme = isCustomerTheme(requestedTheme) ? requestedTheme : "calido";
+const accents = { elegante: "#C9A45C", calido: "#C8412A", moderno: "#FF6A2B", colorido: "#FF6F9E" } as const;
+const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
 ---
-<Base title="Café Luna | Demo de captura" themeColor="#B45309">
-  <div class="demo-bar"><strong>Demostración</strong><span>Este formulario usa datos ficticios y no guarda información.</span><a href="/demo">Volver al panel</a></div>
-  <div class="landing">
-    <section class="business-intro"><div class="logo-mark">C</div><p class="welcome">Bienvenido a</p><h1>Café Luna</h1><p>Registra tu visita en menos de un minuto.</p></section>
-    <section class="form-card"><h2>Cuéntanos quién eres</h2><p class="lead">En tus próximas visitas podremos reconocerte por tu teléfono.</p><CheckInForm client:load demo slug="cafe-luna" tagCode="demo" businessName="Café Luna" primaryColor="#B45309" privacyUrl="/privacy" /></section>
-    <footer>Registro seguro operado por Smart Tap</footer>
+
+<Base title={`Café Luna | Demo ${labels[theme]}`} themeColor={accents[theme]}>
+  <div class="demo-bar">
+    <strong>Demostración</strong>
+    <span>Los datos son ficticios y no se guardan.</span>
+    <form method="get"><label for="theme">Estilo</label><select id="theme" name="theme" onchange="this.form.submit()">
+      {customerThemes.map((value) => <option value={value} selected={value === theme}>{labels[value]}</option>)}
+    </select></form>
+    <a href="/demo">Volver</a>
   </div>
+  <CustomerCapture
+    demo
+    slug="cafe-luna"
+    tagCode="demo"
+    businessName="Café Luna"
+    primaryColor={accents[theme]}
+    privacyUrl="/privacy"
+    theme={theme}
+    tagline="Café de barrio, momentos que se quedan."
+    benefits={[...defaultCustomerBenefits]}
+    googleReviewUrl="https://g.page/r/example/review"
+  />
 </Base>
+
 <style>
-  .demo-bar { min-height: 46px; display:flex; justify-content:center; align-items:center; gap:18px; padding:10px 20px; background:#1c1917; color:#fff; font-size:.82rem; } .demo-bar span{color:#d6d3d1}.demo-bar a{color:#fbbf24;font-weight:750}
-  .landing { min-height:calc(100vh - 46px); display:grid; place-items:center; grid-template-columns:minmax(260px,430px) minmax(340px,470px); gap:24px; padding:45px 22px 25px; background:linear-gradient(145deg,#fff7ed,#fafaf9 54%,#f5f5f4); }
-  .business-intro{padding:30px}.logo-mark{width:78px;height:78px;display:grid;place-items:center;margin-bottom:30px;border-radius:20px;background:#b45309;color:#fff;font-size:2.3rem;font-weight:900}.welcome{color:#b45309;font-weight:800;margin-bottom:8px}.business-intro h1{font-size:clamp(2.7rem,7vw,4.5rem);color:#1c1917;margin-bottom:17px}.business-intro>p:last-child{color:#57534e;font-size:1.08rem}
-  .form-card{width:100%;padding:32px;border:1px solid #e7e5e4;border-radius:22px;background:#fffffff0;box-shadow:0 25px 70px #1c19171f}.form-card h2{margin-bottom:7px;font-size:1.55rem}.lead{color:#78716c;font-size:.9rem;margin-bottom:24px}footer{grid-column:1/-1;color:#a8a29e;font-size:.75rem}
-  @media(max-width:780px){
-    .demo-bar{min-height:40px;padding:8px 14px}.demo-bar span{display:none}
-    .landing{grid-template-columns:1fr;align-content:start;gap:12px;padding:16px 14px 22px}
-    .business-intro{padding:4px 12px;text-align:center}
-    .logo-mark{width:56px;height:56px;margin:0 auto 8px;border-radius:16px}
-    .welcome{margin-bottom:2px;font-size:.8rem}.business-intro h1{margin-bottom:4px;font-size:2.15rem}.business-intro>p:last-child{font-size:.9rem}
-    .form-card{padding:25px 21px}
-  }
+  .demo-bar { min-height: 48px; display: flex; justify-content: center; align-items: center; gap: 16px; padding: 6px 18px; background: #1c1917; color: #fff; font-size: .82rem; }
+  .demo-bar span { color: #d6d3d1; }
+  .demo-bar form { display: flex; align-items: center; gap: 7px; margin: 0; }
+  .demo-bar select { min-height: 36px; padding: 5px 30px 5px 9px; border: 1px solid #57534e; border-radius: 7px; background: #292524; color: #fff; }
+  .demo-bar a { color: #fbbf24; font-weight: 750; }
+  @media (max-width: 620px) { .demo-bar { min-height: 48px; justify-content: space-between; gap: 8px; padding: 6px 10px; } .demo-bar span, .demo-bar form label { display: none; } }
 </style>

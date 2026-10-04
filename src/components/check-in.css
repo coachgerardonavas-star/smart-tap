@@ -1,22 +1,139 @@
+.customer-screen {
+  --display-font: ui-serif, Georgia, serif;
+  --body-font: ui-sans-serif, system-ui, sans-serif;
+  width: 100%; min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 540px);
+  font-family: var(--body-font); color: #1e1a15; background: #faf6ee;
+}
+.brand-hero { position: relative; min-height: 100vh; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: 30px; padding: clamp(34px, 5vw, 72px); isolation: isolate; }
+.hero-image { position: absolute; inset: 0; z-index: -3; width: 100%; height: 100%; object-fit: cover; }
+.hero-overlay { position: absolute; inset: 0; z-index: -2; background: var(--hero-background); }
+.brand-lockup { display: flex; align-items: center; gap: 14px; }
+.brand-mark { width: 64px; height: 64px; flex: none; display: grid; place-items: center; object-fit: contain; overflow: hidden; }
+.brand-mark.initials { background: var(--brand-color); color: var(--brand-label); font-family: var(--display-font); font-size: 1.35rem; font-weight: 800; }
+.brand-mark.logo { background: #fff; }
+.brand-text { min-width: 0; display: grid; gap: 2px; }
+.brand-text strong, .confirmation-brand strong { font-family: var(--display-font); font-size: clamp(1.55rem, 3vw, 2.5rem); line-height: 1; }
+.brand-text span { font-size: .9rem; }
+.hero-copy { display: grid; gap: 22px; }
+.hero-copy h1 { max-width: 650px; margin: 0; font-family: var(--display-font); font-size: clamp(2.5rem, 5vw, 4.8rem); line-height: .98; }
+.hero-copy ul { max-width: 520px; display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.hero-copy li { min-height: 48px; display: flex; align-items: center; gap: 14px; border-top: 1px solid currentColor; font-size: 1rem; }
+.hero-copy li:last-child { border-bottom: 1px solid currentColor; }
+.hero-copy li span { color: var(--brand-color); font-family: var(--display-font); font-weight: 800; }
+
+.form-panel { min-height: 100vh; padding: clamp(34px, 5vw, 64px); background: var(--form-background); color: var(--form-text); }
+.form-heading { margin-bottom: 24px; }
+.form-heading h2 { margin: 0 0 7px; font-family: var(--display-font); font-size: clamp(2rem, 4vw, 3rem); line-height: 1; }
+.form-heading p { margin: 0; color: var(--muted-text); }
 .checkin-form { display: grid; gap: 18px; }
 .checkin-form .field { display: grid; gap: 7px; }
-.checkin-form .field label { color: #292524; font-size: .9rem; font-weight: 750; }
+.checkin-form .field label { color: var(--form-text); font-size: .88rem; font-weight: 700; }
 .checkin-form .field input {
-  width: 100%; min-height: 50px; padding: 11px 13px; border: 1px solid #d6d3d1;
-  border-radius: 11px; background: #fff; color: #1c1917; font: inherit; outline: none;
+  width: 100%; min-height: 50px; padding: 11px 14px; border: var(--field-border-width, 1px) solid var(--field-border);
+  border-radius: var(--field-radius); background: #fff; color: var(--form-text); font: inherit; outline: none;
 }
-.checkin-form .field input:focus { border-color: var(--brand-color, #155eef); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-color, #155eef) 14%, transparent); }
-.checkin-form .hint, .privacy-note { color: #78716c; font-size: .78rem; line-height: 1.45; }
-.checkin-form .optional { color: #78716c; font-weight: 500; }
-.checkin-form .consent { display: grid; grid-template-columns: 20px 1fr; gap: 10px; color: #57534e; font-size: .83rem; line-height: 1.48; }
-.checkin-form .consent input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--brand-color, #155eef); }
-.checkin-form button { min-height: 52px; border: 0; border-radius: 12px; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+.checkin-form .field input:focus { border-color: var(--brand-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-color) 18%, transparent); }
+.checkin-form .hint, .privacy-note { color: var(--muted-text); font-size: .78rem; line-height: 1.45; }
+.checkin-form .optional { color: var(--muted-text); font-weight: 500; }
+.checkin-form .consent { min-height: 44px; display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; color: var(--consent-text); font-size: .83rem; line-height: 1.48; }
+.checkin-form .consent input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--brand-color); }
+.checkin-form button { min-height: 56px; border: 0; border-radius: var(--button-radius); background: var(--brand-color); color: var(--brand-label); font-family: var(--display-font); font-size: var(--button-size, 1.1rem); font-weight: 800; cursor: pointer; }
 .checkin-form button:disabled { opacity: .6; cursor: wait; }
-.checkin-form .form-alert { padding: 12px 14px; border-radius: 10px; background: #fef3f2; color: #b42318; font-size: .86rem; }
-.checkin-form .privacy-note { text-align: center; margin: -5px 0 0; }
+.checkin-form .form-alert { padding: 12px 14px; border-radius: var(--field-radius); background: #fef3f2; color: #b42318; font-size: .86rem; }
+.checkin-form .privacy-note { margin: -4px 0 0; text-align: center; }
 .honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-.confirmation { padding: 18px 4px 8px; text-align: center; }
-.confirmation .check { width: 62px; height: 62px; display: grid; place-items: center; margin: 0 auto 24px; border-radius: 50%; color: #fff; font-size: 1.7rem; font-weight: 900; }
-.confirmation h2 { font-size: 1.8rem; margin-bottom: 10px; }
-.confirmation p { color: #57534e; line-height: 1.55; }
-.confirmation .small { color: #a8a29e; font-size: .82rem; }
+
+.confirmation-screen { position: relative; min-height: 100vh; grid-template-columns: 1fr; overflow: hidden; align-content: start; justify-items: center; padding: clamp(30px, 7vw, 68px); text-align: center; color: var(--confirmation-text); background: var(--confirmation-background); }
+.confirmation-brand { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.confirmation-brand .brand-mark { width: 42px; height: 42px; }
+.confirmation-brand strong { font-size: 1.55rem; }
+.confirmation { position: relative; z-index: 1; width: min(100%, 560px); display: grid; justify-items: center; gap: 16px; margin-top: clamp(62px, 12vh, 125px); }
+.confirmation .check { width: 116px; height: 116px; display: grid; place-items: center; border-radius: var(--check-radius); background: var(--check-background); color: var(--check-color); }
+.confirmation .check svg { width: 58px; height: 58px; }
+.confirmation h1 { margin: 8px 0 0; font-family: var(--display-font); font-size: clamp(4rem, 10vw, 6rem); line-height: .95; }
+.confirmation h2 { margin: 0; font-family: var(--display-font); font-size: clamp(1.35rem, 4vw, 2rem); line-height: 1.15; }
+.confirmation p { max-width: 320px; margin: 0; font-size: 1rem; line-height: 1.5; }
+.review-link { position: relative; z-index: 1; width: min(100%, 520px); min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; padding: 12px 18px; border: var(--review-border); border-radius: var(--button-radius); background: var(--review-background); color: var(--review-text); font-weight: 700; text-decoration: none; }
+.review-link svg { width: 21px; height: 21px; flex: none; }
+.confirmation-shape { display: none; position: absolute; border-radius: 999px; }
+
+.theme-elegante {
+  --display-font: 'Cormorant Garamond Local', Georgia, serif; --body-font: 'Jost Local', sans-serif;
+  --hero-background: linear-gradient(180deg, rgba(21,18,15,.48), #15120f 86%); --form-background: #faf6ee; --form-text: #1e1a15;
+  --muted-text: #5b5248; --consent-text: #3a332c; --field-border: #d8cdbb; --field-radius: 12px; --button-radius: 14px;
+  --confirmation-background: #faf6ee; --confirmation-text: #1e1a15; --check-background: var(--brand-color); --check-color: var(--brand-label); --check-radius: 999px;
+  --review-background: transparent; --review-text: #1e1a15; --review-border: 1.5px solid #1e1a15; --button-size: 1.45rem;
+}
+.theme-elegante .brand-hero { color: #f3ede2; background: #2a231c; }
+.theme-elegante .brand-mark { border: 1.5px solid var(--brand-color); border-radius: 999px; }
+.theme-elegante .brand-text span { color: #e6dccb; font-style: italic; }
+
+.theme-calido {
+  --display-font: 'Bricolage Grotesque Local', sans-serif; --body-font: 'DM Sans Local', sans-serif;
+  --hero-background: linear-gradient(180deg, color-mix(in srgb, var(--brand-color) 94%, #000), color-mix(in srgb, var(--brand-color) 84%, #2b1e16));
+  --form-background: #fdf1d6; --form-text: #2b1e16; --muted-text: #6a5845; --consent-text: #3d2d21;
+  --field-border: #e5c98f; --field-border-width: 1.5px; --field-radius: 16px; --button-radius: 999px; --button-size: 1.2rem;
+  --confirmation-background: var(--brand-color); --confirmation-text: var(--brand-label); --check-background: #fff; --check-color: #111; --check-radius: 40px;
+  --review-background: #fff; --review-text: #111; --review-border: 0;
+}
+.theme-calido .brand-hero { color: var(--brand-label); background: var(--brand-color); }
+.theme-calido .brand-mark { border-radius: 18px; background: #fff; color: #111; }
+.theme-calido .hero-copy li { margin-top: 9px; padding: 0 14px; border: 0; border-radius: 16px; background: #fff; color: #2b1e16; }
+.theme-calido .hero-copy li:last-child { border: 0; }
+
+.theme-moderno {
+  --display-font: 'Archivo Local', sans-serif; --body-font: 'IBM Plex Sans Local', sans-serif;
+  --hero-background: linear-gradient(180deg, rgba(14,14,16,.35), #0e0e10 88%); --form-background: #fff; --form-text: #111113;
+  --muted-text: #55555c; --consent-text: #2a2a2e; --field-border: #111113; --field-border-width: 1.5px; --field-radius: 4px;
+  --button-radius: 4px; --button-size: 1.05rem; --confirmation-background: #0e0e10; --confirmation-text: #f5f5f7;
+  --check-background: var(--brand-color); --check-color: var(--brand-label); --check-radius: 0;
+  --review-background: transparent; --review-text: #f5f5f7; --review-border: 1.5px solid #f5f5f7;
+}
+.theme-moderno .brand-hero { color: #f5f5f7; background: #26262b; text-transform: uppercase; }
+.theme-moderno .brand-mark { border-radius: 0; }
+.theme-moderno .brand-text span { color: #c6c6cc; text-transform: none; }
+.theme-moderno .hero-copy h1, .theme-moderno .form-heading h2 { letter-spacing: -.02em; }
+.theme-moderno .hero-copy li span { letter-spacing: .08em; }
+.theme-moderno .checkin-form label, .theme-moderno .checkin-form button { letter-spacing: .06em; }
+
+.theme-colorido {
+  --display-font: 'Baloo 2 Local', sans-serif; --body-font: 'Nunito Local', sans-serif;
+  --hero-background: rgba(255,227,236,.90); --form-background: #fff; --form-text: #3a1240; --muted-text: #6b4f67;
+  --consent-text: #4a2a47; --field-border: #f4c3d6; --field-border-width: 2px; --field-radius: 18px; --button-radius: 20px; --button-size: 1.35rem;
+  --confirmation-background: #ffd23f; --confirmation-text: #3a1240; --check-background: #3a1240; --check-color: #ffd23f; --check-radius: 999px;
+  --review-background: #fff; --review-text: #3a1240; --review-border: 0;
+}
+.theme-colorido .brand-hero { color: #3a1240; background: #ffe3ec; }
+.theme-colorido .brand-hero::before, .theme-colorido .brand-hero::after { content: ''; position: absolute; z-index: -1; border-radius: 999px; }
+.theme-colorido .brand-hero::before { width: 260px; height: 260px; top: -95px; right: -70px; background: #ffd23f; }
+.theme-colorido .brand-hero::after { width: 190px; height: 190px; bottom: 80px; left: -100px; background: #2ec4b6; }
+.theme-colorido .brand-mark { border-radius: 22px; }
+.theme-colorido .hero-copy li { margin: 4px 0; padding: 0 14px; border: 0; border-radius: 999px; background: #fff; }
+.theme-colorido .hero-copy li:last-child { border: 0; }
+.theme-colorido .confirmation-shape { display: block; }
+.theme-colorido .confirmation-shape-one { width: 190px; height: 190px; right: -70px; bottom: 90px; background: #2ec4b6; }
+.theme-colorido .confirmation-shape-two { width: 110px; height: 110px; left: -50px; top: 160px; background: var(--brand-color); }
+
+@media (max-width: 780px) {
+  .customer-screen { min-height: 100vh; grid-template-columns: 1fr; }
+  .brand-hero { min-height: 0; max-height: 280px; padding: 16px 20px 18px; gap: 12px; }
+  .brand-mark { width: 48px; height: 48px; }
+  .brand-text strong { font-size: 1.55rem; }
+  .brand-text span { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+  .hero-copy { gap: 9px; }
+  .hero-copy h1 { max-width: none; font-size: 1.65rem; line-height: 1; }
+  .hero-copy ul { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hero-copy li { min-height: 34px; flex: 1 1 145px; padding: 5px 8px; border: 1px solid currentColor; border-radius: 8px; font-size: .76rem; line-height: 1.15; }
+  .hero-copy li:last-child { border: 1px solid currentColor; }
+  .hero-copy li span { font-size: .68rem; }
+  .form-panel { min-height: 0; padding: 18px 20px 30px; }
+  .form-heading { margin-bottom: 15px; }
+  .form-heading h2 { margin-bottom: 3px; font-size: 1.75rem; }
+  .form-heading p { font-size: .83rem; }
+  .checkin-form { gap: 16px; }
+  .confirmation-screen { min-height: 100vh; padding: 28px 24px 30px; }
+  .confirmation { margin-top: 72px; }
+  .confirmation .check { width: 112px; height: 112px; }
+  .confirmation h1 { font-size: 4rem; }
+  .review-link { margin-top: auto; }
+}

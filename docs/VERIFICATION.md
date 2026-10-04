@@ -508,3 +508,39 @@ Verdict: **PR #4 approved by the Reviewer.** The CEO merges.
 | DMARC | `_dmarc` CNAME to `dmarc.ionos.com` (`p=none`) was proxied, so TXT did not resolve; set to DNS only, now resolves |
 
 Pending on the deployed app: click-through of the recovery button, the IP-identity check for rate limits (two phones on different networks), and physical NFC tests. The app uses the test Supabase project until the first client (D-047).
+
+## D-046 / D-048 customer styles — ChatGPT Codex, 2026-10-04
+
+Target: local branch `codex/customer-styles` from `origin/claude/deploy-evidence` at `534da86`. No deploy, Supabase migration or `db push` ran.
+
+### Automated gate
+
+| Check | Result |
+|---|---|
+| `npm ci` | 334 packages installed; 0 vulnerabilities |
+| `npm run audit:prod` | 0 vulnerabilities |
+| `npm run verify` | 0 Astro errors, warnings or hints; 13 files and 121/121 tests; standalone Node build complete |
+| Database migration | All migrations, including `20261004203000_customer_styles.sql`, ran in PGlite; valid style data saved; invalid theme, partial benefits and HTTP hero URL were rejected |
+| Button contrast | Sampled 4,096 RGB colors; computed black/white label reached at least 4.5:1 for every sample |
+| Fixed body palettes | Every approved foreground/background pair tested at 4.5:1 or higher |
+| Approved copy | Exact birthday, required consent, optional WhatsApp and confirmation strings covered; WhatsApp input has no `checked` state |
+| Font delivery | Latin WOFF2 assets come from local `@fontsource-variable` packages; page CSS emits only the selected style's two families; no Google Fonts or CSP change |
+
+### Viewport and visual evidence
+
+The repeatable CDP runner is `scripts/capture-customer-styles.mjs`. It uses the production demo component, submits the real React form in demo mode and captures the resulting confirmation state.
+
+| Style | Nombre input bottom at 390×844 | Hero height | Form capture | Confirmation capture |
+|---|---:|---:|---|---|
+| elegante | 417 px | 209 px | `docs/evidence/customer-elegante-form-390x844.png` | `docs/evidence/customer-elegante-confirmation-390x844.png` |
+| calido | 425 px | 221 px | `docs/evidence/customer-calido-form-390x844.png` | `docs/evidence/customer-calido-confirmation-390x844.png` |
+| moderno | 414 px | 209 px | `docs/evidence/customer-moderno-form-390x844.png` | `docs/evidence/customer-moderno-confirmation-390x844.png` |
+| colorido | 425 px | 219 px | `docs/evidence/customer-colorido-form-390x844.png` | `docs/evidence/customer-colorido-confirmation-390x844.png` |
+
+Desktop evidence: `docs/evidence/customer-elegante-form-1440x900.png`, with hero and form side by side. All nine images were opened and visually checked. The review link appears in the confirmation captures because the demo config includes a valid Google Review URL; source and regression coverage confirm it is omitted when the value is null.
+
+### Data and admin path
+
+- One migration adds `theme`, `tagline`, `benefits` and `hero_image_url` with database checks. It remains unapplied.
+- `/admin/[id]` exposes all fields. The existing update route validates them, updates the row and includes their database column names in `business.updated.details.changedFields`.
+- `/b/[slug]` and `/demo/capture` both render `CustomerCapture.astro`; the demo can select all four styles.

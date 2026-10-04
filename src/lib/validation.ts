@@ -1,6 +1,7 @@
 import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
 import { isAtLeastMinimumAge } from "./privacy";
+import { customerThemes } from "./customer-theme";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
@@ -30,6 +31,25 @@ const optionalUrlSchema = z.preprocess(
 const optionalOfferSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : value,
   z.union([z.literal(""), z.string().min(1).max(200)]),
+).transform((value) => value || null);
+const optionalTaglineSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.string().min(1).max(80)]),
+).transform((value) => value || null);
+const optionalBenefitItemSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.string().min(1).max(40)]),
+);
+const optionalHttpsUrlSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.url().max(500).refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }, "La URL debe usar HTTPS.")]),
 ).transform((value) => value || null);
 const googleReviewHosts = new Set(["g.page", "search.google.com", "www.google.com", "maps.app.goo.gl"]);
 export const googleReviewUrlSchema = z.preprocess(
@@ -93,7 +113,21 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
   offerFrequent: optionalOfferSchema,
   offerNew: optionalOfferSchema,
   googleReviewUrl: googleReviewUrlSchema,
-});
+  theme: z.preprocess((value) => typeof value === "string" ? value : "calido", z.enum(customerThemes)),
+  tagline: optionalTaglineSchema,
+  benefit1: optionalBenefitItemSchema,
+  benefit2: optionalBenefitItemSchema,
+  benefit3: optionalBenefitItemSchema,
+  heroImageUrl: optionalHttpsUrlSchema,
+}).superRefine((value, context) => {
+  const benefits = [value.benefit1, value.benefit2, value.benefit3];
+  if (benefits.some(Boolean) && !benefits.every(Boolean)) {
+    context.addIssue({ code: "custom", path: ["benefit1"], message: "Completa los tres beneficios o deja los tres vacíos." });
+  }
+}).transform(({ benefit1, benefit2, benefit3, ...value }) => ({
+  ...value,
+  benefits: benefit1 && benefit2 && benefit3 ? [benefit1, benefit2, benefit3] : null,
+}));
 
 export const ownerApprovalSchema = z.object({ ownerName: z.string().trim().min(2).max(120) });
 
