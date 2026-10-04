@@ -171,3 +171,7 @@ At purchase, the client pays **$278 total**: $199 setup + the first $79 monthly 
 ## D-042 — WhatsApp consent stays optional and prominent (CEO, 2026-10-04)
 
 Replaces D-035. The WhatsApp box stays separate, optional and unchecked, as implemented and verified under D-021; a visit is registered without it. Its label leads with the customer benefit (offers, birthday gifts) and names the business. Reasons: consent obtained as a condition of registration is lower quality, invites fake numbers, and raises spam reports that can get the business's WhatsApp number restricted; marketing-consent rules (TCPA, Florida FTSA) expect voluntary consent. The Reviewer flagged the legal point as unverified, not as legal advice. Customers without consent appear in the follow-up queue without a WhatsApp button.
+
+## D-043 — Branch protection deferred (CEO, 2026-10-04)
+
+The repository is private on GitHub Free, where protected branches are not available. The CEO chose not to buy GitHub Pro yet. Until then `main` has no technical protection: every agent still works through pull requests with the `verify` check green and never pushes to `main` directly (AGENTS.md). Accepted risk for GS-28/GS-30; revisit at the first signed client or when another person gets write access.
