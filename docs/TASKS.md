@@ -21,11 +21,15 @@
 - [x] Add one-visit-per-day behavior.
 - [x] Require AAL2 for platform-admin RLS helper.
 - [x] Reconcile live migration history into a separate Git branch for safe review/merge.
+- [x] Choose Render paid Web Service (`0.5c-512mb`, Virginia) as production host.
+- [x] Choose `https://smarttap.yourbizupgraded.com` as production URL.
+- [x] Add reproducible Render Blueprint and pin Node 22.22.0.
 
 ## Production activation remaining
 
-- [ ] Choose production Node-compatible host and final public domain/URL.
-- [ ] Set production environment values/secrets on the host.
+- [ ] Create/connect the Render service from `render.yaml`.
+- [ ] Set production environment values/secrets on Render.
+- [ ] Add/verify the custom domain and DNS CNAME.
 - [ ] Configure Supabase Auth Site URL and allowed redirect URL for the final domain.
 - [ ] Configure custom SMTP before commercial user invitations.
 - [ ] Verify minimum password policy and MFA enrollment flow.

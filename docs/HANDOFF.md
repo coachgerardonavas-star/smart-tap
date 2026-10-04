@@ -77,7 +77,7 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 - Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
 - Owner-defined offer library (D-028) is approved but not built yet; the queue still uses the fixed messages of `docs/FOLLOW_UP_QUEUE.md`.
 
-## Coordination rule
+## Coordination
 
 **Single working branch until PR #1 merges: `codex/live-smoke-mfa`** (CEO instruction, 2026-10-04, supersedes the earlier `claude/mfa-review` instruction). Every agent — Codex, ChatGPT, Claude — commits there; after the merge, all work goes through pull requests to `main`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
 
@@ -86,3 +86,12 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 - Follow-up Queue migration applied live as `20261004035554_follow_up_queue`; hosted DB checks passed (see VERIFICATION).
 - D-024 merged: Supabase Pro and a separate production project at the first signed client.
 - PR #1: approved by the Reviewer for merge once the CEO enables branch protection on `main`. Remaining before real customer data: GS-25, GS-29 (D-024), templates pasted in Supabase, hosted UI smoke of the queue, host/domain, SMTP, privacy notice, physical NFC.
+
+## Production hosting (D-030) — added by ChatGPT, reviewed by Claude Code
+
+- Host: Render Web Service, Virginia, plan `0.5c-512mb` (paid; free tier sleeps), blueprint `render.yaml`, Node `22.22.0` (`.node-version`), URL `https://smarttap.yourbizupgraded.com`.
+- `render.yaml` deploys from `main`. **Do not create the Render service before PR #1 merges**: `main` still has the old code, whose check-in function no longer runs against the database.
+- Per D-024 the production service points at the separate Supabase Pro project created at the first signed client, not at `vrouyhxzxrfkuuqfslrc` (test/demo).
+- `TRUSTED_IP_HEADER=x-forwarded-for` is set in the blueprint. The production smoke test must confirm the rate-limit identity is the visitor's IP (two phones on different networks are limited independently) before the first client goes live; if the domain is proxied through Cloudflare, switch to `cf-connecting-ip` and block direct `onrender.com` traffic.
+- Runbooks: `docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`.
+- Draft PR #2 (`ops/reconcile-live-2026-10-03`) is fully merged into PR #1 and can be closed.

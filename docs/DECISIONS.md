@@ -118,3 +118,7 @@ The business owner defines the set of allowed offers during onboarding. Smart Ta
 ## D-029 — Onboarding starts with form plus verification meeting (CEO, 2026-10-04)
 
 After successful payment, the client completes a mandatory onboarding form. Automate IT then performs a short verification meeting with the owner or responsible manager. That verification may be by phone/video call or in person. Detailed onboarding fields and operating sequence remain under active design in `docs/CLIENT_ONBOARDING.md`.
+
+## D-030 — Production host: Render (CEO, 2026-10-03)
+
+Render Web Service (Virginia, `0.5c-512mb`, paid tier because the free tier sleeps and an NFC tap must open immediately), defined in `render.yaml`, Node 22.22.0, domain `smarttap.yourbizupgraded.com`. Supabase stays the backend. Closes the open host choice of D-009. Reviewer conditions: create the service only after PR #1 merges; point it at the production Supabase project of D-024; verify `TRUSTED_IP_HEADER` in the production smoke test.
