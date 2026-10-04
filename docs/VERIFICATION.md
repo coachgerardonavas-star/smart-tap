@@ -211,4 +211,4 @@ Evidence:
 - opt-out changes the current flag and appends consent plus audit records in one database function;
 - RLS and grants keep follow-up writes and opt-out service-only.
 
-Final local gate: `npm run audit:prod` passed D-023; `npm run verify` reported 0 Astro diagnostics, 63/63 tests and a complete standalone Node build. The synchronized baseline CI passed in GitHub Actions run `37173173020`. Feature CI remains pending until push.
+Final local gate: `npm run audit:prod` passed D-023; `npm run verify` reported 0 Astro diagnostics, 63/63 tests and a complete standalone Node build. The synchronized baseline CI passed in GitHub Actions run `37173173020`. Feature CI passed for commit `48c6e9b` in GitHub Actions run `37174554236`.

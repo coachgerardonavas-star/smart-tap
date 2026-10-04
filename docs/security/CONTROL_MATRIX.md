@@ -26,7 +26,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-03 Robust auth | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | TOTP enrolled and challenged live; signed `aal2` required for all platform-admin data paths; local regressions cover AAL1 denial | — |
 | GS-04 Server authorization | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local Follow-up tests | Follow-up contact, dismiss and opt-out use requireDataAccess + assertBusinessAccess(identity, businessId, false); viewer and AAL1 admin denied | Hosted Follow-up smoke after migration |
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
-| GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37172436364 | — |
+| GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
 | GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164, slug, colors, URLs, birthday, next path | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
@@ -47,7 +47,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
 | GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile and exact versions; fail-closed audit gate permits only GHSA-ch52-4w7c-c8xp on http-cache-semantics@4.2.0 while no patch exists (D-023) | Remove exception when upstream ships a fix |
-| GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; post-merge PR run 37172436364 passed | — |
+| GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; Follow-up Queue PR run 37174554236 passed | — |
 | GS-28 Secure Build Gate | Yes | PENDIENTE | verify workflow is blocking only with branch protection | Enable branch protection on main |
 | GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
 | GS-30 Production control | Yes | PENDIENTE | PR flow defined (D-018) | Branch protection; deploy identity at hosting decision |
@@ -78,7 +78,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
 | GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE | Follow-up rules, time-zone edges, consent, route authorization, IDOR, idempotency, server-built redirect and opt-out have permanent tests | Hosted Follow-up smoke |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
-| GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37172436364 produced the CycloneDX SBOM artifact | — |
+| GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
 | GS-60 Acceptance criteria | Yes | IMPLEMENTADO | This matrix is part of done | — |
 

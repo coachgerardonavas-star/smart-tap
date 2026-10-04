@@ -46,7 +46,7 @@ Previous local gate after the Reviewer merge: `npm run verify` passed with 0 dia
 - `/api/dashboard/follow-up` scopes every customer read by business, recomputes the opportunity and builds the `wa.me` URL only from database values. Authorization errors propagate as 403 through the shared middleware.
 - The explicit opt-out is atomic through `record_whatsapp_opt_out`; it updates the customer and appends consent and audit records.
 - New migration: `20261004030000_follow_up_queue.sql`. It is committed only and has not been applied to hosted Supabase.
-- Local gate passed: 0 diagnostics, 63/63 tests and standalone Node build. `npm run audit:prod` passed D-023. PR CI for the feature commit is pending.
+- Local gate passed: 0 diagnostics, 63/63 tests and standalone Node build. `npm run audit:prod` passed D-023. PR CI passed for feature commit `48c6e9b`: GitHub Actions run `37174554236`, job `verify`.
 
 ## Builder live smoke and cleanup — 2026-10-03
 
