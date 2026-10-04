@@ -109,7 +109,7 @@ The owner defines one approved offer for each follow-up category: inactive custo
 6. Create business in Smart Tap admin.
 7. Configure name, branding, timezone, privacy URL and owner-selected inactivity threshold.
 8. Confirm whether email collection/campaigns are enabled for that business; if yes, configure purpose/consent copy before collection.
-9. Configure the required WhatsApp consent text for that business, explicitly naming the business and documenting the opt-out path.
+9. Configure the optional WhatsApp consent text for that business (D-042), explicitly naming the business and documenting the opt-out path.
 10. Load the four owner-approved category offers.
 11. Create/program two customer-capture NFC tags and one Google Review NFC tag.
 12. Confirm Automate IT's recommended placement and any owner-approved placement changes.
@@ -117,7 +117,7 @@ The owner defines one approved offer for each follow-up category: inactive custo
 14. Confirm invite delivery and account activation.
 15. Copy the exact production URL for each physical tag.
 16. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-17. Run a customer capture test verifying required name + phone, optional birthday, email only when explicitly enabled, and required explicit WhatsApp consent.
+17. Run a customer capture test verifying required name + phone, optional birthday, email only when explicitly enabled, and that the optional WhatsApp box is unchecked by default and not required to register (D-042).
 18. Test the Google Review NFC against the approved business review destination.
 19. Confirm the test customer appears in the correct dashboard.
 20. Confirm follow-up queue behavior for at least one safe test case.
