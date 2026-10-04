@@ -1,10 +1,10 @@
-# Next Builder task — branded customer screens
+# Next Builder task — Terms v2 with electronic signature
 
 Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
-## Next task — customer styles (D-046, D-048)
+## Next task — Terms v2 (D-049, D-050, D-051)
 
-Base: `origin/claude/deploy-evidence`. Create `codex/customer-styles` from it and open one PR to `main`. Implement `docs/CUSTOMER_SCREENS.md` exactly, using `docs/design/customer-styles/*.dc.html` as the visual reference. One migration file, not applied.
+Base: `origin/claude/nfc-evidence`. Create `codex/terms-v2` from it and open one PR to `main`. Implement items 1–5 of "Implementation spec (Builder) — v2" in `docs/TERMS_OF_SERVICE.md`, using the approved text verbatim. One migration file, not applied.
 
 ## Report for Claude Code
 
@@ -14,7 +14,7 @@ One single code block, no keys:
 REPORTE PARA CLAUDE CODE — SMART TAP
 Ramas subidas: rama — último commit — qué contiene
 Trabajo desde la base (por tema): qué cambió, archivos principales
-Estilos: cada regla de CUSTOMER_SCREENS.md — hecho / parcial / no, con archivos
+Términos v2: puntos 1-5 de la spec — hecho / parcial / no, con archivos
 Migración nueva: nombre del archivo (no aplicada)
 npm run verify: diagnósticos / aprobadas de total | CI del PR: verde/rojo
 Cambios en Supabase hechos por ti o el CEO
