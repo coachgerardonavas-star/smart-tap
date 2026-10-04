@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
 import { BodyTooLargeError, hashIdentifier, readJsonLimited, requestIp } from "../../../lib/security";
+import { PRIVACY_NOTICE_VERSION } from "../../../lib/privacy";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
 
 function json(status: number, body: unknown) {
@@ -24,7 +25,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const parsed = checkInInputSchema.safeParse(raw);
   if (!parsed.success) {
     const consentIssue = parsed.error.issues.some((issue) => issue.path[0] === "consent");
-    return json(400, { error: consentIssue ? "Debes aceptar el consentimiento para continuar." : "Revisa los datos del formulario." });
+    const ageIssue = parsed.error.issues.find((issue) => issue.path[0] === "birthday" && issue.message === "Debes tener 13 años o más.");
+    return json(400, { error: consentIssue ? "Debes aceptar el consentimiento para continuar." : ageIssue?.message || "Revisa los datos del formulario." });
   }
 
   try {
@@ -34,6 +36,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       .select("default_country")
       .eq("slug", parsed.data.slug)
       .eq("is_active", true)
+      .is("cancelled_at", null)
       .maybeSingle();
     if (!business) return json(404, { error: "Este negocio no está disponible." });
 
@@ -46,7 +49,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       p_full_name: parsed.data.fullName,
       p_phone_e164: phone,
       p_birthday: parsed.data.birthday || null,
-      p_consent_version: parsed.data.consentVersion,
+      p_consent_version: PRIVACY_NOTICE_VERSION,
       p_whatsapp_opt_in: parsed.data.whatsappOptIn,
       p_ip_hash: hashIdentifier(`ip:${requestIp(request, clientAddress)}`),
       p_phone_hash: hashIdentifier(`phone:${phone}`),

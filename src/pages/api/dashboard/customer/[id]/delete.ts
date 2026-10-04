@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { assertBusinessAccess, requireDataAccess } from "../../../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
+import { assertCurrentTermsAccepted } from "../../../../../lib/terms-access";
 
 export const POST: APIRoute = async ({ request, cookies, params, redirect }) => {
   const identity = await requireDataAccess(request, cookies);
@@ -8,6 +9,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const businessId = String(form.get("businessId") || "");
   const customerId = params.id ?? "";
   await assertBusinessAccess(identity, businessId, false);
+  await assertCurrentTermsAccepted(identity, businessId);
   const service = createSupabaseServiceClient();
   const { data: customer } = await service.from("customers").select("id").eq("id", customerId).eq("business_id", businessId).maybeSingle();
   if (!customer) return new Response("Cliente no encontrado", { status: 404 });

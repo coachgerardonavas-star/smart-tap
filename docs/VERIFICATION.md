@@ -2,6 +2,34 @@
 
 Updated: 2026-10-04. Sections below are chronological; the Reviewer's reconciliation at the end is the current state.
 
+## PR #4 D-045 alignment and Terms of Service — ChatGPT Codex, 2026-10-04
+
+Base: `codex/privacy-notice` merged with `origin/claude/launch-prep` through `6aec739`. No rebase, force-push, deploy, hosted migration or `db push` occurred.
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| Approved privacy text | PASSED | `tests/privacy.test.ts` reconstructs both rendered languages and compares them word for word with `docs/PRIVACY_NOTICE.md`; the cancellation sentence now states a 30-day download window and deletion at 90 days. |
+| Cancellation purge | PASSED | PGlite deletes customer data at 91 days, preserves it at 31 days, cascades visits/consents/follow-ups and writes count-only audits. |
+| Export beyond 1,000 | PASSED | `fetchAllPages` retrieved and serialized 2,105 customer-shaped rows over three ranges; the route pages both customers and visit-count rows with stable ordering. |
+| Export window | PASSED | Active businesses and the exact 30-day boundary pass; one second beyond the boundary fails. The route returns HTTP 410 with `La ventana de descarga de 30 días terminó.` |
+| E.164 CSV phone | PASSED | `+13055550100` remains unchanged; formula-like customer names still receive the spreadsheet-neutralizing prefix. |
+| Approved Terms text | PASSED | `tests/terms.test.ts` reconstructs `/terms` in Spanish and English and compares it word for word with `docs/TERMS_OF_SERVICE.md`. |
+| Acceptance before dashboard | PASSED | Missing current acceptance redirects HTML to `/terms/accept` and returns 403 JSON for dashboard APIs. Every current dashboard data/API route has the gate; platform admins are exempt. |
+| Current server version | PASSED | The POST route sends `TERMS_VERSION`; the browser form has no version field and its required checkbox starts unchecked. |
+| Idempotency and new version | PASSED | PGlite records the same user/business/version once; an older row does not satisfy the current version and the current version creates a separate row. |
+| Cross-tenant and RLS | PASSED | The service-only function rejects another business, authenticated direct insert is denied, and another tenant reads zero acceptance rows. |
+| Audit data | PASSED | Each first acceptance writes one `terms.accepted` audit; `details` contains only `version`. |
+
+Commands and results:
+
+- Targeted gate: 4 files, 59/59 tests; Astro check 0 errors, warnings or hints.
+- Full pre-clean-install suite: 12 files, 107/107 tests; the final privilege regression raised the suite to 108 tests.
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- `npm run audit:prod`: strict production audit; 0 vulnerabilities.
+- Final `npm run verify`: 0 Astro errors, warnings or hints; 12 files and 108/108 tests; standalone Node build complete.
+- Screenshots: `docs/evidence/privacy-cafe-luna-390x844.png` and `docs/evidence/terms-accept-390x844.png`, each measured at exactly 390×844 and visually checked without horizontal clipping. The production components were rendered with local data fixtures because the migration intentionally remains unapplied; all fixture routes and capture scripts were removed afterward.
+- GitHub Actions: PR #4 implementation commit `acf0459` passed `verify` in 37 seconds, run `37225896122`, job `111505352601`.
+
 ## Existing local gate
 
 Last recorded full local gate: 2026-10-01.
@@ -378,3 +406,90 @@ The first smoke attempt stopped after the check-in because the temporary harness
 Note: the temporary business's `business.updated` audit rows were removed with the smoke cleanup, so the hosted `changedFields` evidence is the Builder's recorded observation; the behavior is covered by `tests/admin-update.test.ts`.
 
 Verdict: **PR #3 approved by the Reviewer.** The CEO merges.
+
+## Custom SMTP — test project (Claude Code + CEO, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Sending domain | `yourbizupgraded.com` verified in Resend (DKIM `resend._domainkey`, SPF/MX on `send.`); click and open tracking not configured |
+| Resend key | `smart-tap-supabase-pruebas`, Sending access restricted to the domain; pasted by the CEO directly into Supabase, never shared |
+| Supabase SMTP (`vrouyhxzxrfkuuqfslrc`) | `smtp.resend.com:465`, user `resend`, sender `Smart Tap <smarttap@yourbizupgraded.com>`, 60 s per-user interval; auth log shows the email limiter moved from 2/h to 30/h |
+| Templates | Invite and Reset password replaced with `supabase/templates/*.html` (prefetch-safe callback) |
+| Delivery test | Recovery email to the admin arrived in the primary inbox, sender Smart Tap, Spanish template |
+| Replies | CEO adding `smarttap@` as a Google Workspace alias of the admin mailbox (not yet confirmed) |
+
+Pending: the link inside the email points to the Supabase Site URL; test the full click-through after the Render deploy sets Site URL to `https://smarttap.yourbizupgraded.com`. Repeat key + SMTP + templates in the production project (D-024).
+
+## D-044 customer privacy notice — ChatGPT Codex, 2026-10-04
+
+### Page and approved copy
+
+- `src/lib/privacy.ts` holds version `2026-10-04`, dates and all approved Spanish/English text with server substitutions.
+- `/privacy/[slug]` selects an active, uncancelled business and requires a configured phone or email; every other path returns 404.
+- `/privacy` renders the same copy with `el negocio donde te registraste` / `the business where you registered`.
+- Live landing links use `/privacy/{slug}` unless `privacy_url` contains an override.
+- `tests/privacy.test.ts` checks approved retention, rights, age and fallback language.
+- `docs/evidence/privacy-cafe-luna-390x844.png`: exact 390×844 local CDP capture. Source business response was local and temporary; Supabase was not changed.
+
+### Contact, consent and age
+
+- Contact phone is accepted only in canonical E.164 form through libphonenumber-js; contact email uses Zod email validation. Database checks provide a second layer.
+- Owner approval requires at least one contact. Activation requires approval, contact and a null cancellation timestamp.
+- Browser payload no longer contains `consentVersion`; Zod strips an injected value; `/api/public/check-in` always sends `PRIVACY_NOTICE_VERSION` to PostgreSQL.
+- The required consent adds `Tengo 13 años o más.` The date input limits selection and the server returns `Debes tener 13 años o más.` for younger birthdays.
+
+### Retention, cancellation and export
+
+| Rule | Evidence | Result |
+|---|---|---|
+| 24 months from latest visit, or creation with no visit | PGlite inserts stale and recent customers, executes `private.purge_inactive_customers()` | PASSED |
+| Cascade visits, consent and follow-ups | Counts after purge are all zero for deleted customers | PASSED |
+| One count-only audit per affected business | Exact JSON is `{\"deletedCount\": 1}` for retention and cancellation actions | PASSED |
+| Cancelled business deletion after 30 days | Recent customer under a 31-day cancelled business is deleted | PASSED |
+| Private function permissions | `has_function_privilege` is false for anon, authenticated and service_role | PASSED |
+| Cancellation cannot reactivate | Database activation constraint rejects the update | PASSED |
+| CSV fields and formula safety | Unit test covers six columns and leading `=`, `+` neutralization | PASSED |
+| AAL2 admin routes | Automatic admin-route guard test covers cancel and export; export uses POST | PASSED |
+
+### Migration and cron
+
+- One new file: `supabase/migrations/20261004190428_privacy_notice.sql`.
+- The SQL ran to completion in PGlite. The availability guard skips extension installation there because PGlite does not provide `pg_cron`.
+- On Supabase, the migration creates `pg_cron` when available and schedules `smart-tap-daily-privacy-purge` at `17 3 * * *`.
+- Migration remains unapplied; Codex ran no migration and no `db push`.
+
+### Gate
+
+- Targeted privacy, validation, migration and database suite: 59/59 passed.
+- `npm ci`: 326 packages; 0 vulnerabilities.
+- `npm run audit:prod`: 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 11 files and 94/94 tests; standalone Node build complete.
+- PR #4 implementation commit `fc84603`: GitHub Actions `verify` passed in run `37212786746`.
+
+## Reviewer pass — PR #4 privacy notice + Terms (Claude Code, 2026-10-04)
+
+Diff reviewed at `08486a0`. Local gate: `npm ci` / `audit:prod` 0 vulnerabilities, `astro check` 0 diagnostics, 12 files and 108/108 tests.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004190428_privacy_notice` (file renamed). Hosted checks, each inside a transaction that was rolled back (no data left behind):
+
+| Check | Result |
+|---|---|
+| Café Luna after migration | active, contact `automateit@yourbizupgraded.com`, `privacy_url` null (uses `/privacy/cafe-luna`), not cancelled, 3 customers kept |
+| pg_cron | job `smart-tap-daily-privacy-purge`, `17 3 * * *`, active, runs `private.purge_inactive_customers()` as `postgres` |
+| Purge: customer of business cancelled 91 days ago | deleted |
+| Purge: customer of business cancelled 89 days ago | kept |
+| Purge: last visit 25 months ago | deleted, visits cascaded |
+| Purge: created 26 months ago, visit 1 month ago | kept |
+| Purge: new customer | kept |
+| Purge audit | one row per business, `details` = `{"deletedCount": 1}` only |
+| `record_terms_acceptance` for a non-member | rejected `terms_business_access_denied` |
+| First acceptance / duplicate / new version | inserted / no-op / inserted; 2 rows and 2 audits with `{"version": …}` only |
+| Function privileges | purge: no execute for anon, authenticated, service_role; terms: service_role only |
+| `terms_acceptances` | RLS on; authenticated has no insert |
+| Security advisor | only the known leaked-password WARN |
+
+Defect found and fixed: `service_role` still had INSERT/UPDATE/DELETE on `terms_acceptances` through Supabase default grants (PGlite has no such defaults, so the local test did not see it). Revoked live as `20261004190717_terms_acceptances_write_via_function_only` (file added); after the revoke `service_role` direct insert is rejected and the security-definer function still records acceptances.
+
+Not exercised against the hosted project: the HTTP routes (`/privacy/[slug]`, `/terms/accept`, CSV export, 410 after the window), because the Reviewer environment holds no server key. They are covered by the 108 local tests; repeat as part of the post-deploy smoke on Render.
+
+Verdict: **PR #4 approved by the Reviewer.** The CEO merges.

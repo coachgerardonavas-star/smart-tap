@@ -1,5 +1,6 @@
 import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
+import { isAtLeastMinimumAge } from "./privacy";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
@@ -11,6 +12,17 @@ const optionalEmailSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : value,
   z.union([z.literal(""), z.email().max(254)]),
 );
+const optionalContactEmailSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.email().max(254)]),
+).transform((value) => value || null);
+const optionalContactPhoneSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.string().max(32).refine((value) => {
+    const parsed = parsePhoneNumberFromString(value);
+    return Boolean(parsed?.isValid() && parsed.number === value);
+  }, "El teléfono de contacto debe usar formato E.164, por ejemplo +13055550100.")]),
+).transform((value) => value || null);
 const optionalUrlSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : value,
   z.union([z.literal(""), z.url().max(500)]),
@@ -44,9 +56,11 @@ export const checkInInputSchema = z.object({
   birthday: z.iso.date().optional().or(z.literal("")),
   consent: z.literal(true),
   whatsappOptIn: z.boolean().optional().default(false),
-  consentVersion: z.string().trim().min(1).max(30),
 }).refine((value) => !value.birthday || value.birthday <= new Date().toISOString().slice(0, 10), {
   message: "El cumpleaños no puede estar en el futuro.",
+  path: ["birthday"],
+}).refine((value) => !value.birthday || isAtLeastMinimumAge(value.birthday), {
+  message: "Debes tener 13 años o más.",
   path: ["birthday"],
 });
 
@@ -61,6 +75,8 @@ export const businessInputSchema = z.object({
   slug: z.string().trim().min(2).max(80).regex(slugPattern),
   logoUrl: optionalUrlSchema,
   privacyUrl: privacyUrlSchema.optional().or(z.literal("")),
+  contactPhone: optionalContactPhoneSchema,
+  contactEmail: optionalContactEmailSchema,
   primaryColor: z.string().regex(hexColorPattern),
   secondaryColor: z.string().regex(hexColorPattern),
   timezone: z.string().trim().min(3).max(80).refine((value) => {

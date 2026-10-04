@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
-const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups"];
+const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances"];
+const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004190428_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
   it.each(exposedTables)("enables RLS on %s", (table) => {
@@ -56,5 +57,38 @@ describe("database security migration", () => {
   });
   it("uses an invoker-security aggregate view", () => {
     expect(sql).toContain("create view public.customer_visit_counts\nwith (security_invoker = true)");
+  });
+
+  it("keeps the daily purge private and schedules it through pg_cron", () => {
+    expect(privacyMigration).toContain("create or replace function private.purge_inactive_customers()\nreturns");
+    expect(privacyMigration).toMatch(/security definer\nset search_path = ''/);
+    expect(privacyMigration).toMatch(/revoke all on function private\.purge_inactive_customers\(\)[\s\S]+from public, anon, authenticated, service_role/);
+    expect(privacyMigration).toContain("create extension if not exists pg_cron");
+    expect(privacyMigration).toContain("smart-tap-daily-privacy-purge");
+    expect(privacyMigration).toContain("17 3 * * *");
+  });
+
+  it("uses count-only purge audits and the two approved retention windows", () => {
+    expect(privacyMigration).toContain("interval '24 months'");
+    expect(privacyMigration).toContain("interval '90 days'");
+    expect(privacyMigration).toContain("jsonb_build_object('deletedcount', v_row.deleted_count)");
+    expect(privacyMigration).not.toMatch(/customers\.(retention|cancellation)_purged[\s\S]{0,300}(full_name|phone_e164)/);
+  });
+
+  it("keeps terms acceptance tenant-scoped and service-route only", () => {
+    expect(privacyMigration).toContain("create table public.terms_acceptances");
+    expect(privacyMigration).toContain("alter table public.terms_acceptances enable row level security");
+    expect(privacyMigration).toMatch(/create policy terms_acceptances_select_own[\s\S]+user_id = \(select auth\.uid\(\)\)[\s\S]+private\.is_business_member\(business_id\)/);
+    expect(privacyMigration).toMatch(/revoke all on table public\.terms_acceptances from public, anon, authenticated/);
+    expect(privacyMigration).toMatch(/revoke all on function public\.record_terms_acceptance\(uuid, uuid, text\)[\s\S]+from public, anon, authenticated/);
+    expect(privacyMigration).toMatch(/grant execute on function public\.record_terms_acceptance\(uuid, uuid, text\)[\s\S]+to service_role/);
+    expect(privacyMigration).toContain("'terms.accepted'");
+    expect(privacyMigration).toContain("jsonb_build_object('version', p_terms_version)");
+  });
+
+  it("requires a contact and prevents activation after cancellation", () => {
+    expect(privacyMigration).toContain("and cancelled_at is null");
+    expect(privacyMigration).toContain("contact_phone is not null or contact_email is not null");
+    expect(privacyMigration).toContain("or (v_business.contact_phone is null and v_business.contact_email is null)");
   });
 });

@@ -27,8 +27,13 @@ const formError = Astro.url.searchParams.get("error");
         </div>
         <div class="field"><label for="legalName">Razón social (opcional)</label><input id="legalName" name="legalName" maxlength="160" /></div>
         <div class="field"><label for="ownerEmail">Correo del dueño (opcional)</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="off" /></div>
+        <div class="split">
+          <div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div>
+          <div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" /></div>
+        </div>
+        <p class="muted">Configura al menos un contacto antes de registrar la aprobación del dueño.</p>
         <div class="field"><label for="logoUrl">URL del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /></div>
-        <div class="field"><label for="privacyUrl">Política de privacidad (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="https://... o /privacy" /></div>
+        <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="Vacío usa /privacy/url-corta" /></div>
         <div class="split compact">
           <div class="field"><label for="primaryColor">Color principal</label><input id="primaryColor" name="primaryColor" type="color" value="#155EEF" /></div>
           <div class="field"><label for="secondaryColor">Color secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value="#0B1220" /></div>
@@ -43,7 +48,7 @@ const formError = Astro.url.searchParams.get("error");
     </section>
     <section class="card list-card">
       <div class="list-head"><h2>Negocios activos</h2><span>{businesses.length}</span></div>
-      {businesses.length ? <ul>{businesses.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug}</small></div><span class:list={["status", { off: !business.is_active }]}>{business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
+      {businesses.length ? <ul>{businesses.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug}</small></div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
     </section>
   </div>
 </Base>

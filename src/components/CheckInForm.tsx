@@ -1,5 +1,6 @@
 import { useState, type SyntheticEvent } from "react";
 import "./check-in.css";
+import { latestBirthdayForAge } from "../lib/privacy";
 
 type Props = {
   slug: string;
@@ -35,7 +36,6 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       birthday: form.get("birthday"),
       consent: form.get("consent") === "on",
       whatsappOptIn: form.get("whatsappOptIn") === "on",
-      consentVersion: "2026-10-01",
       website: form.get("website"),
     };
 
@@ -89,7 +89,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       </div>
       <div className="field">
         <label htmlFor="birthday">¿Cuándo cumples años? <span className="optional">(opcional)</span></label>
-        <input id="birthday" name="birthday" type="date" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} />
+        <input id="birthday" name="birthday" type="date" autoComplete="bday" max={latestBirthdayForAge()} />
         <span className="hint">Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.</span>
       </div>
       <div className="honeypot" aria-hidden="true">
@@ -98,7 +98,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       </div>
       <label className="consent">
         <input name="consent" type="checkbox" required />
-        <span>Acepto que {businessName} guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href={privacyUrl} target="_blank" rel="noreferrer">política de privacidad</a>.</span>
+        <span>Acepto que {businessName} guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href={privacyUrl} target="_blank" rel="noreferrer">política de privacidad</a>. Tengo 13 años o más.</span>
       </label>
       <label className="consent whatsapp-consent">
         <input name="whatsappOptIn" type="checkbox" />

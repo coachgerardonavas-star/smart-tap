@@ -18,10 +18,12 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     p_actor_user_id: identity.id,
   });
   if (error) {
-    const message = error.message.includes("approval_active_member_required")
+    const message = error.message.includes("business_cancelled")
+      ? "El servicio cancelado no admite una nueva aprobación."
+      : error.message.includes("approval_active_member_required")
       ? "Asigna al menos un usuario activo antes de registrar la aprobación."
       : error.message.includes("approval_configuration_incomplete")
-        ? "Completa la marca, las cuatro ofertas, los días de inactividad y la URL de Google Review."
+        ? "Completa la marca, el contacto, las cuatro ofertas, los días de inactividad y la URL de Google Review."
         : "No pudimos registrar la aprobación del dueño.";
     return redirect(`/admin/${id}?error=${encodeURIComponent(message)}`, 303);
   }

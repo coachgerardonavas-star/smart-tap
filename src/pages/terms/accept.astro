@@ -1,0 +1,28 @@
+---
+import Base from "../../layouts/Base.astro";
+import TermsAcceptanceCard from "../../components/TermsAcceptanceCard.astro";
+import { requireDataAccess } from "../../lib/auth";
+import { accessibleBusinesses } from "../../lib/data";
+import { hasAcceptedCurrentTerms } from "../../lib/terms-access";
+import { TERMS_VERSION } from "../../lib/terms";
+import { safeNextPath } from "../../lib/validation";
+
+const identity = await requireDataAccess(Astro.request, Astro.cookies);
+if (identity.isPlatformAdmin) return Astro.redirect("/dashboard");
+const businesses = await accessibleBusinesses(identity);
+const requestedBusiness = Astro.url.searchParams.get("business");
+const business = businesses.find((item) => item.id === requestedBusiness) ?? businesses[0] ?? null;
+const next = safeNextPath(Astro.url.searchParams.get("next"));
+if (business && await hasAcceptedCurrentTerms(identity, business.id)) return Astro.redirect(next);
+const error = Astro.url.searchParams.get("error");
+---
+
+<Base title="Aceptar Términos | Smart Tap" privateArea>
+  <TermsAcceptanceCard
+    businessName={business?.display_name ?? null}
+    businessId={business?.id}
+    next={next}
+    error={Boolean(error)}
+    termsVersion={TERMS_VERSION}
+  />
+</Base>
