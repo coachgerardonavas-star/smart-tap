@@ -1,27 +1,61 @@
 # Smart Tap handoff
 
-Updated: 2026-10-01
+Updated: 2026-10-03
 
 ## Project identity
 
-- Absolute path: `C:\automate-it\smart-tap`
-- Git repository: local repository initialized in the project root
-- Branch: `main`
+- Absolute local path: `C:\automate-it\smart-tap`
+- GitHub: `coachgerardonavas-star/smart-tap`
+- Primary branch: `main`
+- Ops reconciliation branch: `ops/reconcile-live-2026-10-03`
 - Builder: ChatGPT Codex
 - Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 
 ## Current state
 
-The complete executable MVP is implemented. Public demo routes work without credentials. The live data path, Auth, invitations, dashboard, and admin require a Supabase project and environment values. No production project or deploy was changed because credentials and a target were not supplied.
+The executable MVP is implemented. Public demo routes, capture flow, dashboard, admin, Auth flows, tenant isolation and database tests exist.
 
-Estimated completion: 92%. The remaining 8% is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing.
+A real Supabase project named `smart-tap` is now verified active and healthy in `us-east-1` with project ref `vrouyhxzxrfkuuqfslrc`. The live database already contains the application schema and five migrations. The previous handoff statement that a Supabase project still needed to be created/selected is obsolete.
+
+Estimated software completion remains approximately 92-95%. Remaining work is primarily production activation and live end-to-end verification, not new MVP features.
+
+## Verified live Supabase state
+
+Tables currently present with RLS enabled:
+- profiles
+- businesses
+- business_members
+- nfc_tags
+- customers
+- consent_records
+- visits
+- audit_log
+
+Live migration history:
+1. `20261002005131_initial_schema`
+2. `20261002014439_review_hardening_rate_limit_helper`
+3. `20261002014453_review_hardening_check_in_v2`
+4. `20261002072441_one_visit_per_day`
+5. `20261004010900_admin_rls_requires_aal2`
+
+The reconciliation branch versions these migrations so Git history matches the live database. The stale local initial migration number `20261001000000` was replaced by the live version number `20261002005131` on that branch.
+
+## Security status
+
+- RLS is enabled on every public application table.
+- `record_public_check_in` is SECURITY DEFINER and is not executable by `anon` or `authenticated`; the current version is granted to `service_role` only.
+- private authorization helpers remain outside the exposed public schema.
+- platform-admin RLS now requires AAL2 in the live database.
+- Supabase Security Advisor currently reports one warning: leaked-password protection is disabled. This feature is only available on Supabase Pro and above; on Free this is an expected plan limitation, not an unresolved implementation defect. Keep strong password requirements and MFA/AAL2 as compensating controls. Enable leaked-password protection if/when the organization upgrades to Pro.
+- Performance Advisor reports five INFO-level unindexed foreign keys. They are optimization opportunities, not release blockers. Do not add indexes without workload evidence unless query plans show a need.
 
 ## What works
 
 - branded NFC landing, validation, consent, repeat identification, and confirmation;
 - atomic customer, consent, and visit writes;
 - database rate limiting and opaque NFC codes;
+- one counted visit per customer/business local day;
 - strict tenant RLS and exact count dashboard;
 - customers, visits per customer, latest visit, inactivity, and birthdays;
 - Auth login, invitations, password setup, recovery, and logout;
@@ -30,65 +64,22 @@ Estimated completion: 92%. The remaining 8% is live activation, hosted verificat
 - responsive demo dashboard and capture flow;
 - deterministic database seed.
 
-## Key files
+## Documentation added for activation
 
-- Product scope: `specs/smart-tap.md`, `docs/PRODUCT.md`
-- Architecture and decisions: `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`
-- Database: `supabase/migrations/20261001000000_initial_schema.sql`
-- Demo data: `supabase/seed.sql`
-- Public capture: `src/pages/b/[slug].astro`, `src/pages/api/public/check-in.ts`
-- Dashboard: `src/pages/dashboard/index.astro`
-- Admin: `src/pages/admin/index.astro`, `src/pages/admin/[id].astro`
-- Tests: `tests/`, `supabase/tests/`
-- Activation: `docs/SETUP.md`
-- Test record: `docs/VERIFICATION.md`
+- `docs/PRODUCTION_SMOKE_TEST.md`
+- `docs/CLIENT_ONBOARDING.md`
+- `docs/NFC_OPERATIONS.md`
 
-## Directory map
+## Remaining real blockers / dependencies
 
-```text
-smart-tap/
-  docs/          product, architecture, decisions, setup, verification, handoff
-  specs/         accepted MVP specification
-  public/        static public assets
-  src/
-    components/  React and Astro UI
-    layouts/     shared page layout
-    lib/         Auth, tenant access, validation, metrics, Supabase clients
-    pages/       public, Auth, dashboard, admin, and API routes
-  supabase/
-    migrations/  reproducible schema and security
-    tests/       pgTAP catalog checks
-    seed.sql     Café Luna demo data
-  tests/         unit, security, and embedded PostgreSQL tests
-```
+- Production application host and final public domain/URL.
+- Production environment secret values on that host.
+- Auth Site URL + allowed redirect URL aligned to the final domain.
+- Custom SMTP configuration before commercial invitations.
+- Final business privacy notice/retention choices.
+- Physical NFC writing and phone validation.
+- Hosted end-to-end smoke test after deployment.
 
-## Reviewer instructions
+## Coordination rule
 
-Open the existing folder directly. Do not scaffold another project or create a worktree.
-
-```powershell
-cd C:\automate-it\smart-tap
-git status --short --branch
-git log -1 --oneline
-npm ci
-npm run verify
-```
-
-Review these risks first:
-
-1. RLS membership helpers and cross-tenant isolation.
-2. Service-only execution of `record_public_check_in`.
-3. Admin bootstrap, token-hash email templates, and invitation callback behavior against a live Supabase project.
-4. Tenant authorization before every service-role query.
-5. Production privacy notice and retention choices.
-
-Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
-
-## Real blockers
-
-- Supabase project URL, publishable key, secret key, and Auth access.
-- Production SMTP configuration.
-- Production host, domain, and deployment credentials.
-- Business-specific logo, colors, privacy notice, and NFC hardware.
-
-Continue with `docs/SETUP.md` when these inputs are available.
+Codex should continue implementation on `main` without redoing this audit. Before merging the ops reconciliation PR, first check whether Codex has added any newer migration or documentation changes and resolve only actual conflicts. Claude Code should review by diff/gate rather than re-auditing settled areas.
