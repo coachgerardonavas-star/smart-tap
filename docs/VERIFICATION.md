@@ -1,36 +1,40 @@
 # Verification
 
-Last full local gate: 2026-10-02. Current result: 0 diagnostics, 37 of 37 tests passed across 6 files, standalone Node build complete.
+Updated: 2026-10-04. Sections below are chronological; the Reviewer's reconciliation at the end is the current state.
 
-## Automated
+## Existing local gate
 
-`npm run check` passed with zero errors. `npm test` passed 21 tests across four files. `npm run build` produced the standalone Node server.
+Last recorded full local gate: 2026-10-01.
 
-The tests cover:
+- `npm run check` passed with zero errors.
+- `npm test` passed 21 tests across four files.
+- `npm run build` produced the standalone Node server.
+- `npm audit` reported zero known vulnerabilities during installation.
 
-- consent and field validation;
-- phone normalization;
-- slug, color, and redirect rejection;
-- dashboard counts, repeat visits, inactivity, and birthdays;
-- RLS enabled on every exposed table;
-- anonymous roles denied from the check-in function;
-- security-invoker aggregate view;
-- full migration execution in PostgreSQL;
-- demo seed creation;
-- atomic customer, consent, and visit insertion;
-- real RLS isolation between two businesses.
+Existing tests cover consent/field validation, phone normalization, slug/color/redirect rejection, dashboard metrics, RLS enabled on exposed tables, anonymous denial from check-in, security-invoker aggregate view, migration execution, seed data, atomic writes, and cross-tenant isolation.
 
-## Browser
+## Existing browser verification
 
-The local `/demo` dashboard was checked at desktop size. Layout, metrics, customer table, and birthdays rendered correctly.
+- `/demo` dashboard rendered correctly at desktop size.
+- `/demo/capture` was exercised through confirmation after fixing a React hydration issue.
 
-The local `/demo/capture` flow was checked in the browser. The form initially exposed a React hydration error. The TypeScript JSX override was removed, the server was restarted, and the form then rendered. A fictitious customer completed the flow and reached the visit confirmation.
+## Live Supabase verification — 2026-10-03
 
-## Dependency and build checks
+Project:
+- name: `smart-tap`
+- ref: `vrouyhxzxrfkuuqfslrc`
+- region: `us-east-1`
+- status: ACTIVE_HEALTHY
 
-All runtime dependencies are exact versions in `package.json` and `package-lock.json`. `npm audit` reported zero known vulnerabilities during installation.
+Observed public application tables all have RLS enabled:
+`profiles`, `businesses`, `business_members`, `nfc_tags`, `customers`, `consent_records`, `visits`, `audit_log`.
 
-## Remaining verification
+Observed live migration history:
+1. `20261002005131_initial_schema`
+2. `20261002014439_review_hardening_rate_limit_helper`
+3. `20261002014453_review_hardening_check_in_v2`
+4. `20261002072441_one_visit_per_day`
+5. `20261004010900_admin_rls_requires_aal2`
 
 Supabase CLI and Docker are unavailable on this laptop, and no hosted Supabase credentials were supplied. The migration ran under embedded PostgreSQL, while Supabase-specific hosted behavior, SMTP delivery, token-hash invitation links, and the production deploy still need a live smoke test after credentials are connected.
 
@@ -126,3 +130,43 @@ Reviewed `3de6fac` and `f08ff95`. Two MFA bypasses found and fixed (D-020):
 `npm run verify`: 0 diagnostics, 41 of 41 tests. Migration applied to hosted Supabase as `admin_rls_requires_aal2`; test rows rolled back.
 
 Accepted for this phase: an admin who has never enrolled a factor can enroll one at `aal1`, so the first enrollment must happen right after the account is created.
+
+Function privilege inspection confirms the current nine-argument `public.record_public_check_in` is SECURITY DEFINER and executable by `service_role`, not by `anon`/`authenticated`. Private authorization helpers remain in the `private` schema; platform-admin authorization has a live AAL2 requirement.
+
+## Supabase advisors
+
+Security Advisor:
+- WARN: leaked-password protection disabled.
+- Classification: expected Free-plan limitation, not a release blocker. Supabase currently documents leaked-password protection as Pro-and-above only.
+- Compensating controls: strong password policy, MFA/AAL2 for platform admin, restricted signup/invitations.
+
+Performance Advisor:
+- INFO only: five foreign keys lack covering indexes (`audit_log.actor_user_id`, `audit_log.business_id`, `consent_records.business_id`, `nfc_tags.business_id`, `visits.tag_id`).
+- Decision: do not add indexes solely to silence INFO-level advice. Revisit if query plans or production workload show a need.
+
+## Git/live drift found and reconciled
+
+Before this verification, GitHub `main` contained only `20261001000000_initial_schema.sql`, while live Supabase had five migrations with different history/version numbers. The branch `ops/reconcile-live-2026-10-03` reconstructs the live migration sequence and replaces the stale initial migration version. Do not run `db push` from unreconciled `main` against production.
+
+## Still requiring hosted verification
+
+- production host/domain;
+- production environment values;
+- Auth Site URL and redirect URL;
+- custom SMTP;
+- actual invite/recovery delivery;
+- hosted end-to-end flow;
+- physical NFC read/write test;
+- tenant A/B test using real authenticated business users.
+
+Use `docs/PRODUCTION_SMOKE_TEST.md` once deployment is available. Do not repeat the full local audit unless intervening code changes affect previously verified surfaces.
+
+## Reviewer reconciliation — Claude Code, 2026-10-04
+
+Reviewed `ops/reconcile-live-2026-10-03` (13 commits by the CEO's ChatGPT session).
+
+- Correct: migration files reproduce the live history; contents compared with the applied SQL — identical apart from transaction wrappers. Live state checked: 5 migrations, Café Luna demo only, admin confirmed with one MFA factor.
+- Defect: the branch was cut from `main`, whose code calls the old 8-argument check-in function that the live database no longer lets any role execute. Deploying that branch would break every check-in. It was merged into `claude/mfa-review`, which has the matching code.
+- Defect: with both branches merged, the migrations folder would hold two copies of three migrations, and a rebuild would fail on duplicate objects. The duplicates under the old names were removed; the live names were kept.
+- Gap: the manual revoke of the old function was not in any file. Added `20261004020000_revoke_legacy_check_in.sql`, applied live with the same version.
+- The handoff instruction "Codex should continue implementation on main" was replaced: work continues on the PR branch.

@@ -1,11 +1,3 @@
-begin;
-
--- Review 2026-10-02, CEO decision D-017: at most one counted visit per customer,
--- per business, per calendar day in the business's time zone. A repeated
--- check-in refreshes the customer and consent but does not add a visit.
--- Concurrency: the customer upsert takes a row lock, so two simultaneous
--- check-ins for one phone run the visit check one after the other.
-
 create or replace function public.record_public_check_in(
   p_slug text,
   p_tag_code text,
@@ -110,5 +102,3 @@ $$;
 
 revoke all on function public.record_public_check_in(text, text, text, text, date, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.record_public_check_in(text, text, text, text, date, text, text, text, text) to service_role;
-
-commit;
