@@ -9,6 +9,7 @@
 ## Branch coordination
 
 - Work on **`codex/live-smoke-mfa`** (PR #1) as the single working branch until PR #1 merges. `claude/mfa-review` is now an old Reviewer branch — do not commit there.
+- Before changing anything, read **`docs/CHATGPT_COORDINATION_NOTE.md`**.
 - Do **not** create new work branches from `main` for current Smart Tap work unless the CEO explicitly changes that instruction.
 - `main` remains behind the integration state and is not the working baseline.
 
@@ -29,7 +30,7 @@ Business-owner flow:
 
 ## Approved commercial rules
 
-Decision records: D-025 (package and commitment), D-026 (NFC and locations), D-027 (support), D-028 (offers), D-029 (onboarding). Pricing source of truth stays `Manual_de_Pricing.md` in ADN.
+Decision records: D-025 (package and commitment), D-026 (NFC and locations), D-027 (support), D-028 (offers), D-029 (onboarding), D-031 (owner activation approval), D-032 (dashboard-user limit). Pricing source of truth stays `Manual_de_Pricing.md` in ADN.
 
 ### Base price
 - Setup: **$199**.
@@ -118,14 +119,19 @@ The product must produce an actionable follow-up queue so customer data does not
 
 ## Onboarding — decisions already approved
 
-The onboarding is still being designed. Current approved rule:
+The onboarding is still being designed. Current approved rules:
 
 1. After successful payment, the customer completes a **mandatory onboarding form**.
-2. After the form, Automate IT performs a **short verification session**.
-3. That session may be either:
+2. The form may be completed by the **business owner or an authorized responsible manager**.
+3. After the form, Automate IT performs a **short verification session**.
+4. That session may be either:
    - a phone/video call; or
    - an in-person meeting.
-4. It may be conducted with the **owner or the responsible manager/person in charge**.
+5. It may be conducted with the **owner or the responsible manager/person in charge**.
+6. Even if an authorized manager completes the form or verification, the **business owner must give final approval before Smart Tap is activated**.
+7. The base package includes a maximum of **2 business-side dashboard users total**.
+8. The owner decides who occupies the two included user slots. The owner may use one slot personally or assign both slots to authorized employees.
+9. Additional-user pricing/policy is **not yet approved**; do not invent it.
 
 The onboarding form/session should eventually capture at least:
 - business identity and location;
@@ -139,7 +145,7 @@ The onboarding form/session should eventually capture at least:
 - birthday preference;
 - WhatsApp consent wording;
 - approved offer library for inactive, birthday, VIP/frequent and new-customer cases;
-- dashboard user(s).
+- the owner-selected dashboard users (maximum 2 included).
 
 **Onboarding design is not complete yet. Continue one decision at a time with the CEO before treating the remaining details as final.**
 
@@ -153,17 +159,19 @@ The MVP direction is:
 - owner-approved offer library;
 - no automated Meta API messaging in base scope;
 - no CRM integration in base scope;
-- one-location base plan with multi-location commercial rules above.
+- one-location base plan with multi-location commercial rules above;
+- owner approval gate before activation;
+- maximum 2 included dashboard users per base package.
 
 Do not silently implement broader features that change these commercial boundaries.
 
 ## Pending items (not yet CEO-final unless already documented elsewhere)
 
 - Complete onboarding questionnaire/workflow design.
+- Decide policy/pricing for dashboard users beyond the 2 included users.
 - Exact multi-location dashboard UX/data model if code changes are required.
 - Exact data export mechanism and 90-day deletion implementation.
 - Final contract/SOW language reflecting the new 3-month Smart Tap minimum and cancellation/data rules.
-- Final pricing/manual synchronization across Automate IT manuals.
 - Production hosting/deployment, SMTP, Auth URLs, privacy/retention implementation and physical NFC testing.
 
 When another agent changes one of these areas, update this note or the current handoff so concurrent agents do not work from stale assumptions.
