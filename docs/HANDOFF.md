@@ -20,7 +20,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-046 and D-0
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
-| `codex/customer-styles` | **Current Builder branch.** Starts at Reviewer-approved `534da86` and implements the four D-046/D-048 customer styles. Migration `20261004203000_customer_styles.sql` remains unapplied for Reviewer inspection. |
+| `codex/customer-styles` | **Current Builder branch and PR #6.** Starts at Reviewer-approved `534da86`; implementation commit `ad2d0eb` adds the four D-046/D-048 customer styles. Migration `20261004203000_customer_styles.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -178,5 +178,7 @@ The eight mobile captures and one desktop capture are under `docs/evidence/custo
 The exact consent, birthday and WhatsApp text remains unchanged; WhatsApp stays optional and unchecked. Confirmation uses the three exact approved lines and displays the Google review link only when configured. Fonts use eight local latin variable packages; the rendered page references only the two families assigned to its selected style.
 
 No Supabase migration, `db push`, deploy or hosted-data change ran in this Builder task. Claude Code must review and apply `20261004203000_customer_styles.sql` before hosted tests.
+
+PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`, open from `codex/customer-styles` to `main`, with no merge or deploy. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
 
 Reviewer pass on PR #4 complete (see VERIFICATION): migrations `20261004190428_privacy_notice` and `20261004190717_terms_acceptances_write_via_function_only` live; PR #4 approved, awaiting CEO merge.

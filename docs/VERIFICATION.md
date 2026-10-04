@@ -513,6 +513,8 @@ Pending on the deployed app: click-through of the recovery button, the IP-identi
 
 Target: local branch `codex/customer-styles` from `origin/claude/deploy-evidence` at `534da86`. No deploy, Supabase migration or `db push` ran.
 
+PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
+
 ### Automated gate
 
 | Check | Result |
