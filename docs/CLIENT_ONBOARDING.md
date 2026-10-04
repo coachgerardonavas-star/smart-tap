@@ -35,6 +35,20 @@ The base Smart Tap package includes a maximum of **2 dashboard users total**.
 - The two-user limit counts all business-side dashboard users included in the base package.
 - Additional-user pricing or policy is not yet approved; do not invent it.
 
+## Customer-facing NFC form
+
+Approved minimum customer fields:
+- **Name: required.**
+- **Phone: required.**
+- **Birthday: optional.**
+
+The birthday field should explain the benefit so the customer has a reason to complete it. Approved intent: communicate that sharing the birthday may allow the business to send discounts, gifts or birthday benefits. Recommended customer-facing copy:
+
+> **¿Cuándo cumples años? (opcional)**  
+> Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.
+
+Do not make birthday mandatory and do not promise a specific gift or discount unless that business has approved such an offer.
+
 ## Information to collect
 
 Required:
@@ -55,7 +69,7 @@ Required:
 
 Optional:
 - secondary color;
-- birthday collection enabled/wording;
+- birthday-specific offer/benefit wording approved by the owner;
 - internal label for counters/tables or multiple tags inside the same location.
 
 ## Offer configuration
@@ -77,7 +91,7 @@ The owner defines which offers are permitted. Smart Tap may recommend one of tho
 11. Confirm invite delivery and account activation.
 12. Copy the exact production NFC URL for each physical tag.
 13. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-14. Run a customer capture test.
+14. Run a customer capture test verifying required name + phone and optional birthday behavior.
 15. Confirm the test customer appears in the correct dashboard.
 16. Confirm follow-up queue behavior for at least one safe test case.
 17. Remove test data when appropriate.
@@ -114,6 +128,7 @@ A customer is considered configured when:
 - privacy link is present;
 - owner-approved offers are recorded;
 - NFC opens the intended production landing page;
+- customer form requires name and phone and leaves birthday optional with benefit-oriented copy;
 - one test capture succeeds;
 - dashboard receives the customer/visit;
 - tenant access is limited to that business;
