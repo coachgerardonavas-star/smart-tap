@@ -8,13 +8,14 @@ Updated: 2026-10-04 by Claude Code (Reviewer), after reconciling the ops branch.
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
+- **CEO-approved commercial/product decisions from the current ChatGPT session:** `docs/CHATGPT_COORDINATION_NOTE.md`. Codex, Claude Code and ChatGPT should read it before changing Smart Tap scope, pricing behavior, CRM/WhatsApp assumptions, location rules or onboarding.
 
 ## Branches — which one is current
 
 | Branch | State |
 |---|---|
 | `main` | Original MVP (`f1ec5d3`). Does not match the live database: its code calls the old 8-argument check-in function, which no role may execute. **Do not deploy or build on `main` until PR #1 is merged.** |
-| `claude/mfa-review` | **Current integration branch.** Contains the review hardening, Codex's MFA (`codex/live-smoke-mfa`), the MFA bypass fixes (D-020) and the ops reconciliation below. |
+| `claude/mfa-review` | **Current integration branch.** Contains the review hardening, Codex's MFA (`codex/live-smoke-mfa`), the MFA bypass fixes (D-020) and the ops reconciliation below. **Current CEO instruction: continue coordinated work here; do not create new current-work branches from `main`.** |
 | `codex/live-smoke-mfa` | Head of PR #1. Must merge `claude/mfa-review`. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
@@ -38,7 +39,7 @@ Estimated completion: 90% of the commercial MVP.
 
 ## Activation documents
 
-`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`.
+`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`, `docs/CHATGPT_COORDINATION_NOTE.md`.
 
 ## Real blockers
 
@@ -47,7 +48,9 @@ Estimated completion: 90% of the commercial MVP.
 - Custom SMTP before commercial invitations.
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
+- Synchronize the newly approved Smart Tap commercial rules into contract/SOW and authoritative Automate IT pricing documentation.
+- Complete onboarding design with CEO; only the form + verification-session model is currently approved.
 
 ## Coordination rule
 
-Work happens on the PR branch, never directly on `main`. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+Work happens on the PR/integration branch, never directly on `main`. Current CEO instruction specifically identifies `claude/mfa-review` as the coordinated working branch. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas. Read `docs/CHATGPT_COORDINATION_NOTE.md` before modifying commercial/product assumptions so parallel agents do not undo CEO-approved decisions.
