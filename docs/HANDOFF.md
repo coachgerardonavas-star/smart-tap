@@ -152,3 +152,13 @@ Onboarding configuration reviewed; migration applied live as `20261004130503_onb
 Builder follow-up complete: NFC page polish, changed-field audit, exact 390×844 evidence and the full hosted admin smoke are done. PR #3 remains open for the Reviewer's final pass; no deploy or merge occurred.
 
 PR #3 merged to main (a9ebc37). Next: custom SMTP done on the test project; privacy notice approved (D-044), Builder implements it on `codex/privacy-notice` from `claude/launch-prep`.
+
+## Pending — customer-facing visual design (CEO, 2026-10-04, D-046)
+
+The CEO wants each business's NFC screens (welcome, registration, confirmation) to look branded and attractive, like an early ChatGPT mockup (photo-led hero, business logo, tagline, benefit list with icons, branded inputs, celebratory "¡Listo!" confirmation), instead of a plain white page.
+
+Decision D-046: **customizable styles, not bespoke design per client.** 3–4 styles are designed once (e.g. dark elegant, warm light, modern, colorful family), approved by the CEO, built once by the Builder. At onboarding each business gets a style plus its logo, colors, hero photo, tagline and benefits — data only, no per-client code. Configuring a client takes minutes and support changes stay simple (D-027).
+
+Route: design the styles with Claude Design → CEO approval → Builder implements as a theme system with new admin fields. Scheduled after the privacy/terms PR.
+
+Constraints every style must keep: WhatsApp box unchecked and optional (D-042); no SMS; privacy acceptance separate from marketing; no visit-reward counter unless a rewards feature is approved and built; Instagram/social links only if added as a configured field; images optimized for fast load on mobile data; Nombre visible without scroll at 390×844; contrast readable in sunlight.
