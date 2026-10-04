@@ -66,55 +66,58 @@ Automate IT admins can pause and reactivate a business member or an NFC tag from
 
 ## D-017 — One counted visit per customer per day (CEO, 2026-10-02)
 
-A customer earns at most one visit per business per calendar day in the business's time zone. A repeated check-in the same day updates the customer, appends a consent record, and answers "already registered today" without adding a visit. The customer upsert locks the customer row, so concurrent submissions for one phone cannot both add a visit. This caps visit inflation from a copied NFC URL at one per day per phone. Proof of physical presence remains open for when rewards are introduced.
+A customer earns at most one visit per business per calendar day in the business's time zone. A repeated check-in the same day updates the customer, appends a consent record, and answers "already registered today" without adding a visit. The customer upsert locks the customer row, so concurrent submissions for one phone cannot both add a visit. This caps visit inflation from a copied NFC URL at one per day per phone. Proof of physical presence (dynamic NFC such as NTAG 424 DNA SUN, or staff confirmation) remains open for when rewards are introduced.
 
 ## D-018 — Glasswing Shield applies to Smart Tap (2026-10-02)
 
-Glasswing Shield v1.0 governs this project. The matrix is `docs/security/CONTROL_MATRIX.md`.
+Glasswing Shield v1.0 (ADN `Glasswing_Shield.md`, Manual Maestro §10.1) governs this project. The matrix is `docs/security/CONTROL_MATRIX.md`. Changes to `main` go through a pull request with the `verify` workflow green, which runs gitleaks, npm audit, check, tests, build and an SBOM.
 
 ## D-019 — Platform administrators require TOTP at AAL2 (2026-10-02)
 
-Every `/admin` page and `/api/admin` endpoint uses `requirePlatformAdmin`, which accepts only a verified `platform_admin` session whose signed JWT has `aal2`.
+Every `/admin` page and `/api/admin` endpoint uses `requirePlatformAdmin`, which accepts only a verified `platform_admin` session whose signed JWT has `aal2`. An administrator at `aal1` receives a redirect to `/admin/mfa` for a page request and HTTP 403 for an API request. The MFA page is the narrow exception: it checks the platform role at `aal1`, then enrolls or challenges a TOTP factor through Supabase Auth on the server. The server chooses the factor from the authenticated user's factor list and never accepts an assurance level from form data.
 
 ## D-020 — Platform-admin power requires aal2 everywhere (review 2026-10-04)
 
-Platform-admin tenant access also requires `aal2`.
+D-019 guarded `/admin` only. A platform admin also reaches every tenant through `/dashboard`, customer deletion, and the Data API RLS bypass in `private.is_platform_admin()`. All three now require `aal2`: `requireDataAccess` and `assertBusinessAccess(identity, …)` in the app, and the SQL helper checks `auth.jwt() ->> 'aal'` (migration `20261004010900_admin_rls_requires_aal2.sql`). A stolen admin password alone no longer reads customer data by any path.
 
 ## D-021 — Assisted WhatsApp follow-up, no Meta API (CEO, 2026-10-04)
 
-The MVP detects follow-up opportunities and opens WhatsApp with a suggested message; the business user presses Send. Smart Tap never sends messages automatically. CRM integration and Meta API automation are outside the base product.
+The MVP detects follow-up opportunities (inactive, birthday, frequent, new) and shows them in a dashboard queue. "Enviar WhatsApp" opens WhatsApp with the customer's number and a suggested message; the owner presses Send. Smart Tap never sends messages. WhatsApp marketing consent is a separate, optional, unchecked box at check-in, recorded with its own text version. Meta Business Platform, templates and automated sending are outside the Smart Tap base product. CRM integration is not part of Smart Tap and is handled through Plan Asistente or higher depending on scope. Specification: `docs/FOLLOW_UP_QUEUE.md`.
 
 ## D-022 — Production recovery must resist email prefetch (2026-10-03)
 
-Recovery links use a confirmation step before token consumption.
+Supabase's default recovery link was consumed before the user could use it and returned `otp_expired` in three immediate attempts. This matches Supabase's documented email-prefetch limitation for single-use links. The hosted smoke test completed recovery with a server-generated one-time recovery token opened directly on the same laptop; the password changed and the token was cleared. Before commercial launch, Smart Tap needs custom SMTP with tracking disabled and a recovery template that lands on a Smart Tap confirmation page before the browser follows the Supabase verification URL. The direct admin-generated link is a test-only recovery path and is not exposed in the product.
+
+Reviewer (2026-10-04): the application half is done. `/auth/callback` no longer consumes `token_hash` on GET; it shows a "Continuar" page and verifies only on POST (`tests/auth-callback.test.ts`). With the repository templates (`supabase/templates/*.html`) pasted into Supabase, invitation and recovery links survive scanner prefetch even on the default mailer. Custom SMTP is still needed for sending limits and deliverability, not for prefetch.
 
 ## D-023 — Dependency audit exceptions fail closed (2026-10-04)
 
-Dependency audit is currently clean after upstream patching.
+The production dependency gate permits one temporary exception for `GHSA-ch52-4w7c-c8xp` in `http-cache-semantics@4.2.0`, reached through Astro. The advisory has no patched release as of this date, and Smart Tap does not run a shared HTTP response cache; Astro imports the package for remote asset build caching. `scripts/audit-dependencies.mjs` accepts only that advisory, package chain and exact installed version. Any other high or critical finding fails the gate. Remove the exception when an upstream patch is available.
 
+Closed (Reviewer, 2026-10-04): `http-cache-semantics@4.3.0` was published on 2026-10-04 and fixes the advisory. The lockfile now resolves 4.3.0 (Astro allows `^4.2.0`), `npm audit` reports 0 vulnerabilities, and the exception script was removed. `npm run audit:prod` is plain `npm audit --omit=dev --audit-level=high` again. Before removal, reachability had been checked: the package was used only by Astro's build-time remote image cache and never reached `dist/server`.
 ## D-024 — Supabase Pro and a separate production project at the first signed client (CEO, 2026-10-04)
 
-The free project stays for demo/testing. At the first signed client, move to Supabase Pro and create a separate production project with daily backups.
+The free project `vrouyhxzxrfkuuqfslrc` stays for demo and testing. When the first business signs, the organization moves to Supabase Pro and a separate production project is created with daily backups. Until then no real customer data is loaded. This schedules GS-25 (backups) and GS-29 (separate environments); both stay open and block real data until done.
 
 ## D-025 — Commercial package and commitment (CEO, 2026-10-04)
 
-Smart Tap remains $199 setup + $79/month, with $278 initial checkout when setup and the first month are charged together. Minimum commitment: 3 monthly payments. Early cancellation still owes the full minimum. Afterward, cancellation requires 30 days notice. Access ends at the end of the paid period. 30-day export window; 90-day retention before deletion.
+Smart Tap remains $199 setup + $79/month, with $278 initial checkout when setup and the first month are charged together. The minimum commitment is 3 monthly payments. If the client cancels earlier, all three monthly payments remain due. After the minimum term, cancellation requires 30 days notice. Access ends at the end of the paid service period. The client receives a 30-day export window and data is retained for 90 days before deletion according to the final retention workflow.
 
 ## D-026 — NFC and location pricing (CEO, 2026-10-04)
 
-Base package: one location and 3 configured NFC tags. Additional configured tags: $10 each. Each additional location: $79/month. Setup is $99 if contracted before the prior location generates its second monthly payment; otherwise $199.
+The base package covers one business location and includes 3 configured NFC tags. Additional configured tags cost $10 each. Each additional location is $79/month. Its setup is $99 when contracted before the prior location of the same franchise/business group generates its second monthly payment; after that threshold, the regular $199 setup applies.
 
 ## D-027 — Support boundary (CEO, 2026-10-04)
 
-The $79 monthly fee includes normal platform operation, basic support and up to 2 simple configuration changes every 2 weeks. New automation/integration/custom work is separate scope.
+The $79 monthly fee includes normal platform operation, basic support and up to 2 simple configuration changes every 2 weeks. Examples include editing an offer, text, logo, phone number, business data or a suggested message. New automations, integrations, automated WhatsApp/API work, custom features and custom CRM work are outside this allowance and must be separately scoped, normally as Plan Asistente or higher.
 
 ## D-028 — Offers are owner-defined and system-recommended (CEO, 2026-10-04)
 
-The business owner defines allowed offers. Smart Tap may recommend an approved offer by opportunity type but must not invent discounts.
+The business owner defines the set of allowed offers during onboarding. Smart Tap may recommend which approved offer fits each opportunity type (inactive, birthday, frequent/VIP, new/welcome), but it must not invent or authorize discounts on its own. The owner approves the suggestion before opening WhatsApp and manually sending the message.
 
 ## D-029 — Onboarding starts with form plus verification meeting (CEO, 2026-10-04)
 
-After successful payment, the client completes a mandatory onboarding form. Automate IT then performs a short verification meeting with the owner or responsible manager, by phone/video or in person.
+After successful payment, the client completes a mandatory onboarding form. Automate IT then performs a short verification meeting with the owner or responsible manager. That verification may be by phone/video call or in person. Detailed onboarding fields and operating sequence remain under active design in `docs/CLIENT_ONBOARDING.md`.
 
 ## D-030 — Production host: Render (CEO, 2026-10-03)
 
@@ -147,3 +150,7 @@ The owner chooses during onboarding how many days without a qualifying visit mak
 ## D-037 — One owner-defined offer per follow-up category (CEO, 2026-10-04)
 
 During onboarding, the owner defines one approved offer for each follow-up category: inactive customer, birthday, frequent/VIP customer, and new/welcome customer. Smart Tap uses the offer assigned to that category and must not substitute or invent a different promotion without later owner approval.
+
+## D-038 — Included NFC allocation and placement (CEO, 2026-10-04)
+
+The base Smart Tap setup includes 3 configured NFC tags with fixed roles: **2 tags for customer capture/registration** and **1 tag for Google Review**. Automate IT recommends the best physical placement according to the type and customer flow of the business, and the owner may change that placement before activation.
