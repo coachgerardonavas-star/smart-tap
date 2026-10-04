@@ -212,3 +212,23 @@ Evidence:
 - RLS and grants keep follow-up writes and opt-out service-only.
 
 Final local gate: `npm run audit:prod` passed D-023; `npm run verify` reported 0 Astro diagnostics, 63/63 tests and a complete standalone Node build. The synchronized baseline CI passed in GitHub Actions run `37173173020`. Feature CI passed for commit `48c6e9b` in GitHub Actions run `37174554236`.
+
+## Reviewer pass on PR #1 up to 84ca9ae — 2026-10-04
+
+- Merge resolution of `claude/mfa-review` (22cebbb): intent preserved; D-020 guards, live migration names and branch map intact.
+- CRLF normalisation in `tests/migration-security.test.ts`: correct.
+- D-023: the upstream fix shipped the same day; dependency updated, exception removed, audit 0.
+- New: prefetch-safe `/auth/callback` (GET shows "Continuar", POST verifies), `tests/auth-callback.test.ts` (3 tests).
+- Merged `claude/mfa-review` again to bring the Follow-up Queue scope (the Builder numbered it D-021; recovery prefetch became D-022 and the audit exception D-023).
+- Reviewer gate before the Follow-up Queue integration: `npm run verify` reported 0 diagnostics and 44 tests; `npm audit --omit=dev` reported 0 vulnerabilities.
+
+## Reviewer integration gate — ChatGPT Codex, 2026-10-04
+
+Merged `origin/claude/pr1-review` at `a2dc700` into `codex/live-smoke-mfa`. The merge conflict in this file was resolved by retaining both the Follow-up Queue evidence and the Reviewer pass. The modify/delete conflict for `scripts/audit-dependencies.mjs` was resolved in favor of the Reviewer: `http-cache-semantics@4.3.0` closes the advisory and `audit:prod` is strict again. D-021, D-022 and D-023 retain their assigned topics.
+
+Final local results before push:
+- `npm ci`: completed; audit found 0 vulnerabilities;
+- `npm run audit:prod`: passed; 0 vulnerabilities;
+- `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 66/66 tests passed; standalone Node build completed;
+- `20261004030000_follow_up_queue.sql` remains unapplied to hosted Supabase;
+- no Supabase or deployment changes were made in this integration.

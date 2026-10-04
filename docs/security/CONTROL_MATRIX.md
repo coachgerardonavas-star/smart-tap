@@ -35,7 +35,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-12 Headers/transport | Yes | PENDIENTE — MEDIUM | CSP, nosniff, Referrer, Permissions present; CSP keeps 'unsafe-inline'; HSTS needs HTTPS host | Remove inline handlers or hash them; HSTS at deploy |
 | GS-13 Framing | Yes | VERIFICADO LOCALMENTE | frame-ancestors 'none' + X-Frame-Options DENY | — |
 | GS-14 Webhooks | No | NO APLICA JUSTIFICADO | No webhooks | — |
-| GS-15 Replay | Yes | VERIFICADO (H) | Repeat check-in same day did not count; invite and recovery tokens are single-use. Email prefetch risk is tracked in D-022 | Prefetch-safe production template |
+| GS-15 Replay | Yes | VERIFICADO (H) plus local callback tests | Repeat check-in same day did not count; invite and recovery tokens are single-use; token_hash is consumed only by an explicit POST (D-022) | Paste repository email templates into Supabase |
 | GS-16 Idempotency | Yes | VERIFICADO (H) | Check-in idempotent per customer-day | — |
 | GS-17 Race conditions | Yes | IMPLEMENTADO NO VERIFICADO | Customer upsert row lock serializes same-phone check-ins; UNIQUE(business_id, phone) | Concurrent test against H |
 | GS-18 Transactions | Yes | VERIFICADO LOCALMENTE | Check-in and WhatsApp opt-out each run in one PostgreSQL function; business creation compensates tag failure | Membership upsert error ignored in businesses.ts (low) |
@@ -46,7 +46,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
-| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile and exact versions; fail-closed audit gate permits only GHSA-ch52-4w7c-c8xp on http-cache-semantics@4.2.0 while no patch exists (D-023) | Remove exception when upstream ships a fix |
+| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile resolves http-cache-semantics@4.3.0; strict npm audit reports 0 vulnerabilities; D-023 exception removed | — |
 | GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; Follow-up Queue PR run 37174554236 passed | — |
 | GS-28 Secure Build Gate | Yes | PENDIENTE | verify workflow is blocking only with branch protection | Enable branch protection on main |
 | GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
@@ -62,7 +62,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403 | — |
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + Follow-up local | Viewer, other tenant, foreign customer, no opt-in, stale opportunity and AAL1 admin are rejected; phone/message absent from form | Expired/tampered JWT live; hosted Follow-up smoke |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
-| GS-42 Account attacks | Yes | PARCIAL | Generic login error and recovery response verified; default email links were consumed by prefetch | Auth limits + D-022 SMTP/template |
+| GS-42 Account attacks | Yes | IMPLEMENTADO NO VERIFICADO EN VIVO | Generic responses; prefetch-safe callback verifies token_hash only after the user presses Continuar (D-022) | Paste repository templates; verify hosted flow; confirm Auth limits |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO (H) plus local Follow-up routes | Follow-up and opt-out authorize business before service-role reads; customer query filters business_id + id; foreign customer returns 404 | Hosted Follow-up smoke |
@@ -87,3 +87,8 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 - GS-03: VERIFICADO EN EL ENTORNO OBJETIVO. MFA covers `/admin`, `/dashboard`, customer deletion and the Data API bypass (D-020); enrollment and live challenge passed.
 - GS-02: VERIFICADO EN EL ENTORNO OBJETIVO for the admin RLS path at aal1/aal2.
 - GS-56: two new permanent regression tests (app guard, SQL helper).
+
+## Update 2026-10-04 (Reviewer, after PR #1 commit 84ca9ae)
+
+- GS-26: VERIFICADO LOCALMENTE — `http-cache-semantics` 4.3.0, `npm audit` 0 vulnerabilities; D-023 exception removed.
+- GS-42 / GS-15: IMPLEMENTADO NO VERIFICADO en vivo — `/auth/callback` verifies `token_hash` only on POST; link prefetch cannot consume it. Requires the repository templates in Supabase.

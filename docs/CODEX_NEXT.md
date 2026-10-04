@@ -4,13 +4,8 @@ Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
 ## Part A — sync (first, before any new code)
 
-1. `git status --short --branch`; commit anything pending (never `.env`; check `git check-ignore .env`).
-2. Push every local branch you touched.
-3. `git fetch origin`; on `codex/live-smoke-mfa`: `git merge origin/claude/mfa-review`.
-   - It already contains the MFA bypass fixes (D-020), the ops reconciliation and these docs.
-   - `supabase/migrations/` holds the six live migration names. Do not restore old names. Do not merge `ops/reconcile-live-2026-10-03` separately.
-   - If your code calls `assertBusinessAccess(userId, …)`, change it to `assertBusinessAccess(identity, …)`.
-4. `npm ci`, `npm run verify` (baseline 0 diagnostics, 41 tests), push, PR #1 `verify` green.
+1. `git fetch origin`; on `codex/live-smoke-mfa`: `git pull --ff-only origin codex/live-smoke-mfa`. `origin/claude/pr1-review` is integrated through `a2dc700`; it adds the prefetch-safe callback and closes D-023 with the upstream dependency fix.
+2. `npm ci`, `npm run audit:prod`, `npm run verify` (current baseline: 0 diagnostics, 66 tests, 0 audit vulnerabilities).
 
 ## Part B — Follow-up Queue (D-021)
 
