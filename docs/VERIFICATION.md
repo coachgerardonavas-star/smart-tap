@@ -556,3 +556,14 @@ Reviewer screenshots at 390×844 of `/demo/capture?theme=` for the four styles (
 Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004212542_customer_styles` (file renamed). Hosted checks inside a rolled-back transaction: Café Luna defaulted to `calido` and stayed active; a valid style update passed; unknown theme, two benefits, `http://` and `javascript:` hero URLs and an 81-character tagline were rejected.
 
 Verdict: **PR #6 approved by the Reviewer.** After merge, Render redeploys and the Reviewer checks `/demo/capture` on the production domain.
+
+## Physical NFC test — production domain (CEO + Claude Code, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Tag written with `https://smarttap.yourbizupgraded.com/b/cafe-luna?t=<Mostrador principal code>` (not locked) | Opened the Café Luna page in the `calido` style on the CEO's iPhone |
+| Check-in from the tag | Visit recorded at 21:33 UTC against tag "Mostrador principal"; new customer; consent `text_version` = `2026-10-04` (server-set); WhatsApp opt-in recorded as chosen |
+| Confirmation screen | "¡Listo!" shown (CEO) |
+| Cleanup at the CEO's request | The test customer was deleted (visits and consent cascaded); Café Luna back to 3 customers and 7 visits, 0 follow-ups |
+
+Still open before the first client: second-device test (Android), rate-limit IP identity on two networks, tag write-lock after final URL, production Supabase project (D-024/D-047).
