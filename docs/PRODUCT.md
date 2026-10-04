@@ -6,11 +6,30 @@ Smart Tap is a $199 setup and $79 monthly entry product for local businesses.
 
 A customer touches an NFC, opens the business landing, shares a name and phone, optionally shares a birthday, accepts the privacy notice, optionally accepts WhatsApp messages, and records a visit. The dashboard turns visits into a follow-up queue (inactive, birthday, frequent, new); the owner sends each WhatsApp message himself with one tap (D-021, `docs/FOLLOW_UP_QUEUE.md`).
 
-Existing CRM: without one, Smart Tap stands alone; with an underused one, Smart Tap starts standalone and is not integrated by default; with an active CRM and automations, integration is quoted as a separate project. Automated WhatsApp through Meta is a later add-on.
+Existing CRM: Smart Tap remains standalone by default whether or not the business already has a CRM. CRM integration is not part of Smart Tap; if requested, it is handled under Plan Asistente or higher depending on scope. Automated WhatsApp through Meta is also outside the Smart Tap base product.
 
-The business gets a small private panel. It shows customers, visits, repeat customers, last visits, inactive customers, upcoming birthdays, and a basic customer list. Owners and managers can remove a customer when handling a privacy request.
+The business gets a small private panel. It shows customers, visits, repeat customers, last visits, inactive customers, upcoming birthdays, frequent/VIP customers, new customers, and a basic customer list. Owners and managers can remove a customer when handling a privacy request.
 
 Automate IT gets a separate admin area for business configuration, branding, NFC links, inactivity rules, and user invitations. One platform serves all businesses. Each business sees only its rows.
+
+## Commercial package
+
+- $199 setup + $79/month.
+- Initial checkout: $278 when setup and first monthly payment are charged together.
+- Minimum commitment: 3 monthly payments. Early cancellation still owes the full three-month commitment.
+- After the minimum, cancellation requires 30 days notice.
+- Service access ends at the end of the paid period.
+- Customer receives a 30-day export window after termination; data is retained for 90 days before deletion under the final retention workflow.
+- Base package covers one business location.
+- Three configured NFC tags are included in the initial setup.
+- Additional configured NFC tags: $10 each.
+- Additional location: $79/month. Setup is $99 if purchased before the prior location of the same franchise/business group generates its second monthly charge; after that point, setup is the regular $199.
+- Monthly support includes normal platform operation, basic support and up to 2 simple configuration changes every 2 weeks.
+- New automations, integrations, custom features, automated WhatsApp/API work and custom CRM work are not simple configuration changes and are scoped separately, normally as Plan Asistente or higher.
+
+## Follow-up and offers
+
+Smart Tap prepares opportunities for inactive customers, birthdays, frequent/VIP customers and new/welcome customers. The system should recommend which owner-approved offer fits each case, but it must not invent or authorize discounts on its own. The business owner defines the allowed offers during onboarding. The owner approves the suggested offer/message and manually sends the WhatsApp message.
 
 ## MVP success criteria
 
