@@ -56,7 +56,7 @@ Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics 
 
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
-- Custom SMTP with tracking disabled and a prefetch-safe recovery template before commercial invitations (D-021).
+- Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (makes links prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-021).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
 

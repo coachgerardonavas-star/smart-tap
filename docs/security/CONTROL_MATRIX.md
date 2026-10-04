@@ -86,3 +86,8 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 - GS-03: VERIFICADO EN EL ENTORNO OBJETIVO. MFA covers `/admin`, `/dashboard`, customer deletion and the Data API bypass (D-020); enrollment and live challenge passed.
 - GS-02: VERIFICADO EN EL ENTORNO OBJETIVO for the admin RLS path at aal1/aal2.
 - GS-56: two new permanent regression tests (app guard, SQL helper).
+
+## Update 2026-10-04 (Reviewer, after PR #1 commit 84ca9ae)
+
+- GS-26: VERIFICADO LOCALMENTE — `http-cache-semantics` 4.3.0, `npm audit` 0 vulnerabilities; D-022 exception removed.
+- GS-42 / GS-15: IMPLEMENTADO NO VERIFICADO en vivo — `/auth/callback` verifies `token_hash` only on POST; link prefetch cannot consume it. Requires the repository templates in Supabase.

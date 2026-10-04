@@ -83,6 +83,17 @@ D-019 guarded `/admin` only. A platform admin also reaches every tenant through 
 ## D-021 — Production recovery must resist email prefetch (2026-10-03)
 
 Supabase's default recovery link was consumed before the user could use it and returned `otp_expired` in three immediate attempts. This matches Supabase's documented email-prefetch limitation for single-use links. The hosted smoke test completed recovery with a server-generated one-time recovery token opened directly on the same laptop; the password changed and the token was cleared. Before commercial launch, Smart Tap needs custom SMTP with tracking disabled and a recovery template that lands on a Smart Tap confirmation page before the browser follows the Supabase verification URL. The direct admin-generated link is a test-only recovery path and is not exposed in the product.
+
+Reviewer (2026-10-04): the application half is done. `/auth/callback` no longer consumes `token_hash` on GET; it shows a "Continuar" page and verifies only on POST (`tests/auth-callback.test.ts`). With the repository templates (`supabase/templates/*.html`) pasted into Supabase, invitation and recovery links survive scanner prefetch even on the default mailer. Custom SMTP is still needed for sending limits and deliverability, not for prefetch.
+
 ## D-022 — Dependency audit exceptions fail closed (2026-10-04)
 
 The production dependency gate permits one temporary exception for `GHSA-ch52-4w7c-c8xp` in `http-cache-semantics@4.2.0`, reached through Astro. The advisory has no patched release as of this date, and Smart Tap does not run a shared HTTP response cache; Astro imports the package for remote asset build caching. `scripts/audit-dependencies.mjs` accepts only that advisory, package chain and exact installed version. Any other high or critical finding fails the gate. Remove the exception when an upstream patch is available.
+
+Closed (Reviewer, 2026-10-04): `http-cache-semantics@4.3.0` was published on 2026-10-04 and fixes the advisory. The lockfile now resolves 4.3.0 (Astro allows `^4.2.0`), `npm audit` reports 0 vulnerabilities, and the exception script was removed. `npm run audit:prod` is plain `npm audit --omit=dev --audit-level=high` again. Before removal, reachability had been checked: the package was used only by Astro's build-time remote image cache and never reached `dist/server`.
+
+D-019 guarded `/admin` only. A platform admin also reaches every tenant through `/dashboard`, customer deletion, and the Data API RLS bypass in `private.is_platform_admin()`. All three now require `aal2`: `requireDataAccess` and `assertBusinessAccess(identity, …)` in the app, and the SQL helper checks `auth.jwt() ->> 'aal'` (migration `20261004000000_admin_rls_requires_aal2.sql`). A stolen admin password alone no longer reads customer data by any path.
+
+## D-023 — Assisted WhatsApp follow-up, no Meta API (CEO, 2026-10-04)
+
+The MVP detects follow-up opportunities (inactive, birthday, frequent, new) and shows them in a dashboard queue. "Enviar WhatsApp" opens WhatsApp with the customer's number and a suggested message; the owner presses Send. Smart Tap never sends messages. WhatsApp marketing consent is a separate, optional, unchecked box at check-in, recorded with its own text version. Meta Business Platform, templates and automated sending are a later add-on outside $199 + $79/month. CRM integration is a separately quoted project. Specification: `docs/FOLLOW_UP_QUEUE.md`.
