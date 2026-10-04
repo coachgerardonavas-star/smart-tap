@@ -175,3 +175,7 @@ Replaces D-035. The WhatsApp box stays separate, optional and unchecked, as impl
 ## D-043 — Branch protection deferred (CEO, 2026-10-04)
 
 The repository is private on GitHub Free, where protected branches are not available. The CEO chose not to buy GitHub Pro yet. Until then `main` has no technical protection: every agent still works through pull requests with the `verify` check green and never pushes to `main` directly (AGENTS.md). Accepted risk for GS-28/GS-30; revisit at the first signed client or when another person gets write access.
+
+## D-044 — Customer privacy notice per business (CEO, 2026-10-04)
+
+Approved text in `docs/PRIVACY_NOTICE.md`. One notice per business at `/privacy/[slug]`, Spanish and English on one page, filled with the business name and contact (phone or email, required for owner approval). Retention: customer data deleted after 24 months without a visit; on cancellation the owner receives a CSV export and all customer data is deleted within 30 days. Requests go to the business with smarttap@yourbizupgraded.com as fallback. Minimum age 13. Providers described by type (US hosting and database), not by name. Not legal advice: attorney review before the first real client. Closes D-011 once the implementation spec ships.
