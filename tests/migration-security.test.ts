@@ -37,6 +37,20 @@ describe("database security migration", () => {
     expect(sql).toMatch(/revoke all on function public\.record_whatsapp_opt_out\(uuid, uuid, uuid, text\)[\s\S]+from public, anon, authenticated/);
     expect(sql).toMatch(/grant execute on function public\.record_whatsapp_opt_out\(uuid, uuid, uuid, text\)[\s\S]+to service_role/);
   });
+  it("keeps onboarding mutations service-only", () => {
+    for (const signature of [
+      "upsert_business_member_with_limit\\(uuid, uuid, public\\.business_role\\)",
+      "set_business_member_active_with_limit\\(uuid, uuid, boolean\\)",
+      "record_business_owner_approval\\(uuid, text, uuid\\)",
+    ]) {
+      expect(sql).toMatch(new RegExp(`revoke all on function public\\.${signature}[\\s\\S]+?from public, anon, authenticated`));
+      expect(sql).toMatch(new RegExp(`grant execute on function public\\.${signature}[\\s\\S]+?to service_role`));
+    }
+  });
+  it("requires approval for activation and defaults new businesses to inactive", () => {
+    expect(sql).toContain("alter table public.businesses alter column is_active set default false");
+    expect(sql).toContain("check (not is_active or owner_approved_at is not null)");
+  });
   it("changes the new-business inactivity default to 30 days", () => {
     expect(sql).toContain("alter table public.businesses alter column inactivity_days set default 30");
   });

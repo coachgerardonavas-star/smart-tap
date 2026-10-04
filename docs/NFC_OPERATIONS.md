@@ -1,19 +1,28 @@
 # Smart Tap — NFC Operations
 
+## Base package allocation
+
+Each business receives three configured physical tags:
+
+- two capture tags with Smart Tap URLs;
+- one Google Review tag with the direct Google Review URL saved in the business admin.
+
+The Google Review tag opens Google directly. Do not place a Smart Tap page, rating screen, filter or other step before Google.
+
 ## Rule
 
-The NFC stores only the exact Smart Tap HTTPS URL generated for the business/tag. Do not store customer PII, credentials, secrets or tokens directly on the NFC.
+Each capture NFC stores only the exact Smart Tap HTTPS URL generated for the business/tag. The review NFC stores only the approved direct Google Review HTTPS URL. Do not store customer PII, credentials, secrets or tokens directly on any NFC.
 
 ## Programming procedure
 
 1. In Smart Tap admin, open the target business.
-2. Create/select the intended NFC tag record and label.
-3. Copy the exact production HTTPS URL shown for that tag.
+2. For either capture tag, create/select the intended NFC tag record and label. For the review tag, use the Google Review URL shown in the same page.
+3. Copy the exact production HTTPS URL for the intended tag role.
 4. Write that URL as the NFC web/URI record.
 5. Read the tag back before delivery and confirm the URL matches exactly.
-6. Tap with a real phone and verify the correct business landing page opens.
-7. Complete one test check-in.
-8. Confirm the dashboard records the intended customer/business/tag behavior.
+6. Tap with a real phone. Confirm that a capture tag opens the correct business landing or that the review tag opens Google directly.
+7. For each capture tag, complete one test check-in.
+8. For each capture tag, confirm the dashboard records the intended customer/business/tag behavior.
 9. Only after the full test succeeds may the physical tag be write-locked.
 
 ## Never lock first
@@ -41,7 +50,7 @@ If a tag is lost/damaged:
 
 ## Privacy/security
 
-- NFC URL must use HTTPS.
+- Every NFC URL must use HTTPS.
 - No service-role key or secret belongs in the NFC URL.
 - Customer data collection occurs only on the Smart Tap landing page with the applicable consent/privacy notice.
 - Do not program a generic URL when per-tag attribution is expected.

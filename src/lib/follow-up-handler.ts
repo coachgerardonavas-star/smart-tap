@@ -8,7 +8,10 @@ export class FollowUpActionError extends Error {
   }
 }
 
-type FollowUpBusiness = Pick<Business, "id" | "slug" | "display_name" | "timezone" | "inactivity_days">;
+type FollowUpBusiness = Pick<Business,
+  "id" | "slug" | "display_name" | "timezone" | "inactivity_days" |
+  "offer_inactive" | "offer_birthday" | "offer_frequent" | "offer_new"
+>;
 
 type FollowUpStore = {
   getBusiness(businessId: string): Promise<FollowUpBusiness | null>;
@@ -57,6 +60,12 @@ export async function executeFollowUpAction(
     timezone: business.timezone,
     inactivityDays: business.inactivity_days,
     now: dependencies.now,
+    offers: {
+      inactive: business.offer_inactive,
+      birthday: business.offer_birthday,
+      frequent: business.offer_frequent,
+      new: business.offer_new,
+    },
   }).find((item) => item.kind === input.kind);
   if (!opportunity) throw new FollowUpActionError(409, "Esta oportunidad ya no está disponible.");
 

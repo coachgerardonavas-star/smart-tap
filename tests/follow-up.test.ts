@@ -100,4 +100,23 @@ describe("follow-up opportunity rules", () => {
     expect(url).toMatch(/^https:\/\/wa\.me\/13055550101\?text=/);
     expect(decodeURIComponent(new URL(url).searchParams.get("text")!)).toBe(opportunity?.message);
   });
+
+  it("adds only the approved offer for the matching category", () => {
+    const first = customer({ id: "offer", full_name: "Elena García", last_seen_at: "2026-10-03T18:00:00Z" });
+    const input = {
+      ...business,
+      now,
+      customers: [first],
+      visits: [visit("offer-visit", first.id, first.last_seen_at)],
+      visitCounts: { offer: 1 },
+    };
+    const withoutOffer = buildFollowUpOpportunities(input).find((item) => item.kind === "new");
+    const withOffer = buildFollowUpOpportunities({
+      ...input,
+      offers: { new: "Recibe un café gratis.", inactive: "Oferta del otro caso." },
+    }).find((item) => item.kind === "new");
+    expect(withoutOffer?.message).toBe("¡Gracias por tu primera visita a Café Luna, Elena! Esperamos verte pronto. Si prefieres no recibir mensajes, responde BAJA.");
+    expect(withOffer?.message).toBe("¡Gracias por tu primera visita a Café Luna, Elena! Esperamos verte pronto. Recibe un café gratis. Si prefieres no recibir mensajes, responde BAJA.");
+    expect(withOffer?.message).not.toContain("Oferta del otro caso");
+  });
 });

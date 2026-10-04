@@ -61,5 +61,13 @@ if (!business) Astro.response.status = 404;
   .ambient.one { top: -150px; right: -80px; } .ambient.two { bottom: -180px; left: -90px; background: var(--brand-dark); }
   footer { grid-column: 1 / -1; color: #a8a29e; font-size: .75rem; }
   .not-found { min-height: 100vh; display: grid; place-content: center; text-align: center; padding: 30px; }
-  @media (max-width: 780px) { .landing { grid-template-columns: 1fr; padding-top: 28px; } .business-intro { padding: 12px; text-align: center; } .business-intro img, .logo-mark { margin: 0 auto 20px; } .business-intro h1 { font-size: 2.8rem; } .form-card { padding: 25px 21px; } }
+  @media (max-width: 780px) {
+    .landing { grid-template-columns: 1fr; align-content: start; gap: 12px; padding: 16px 14px 22px; }
+    .business-intro { padding: 4px 12px; text-align: center; }
+    .business-intro img, .logo-mark { width: 56px; height: 56px; margin: 0 auto 8px; border-radius: 16px; }
+    .welcome { margin-bottom: 2px; font-size: .8rem; }
+    .business-intro h1 { margin-bottom: 4px; font-size: 2.15rem; }
+    .business-intro > p:last-child { font-size: .9rem; }
+    .form-card { padding: 25px 21px; }
+  }
 </style>

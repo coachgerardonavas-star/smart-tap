@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { businessInputSchema, checkInInputSchema, normalizePhone, safeNextPath } from "../src/lib/validation";
+import { businessInputSchema, businessUpdateSchema, checkInInputSchema, googleReviewUrlSchema, normalizePhone, safeNextPath } from "../src/lib/validation";
 
 describe("public check-in validation", () => {
   it("accepts a complete check-in and rejects missing consent", () => {
@@ -37,5 +39,40 @@ describe("admin validation", () => {
     expect(safeNextPath("/\\evil.example")).toBe("/dashboard");
     expect(safeNextPath("/\t/evil.example")).toBe("/dashboard");
     expect(safeNextPath("/admin/../dashboard")).toBe("/dashboard");
+  });
+
+  it("accepts only direct HTTPS Google Review hosts", () => {
+    for (const url of [
+      "https://g.page/r/example/review",
+      "https://search.google.com/local/writereview?placeid=abc",
+      "https://www.google.com/maps/place/example",
+      "https://maps.app.goo.gl/example",
+    ]) expect(googleReviewUrlSchema.safeParse(url).success).toBe(true);
+    for (const url of [
+      "http://g.page/r/example/review",
+      "https://evil.example/review",
+      "https://g.page.evil.example/review",
+      "javascript:alert(1)",
+    ]) expect(googleReviewUrlSchema.safeParse(url).success).toBe(false);
+  });
+
+  it("trims onboarding offers and limits them to 200 characters", () => {
+    const base = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "https://example.com/logo.png", privacyUrl: "/privacy", primaryColor: "#155EEF", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "US", inactivityDays: "30", googleReviewUrl: "https://g.page/r/example/review", offerInactive: " Regresa por un café. ", offerBirthday: "Celebra con nosotros.", offerFrequent: "Gracias por volver.", offerNew: "Bienvenido." };
+    const parsed = businessUpdateSchema.parse(base);
+    expect(parsed.offerInactive).toBe("Regresa por un café.");
+    expect(businessUpdateSchema.safeParse({ ...base, offerNew: "x".repeat(201) }).success).toBe(false);
+  });
+
+  it("renders the approved birthday label and help text", () => {
+    const form = readFileSync(join(process.cwd(), "src/components/CheckInForm.tsx"), "utf8");
+    expect(form).toContain("¿Cuándo cumples años?");
+    expect(form).toContain("Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.");
+  });
+
+  it("renders the optional benefit-led WhatsApp consent unchecked", () => {
+    const form = readFileSync(join(process.cwd(), "src/components/CheckInForm.tsx"), "utf8");
+    expect(form).toContain("Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.");
+    expect(form).toMatch(/<input name="whatsappOptIn" type="checkbox" \/>/);
+    expect(form).not.toMatch(/name="whatsappOptIn"[^>]*checked/);
   });
 });

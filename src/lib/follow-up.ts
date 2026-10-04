@@ -3,6 +3,7 @@ import type { Customer, Visit } from "./types";
 export const FOLLOW_UP_KINDS = ["inactive", "birthday", "frequent", "new"] as const;
 export type FollowUpKind = (typeof FOLLOW_UP_KINDS)[number];
 export type FollowUpStatus = "contacted" | "dismissed";
+export type FollowUpOffers = Partial<Record<FollowUpKind, string | null>>;
 
 export const FOLLOW_UP_KIND_LABELS: Record<FollowUpKind, string> = {
   inactive: "Hace tiempo que no viene",
@@ -40,6 +41,7 @@ type BuildInput = {
   timezone: string;
   inactivityDays: number;
   now?: Date;
+  offers?: FollowUpOffers;
 };
 
 const DAY_MS = 86_400_000;
@@ -69,14 +71,14 @@ export function buildFollowUpOpportunities(input: BuildInput): FollowUpOpportuni
 
     if (daysSinceLastVisit >= input.inactivityDays) {
       addOpportunity(opportunities, handled, customer, "inactive", lastVisitKey,
-        `Sin venir hace ${daysSinceLastVisit} días`, lastVisit, input.businessName);
+        `Sin venir hace ${daysSinceLastVisit} días`, lastVisit, input.businessName, input.offers);
     }
 
     if (customer.birthday) {
       const birthday = nextBirthday(customer.birthday, todayKey);
       if (birthday && birthday.daysUntil <= 7) {
         const reason = birthday.daysUntil === 0 ? "Cumple hoy" : `Cumple el ${shortDate(birthday.dateKey)}`;
-        addOpportunity(opportunities, handled, customer, "birthday", String(birthday.year), reason, lastVisit, input.businessName);
+        addOpportunity(opportunities, handled, customer, "birthday", String(birthday.year), reason, lastVisit, input.businessName, input.offers);
       }
     }
 
@@ -86,12 +88,12 @@ export function buildFollowUpOpportunities(input: BuildInput): FollowUpOpportuni
     }).length;
     if (recentVisitCount >= 4) {
       addOpportunity(opportunities, handled, customer, "frequent", currentYearMonth,
-        `${recentVisitCount} visitas en los últimos 30 días`, lastVisit, input.businessName);
+        `${recentVisitCount} visitas en los últimos 30 días`, lastVisit, input.businessName, input.offers);
     }
 
     if (totalVisits === 1 && daysSinceLastVisit >= 0 && daysSinceLastVisit <= 3) {
       addOpportunity(opportunities, handled, customer, "new", "first",
-        "Primera visita reciente", lastVisit, input.businessName);
+        "Primera visita reciente", lastVisit, input.businessName, input.offers);
     }
   }
 
@@ -116,6 +118,7 @@ function addOpportunity(
   reason: string,
   lastVisit: string,
   businessName: string,
+  offers?: FollowUpOffers,
 ) {
   if (handled.has(actionKey(customer.id, kind, periodKey))) return;
   result.push({
@@ -124,18 +127,19 @@ function addOpportunity(
     periodKey,
     reason,
     lastVisit,
-    message: suggestedMessage(kind, firstName(customer.full_name), businessName),
+    message: suggestedMessage(kind, firstName(customer.full_name), businessName, offers?.[kind]),
   });
 }
 
-function suggestedMessage(kind: FollowUpKind, name: string, businessName: string): string {
+function suggestedMessage(kind: FollowUpKind, name: string, businessName: string, offer?: string | null): string {
   const body: Record<FollowUpKind, string> = {
     inactive: `Hola ${name}, te extrañamos en ${businessName}. ¡Te esperamos pronto!`,
     birthday: `¡Feliz cumpleaños, ${name}! En ${businessName} queremos celebrarlo contigo.`,
     frequent: `Gracias por visitarnos tan seguido, ${name}. En ${businessName} valoramos mucho tu preferencia.`,
     new: `¡Gracias por tu primera visita a ${businessName}, ${name}! Esperamos verte pronto.`,
   };
-  return `${body[kind]} ${stopMessage}`;
+  const approvedOffer = offer?.trim();
+  return `${body[kind]}${approvedOffer ? ` ${approvedOffer}` : ""} ${stopMessage}`;
 }
 
 function firstName(fullName: string): string {

@@ -244,3 +244,91 @@ describe("WhatsApp consent and opt-out", () => {
     expect(result.rows[0]).toEqual({ whatsapp_opt_in: false, revocations: 1, audits: 1 });
   });
 });
+
+describe("onboarding configuration", () => {
+  it("keeps at most two active members, including parallel invitations, and frees paused slots", async () => {
+    const businessA = "10000000-0000-4000-8000-0000000000a1";
+    const businessB = "10000000-0000-4000-8000-0000000000a2";
+    const users = [
+      "40000000-0000-4000-8000-0000000000a1",
+      "40000000-0000-4000-8000-0000000000a2",
+      "40000000-0000-4000-8000-0000000000a3",
+    ];
+    await database.exec(`
+      insert into auth.users (id, email) values
+        ('${users[0]}', 'limit-1@example.test'),
+        ('${users[1]}', 'limit-2@example.test'),
+        ('${users[2]}', 'limit-3@example.test')
+      on conflict (id) do nothing;
+      insert into public.businesses (id, slug, display_name) values
+        ('${businessA}', 'member-limit-a', 'Member Limit A'),
+        ('${businessB}', 'member-limit-b', 'Member Limit B');
+    `);
+
+    await database.query(`select public.upsert_business_member_with_limit('${businessA}', '${users[0]}', 'owner')`);
+    await database.query(`select public.upsert_business_member_with_limit('${businessA}', '${users[1]}', 'manager')`);
+    await expect(database.query(`select public.upsert_business_member_with_limit('${businessA}', '${users[2]}', 'viewer')`))
+      .rejects.toThrow(/active_member_limit/);
+
+    await database.query(`select public.set_business_member_active_with_limit('${businessA}', '${users[0]}', false)`);
+    await database.query(`select public.upsert_business_member_with_limit('${businessA}', '${users[2]}', 'viewer')`);
+    await expect(database.query(`select public.set_business_member_active_with_limit('${businessA}', '${users[0]}', true)`))
+      .rejects.toThrow(/active_member_limit/);
+    await database.query(`select public.set_business_member_active_with_limit('${businessA}', '${users[1]}', false)`);
+    await database.query(`select public.set_business_member_active_with_limit('${businessA}', '${users[0]}', true)`);
+    const afterPause = await database.query<{ count: number }>(`select count(*)::int as count from public.business_members where business_id = '${businessA}' and is_active`);
+    expect(afterPause.rows[0]?.count).toBe(2);
+
+    await database.query(`select public.upsert_business_member_with_limit('${businessB}', '${users[0]}', 'owner')`);
+    const parallel = await Promise.allSettled([
+      database.query(`select public.upsert_business_member_with_limit('${businessB}', '${users[1]}', 'manager')`),
+      database.query(`select public.upsert_business_member_with_limit('${businessB}', '${users[2]}', 'viewer')`),
+    ]);
+    expect(parallel.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(parallel.filter((result) => result.status === "rejected")).toHaveLength(1);
+    const afterParallel = await database.query<{ count: number }>(`select count(*)::int as count from public.business_members where business_id = '${businessB}' and is_active`);
+    expect(afterParallel.rows[0]?.count).toBe(2);
+  });
+
+  it("blocks activation and approval until the final config is complete, then audits approval", async () => {
+    const businessId = "10000000-0000-4000-8000-0000000000b1";
+    const actorId = "40000000-0000-4000-8000-0000000000b1";
+    await database.exec(`
+      insert into auth.users (id, email) values ('${actorId}', 'approval-owner@example.test') on conflict (id) do nothing;
+      insert into public.businesses (id, slug, display_name) values ('${businessId}', 'approval-test', 'Approval Test');
+    `);
+    await expect(database.exec(`update public.businesses set is_active = true where id = '${businessId}'`))
+      .rejects.toThrow(/businesses_activation_requires_approval_check/);
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
+      .rejects.toThrow(/approval_configuration_incomplete/);
+
+    await database.exec(`
+      update public.businesses set
+        logo_url = 'https://example.test/logo.png',
+        offer_inactive = 'Regresa por un café.',
+        offer_birthday = 'Celebra con un postre.',
+        offer_frequent = 'Disfruta un extra.',
+        offer_new = 'Recibe una bienvenida.',
+        google_review_url = 'https://g.page/r/example/review'
+      where id = '${businessId}';
+    `);
+    await expect(database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`))
+      .rejects.toThrow(/approval_active_member_required/);
+    await database.query(`select public.upsert_business_member_with_limit('${businessId}', '${actorId}', 'owner')`);
+    await database.query(`select public.record_business_owner_approval('${businessId}', 'Dueña Prueba', '${actorId}')`);
+    await database.exec(`update public.businesses set is_active = true where id = '${businessId}'`);
+
+    const result = await database.query<{ is_active: boolean; owner_approved_name: string; audits: number }>(`
+      select b.is_active, b.owner_approved_name,
+        (select count(*)::int from public.audit_log where business_id = b.id and action = 'business.owner_approved') as audits
+      from public.businesses b where b.id = '${businessId}'
+    `);
+    expect(result.rows[0]).toEqual({ is_active: true, owner_approved_name: "Dueña Prueba", audits: 1 });
+
+    const demo = await database.query<{ is_active: boolean; approved: boolean }>(`
+      select is_active, owner_approved_at is not null as approved
+      from public.businesses where id = '10000000-0000-4000-8000-000000000001'
+    `);
+    expect(demo.rows[0]).toEqual({ is_active: true, approved: true });
+  });
+});

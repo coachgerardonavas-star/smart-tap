@@ -27,8 +27,17 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   }
   if (!userId) return redirect(`/admin/${id}?error=${encodeURIComponent("No pudimos invitar ese correo.")}`, 303);
 
-  const { error } = await service.from("business_members").upsert({ business_id: id, user_id: userId, role: parsed.data.role, is_active: true });
-  if (error) return redirect(`/admin/${id}?error=${encodeURIComponent("No pudimos asignar el usuario.")}`, 303);
+  const { error } = await service.rpc("upsert_business_member_with_limit", {
+    p_business_id: id,
+    p_user_id: userId,
+    p_role: parsed.data.role,
+  });
+  if (error) {
+    const message = error.message.includes("active_member_limit")
+      ? "Este negocio ya tiene 2 usuarios activos. Pausa uno antes de agregar otro."
+      : "No pudimos asignar el usuario.";
+    return redirect(`/admin/${id}?error=${encodeURIComponent(message)}`, 303);
+  }
   await service.from("audit_log").insert({ actor_user_id: identity.id, business_id: id, action: "member.invited", entity_type: "business_member", entity_id: userId, details: { role: parsed.data.role } });
   return redirect(`/admin/${id}?message=${encodeURIComponent("Usuario asignado.")}`, 303);
 };

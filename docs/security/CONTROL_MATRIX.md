@@ -1,6 +1,6 @@
 # Smart Tap — Glasswing Shield v1.0 control matrix
 
-Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with hosted smoke evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc` with the app running locally against H. There is no production environment yet.
+Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with hosted smoke and onboarding evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc` with the app running locally against H. There is no production environment yet.
 
 **Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
 
@@ -28,7 +28,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
-| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164, slug, colors, URLs, birthday, next path | — |
+| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164, slug, colors, URLs, birthday, next path; Google Review accepts only HTTPS on four approved exact hosts; offers trim to 1–200 chars | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
 | GS-10 Anti-abuse | Yes | VERIFICADO (H) for check-in; IMPLEMENTADO NO VERIFICADO for login/recovery | DB counters (multi-instance safe); login/recovery rely on Supabase Auth limits | Confirm Auth rate limits in dashboard |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
@@ -37,12 +37,12 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-14 Webhooks | No | NO APLICA JUSTIFICADO | No webhooks | — |
 | GS-15 Replay | Yes | VERIFICADO (H) plus local callback tests | Repeat check-in same day did not count; invite and recovery tokens are single-use; token_hash is consumed only by an explicit POST (D-022) | Paste repository email templates into Supabase |
 | GS-16 Idempotency | Yes | VERIFICADO (H) | Check-in idempotent per customer-day | — |
-| GS-17 Race conditions | Yes | IMPLEMENTADO NO VERIFICADO | Customer upsert row lock serializes same-phone check-ins; UNIQUE(business_id, phone) | Concurrent test against H |
-| GS-18 Transactions | Yes | VERIFICADO LOCALMENTE | Check-in and WhatsApp opt-out each run in one PostgreSQL function; business creation compensates tag failure | Membership upsert error ignored in businesses.ts (low) |
+| GS-17 Race conditions | Yes | VERIFICADO (L+H) | Local parallel member test ends at exactly 2; hosted admin smoke accepted owner+manager and rejected the third active user | — |
+| GS-18 Transactions | Yes | VERIFICADO (L+H) | Check-in, WhatsApp opt-out, member slot enforcement and owner approval/audit run in PostgreSQL functions; hosted approval plus activation passed | — |
 | GS-19 SSRF | No | NO APLICA JUSTIFICADO | Server fetches only Supabase | — |
 | GS-20 Own API keys | No | NO APLICA JUSTIFICADO | No API keys issued | — |
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
-| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) for WhatsApp opt-out | Hosted opt-out appended negative consent and one customer.whatsapp_opt_out audit row atomically | Separate destination (low) |
+| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Hosted opt-out and owner approval audit passed; hosted business update stored five changed field names without values | — |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
@@ -58,7 +58,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-35 Immutable versions | Partial | VERIFICADO LOCALMENTE | Visit and WhatsApp consent purposes use append-only rows with exact text versions; no update path | — |
 | GS-36 Least-privilege agents | Yes | VERIFICADO | Agents never receive the secret key (Codex prompt rule) | — |
 | GS-37 Prompt injection | No | NO APLICA JUSTIFICADO | No AI in product | — |
-| GS-38 Secure defaults | Yes | VERIFICADO LOCALMENTE | Missing env fails closed; private schema; no implicit access | — |
+| GS-38 Secure defaults | Yes | VERIFICADO LOCALMENTE | Missing env fails closed; private schema; new businesses default inactive; database constraint blocks activation without approval | — |
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403 | — |
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
@@ -66,7 +66,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; customer query filters business_id + id; foreign customer returns 404 locally | — |
-| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Live 303 used database phone and server-built encoded message; browser form accepts only ids, kind and action | — |
+| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Hosted PR #3 smoke returned a server-built 303 using database phone, message and matching business offer; browser form accepts only ids, kind and action | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
 | GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
@@ -76,7 +76,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 66/66 permanent tests plus hosted Follow-up UI smoke and cleanup | — |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 78/78 permanent tests; hosted Follow-up smoke; hosted onboarding admin smoke with scoped cleanup; exact 390×844 before/after captures | — |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -98,3 +98,18 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 - GS-02, GS-04, GS-22, GS-45 and GS-46: hosted evidence added for migration/RLS, owner actions, viewer restrictions, audit and the server-built WhatsApp redirect.
 - GS-40: hosted viewer and no-opt-in paths passed; expired/tampered JWT remains a separate live check.
 - GS-56: hosted smoke completed; cleanup restored Café Luna and the platform admin as the only demo business/user state.
+
+## Update 2026-10-04 (Builder, onboarding configuration)
+
+- GS-08: direct Google Review hosts and offer lengths are validated in Zod and constrained in the migration.
+- GS-17 / GS-18: row-locked member functions enforce two active users during parallel calls; owner approval plus audit is atomic.
+- GS-22: owner approval audit passed in PGlite.
+- GS-38: new businesses default inactive and activation requires an approval timestamp at the database layer.
+- GS-56: initial local gate passed 75/75 tests; the Reviewer later applied the migration as `20261004130503_onboarding_config`.
+
+## Update 2026-10-04 (Builder, PR #3 finish)
+
+- GS-17 / GS-18: hosted admin flow kept two active members, rejected the third, recorded owner approval and activated the business.
+- GS-22: hosted `business.updated` audit contained only the five changed column names and no offer values.
+- GS-46: hosted WhatsApp suggestion used the New offer loaded from the approved business row.
+- GS-56: local gate passed 78/78; exact 390×844 before/after images are committed; hosted cleanup left only Café Luna and the expected admin.

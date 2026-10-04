@@ -88,8 +88,9 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
         <span className="hint">Usaremos tu teléfono para identificar tus próximas visitas.</span>
       </div>
       <div className="field">
-        <label htmlFor="birthday">Cumpleaños <span className="optional">(opcional)</span></label>
+        <label htmlFor="birthday">¿Cuándo cumples años? <span className="optional">(opcional)</span></label>
         <input id="birthday" name="birthday" type="date" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} />
+        <span className="hint">Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.</span>
       </div>
       <div className="honeypot" aria-hidden="true">
         <label htmlFor="website">Sitio web</label>
@@ -101,7 +102,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       </label>
       <label className="consent whatsapp-consent">
         <input name="whatsappOptIn" type="checkbox" />
-        <span>Quiero recibir mensajes y promociones de {businessName} por WhatsApp. Puedo pedir que paren en cualquier momento.</span>
+        <span>Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.</span>
       </label>
       {error && <div className="form-alert" role="alert">{error}</div>}
       <button type="submit" disabled={pending} style={{ backgroundColor: primaryColor }}>

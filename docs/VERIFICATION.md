@@ -273,3 +273,108 @@ Target: standalone Node build at `http://127.0.0.1:4321` using runtime `.env` va
 | Cleanup | PASSED | Temporary business, 4 customers, 4 visits, consent rows, 2 follow-up actions, NFC tag and 2 Auth users all removed. Café Luna remains at 3 customers/7 visits; only the platform admin remains; no business memberships remain. |
 
 The smoke ran on `face24b`; the subsequent fast-forward to `0eb3b6d` changed only `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/CLIENT_ONBOARDING.md` and `docs/DECISIONS.md`. The complete gates and build were repeated on `0eb3b6d`, proving the final executable tree remains the tested one.
+
+## Onboarding configuration — ChatGPT Codex, 2026-10-04
+
+Branch: `codex/onboarding-config`, created from `main` after confirming merge `7a6310a` for PR #1.
+
+Migration `20261004130503_onboarding_config.sql` ran only in PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| Offer present/absent | PASSED | Unit tests preserve the old message without an offer and insert only the matching category offer before the BAJA sentence. |
+| Cross-business offer isolation | PASSED | The action handler loads the authorized business by id; route tests prove the selected business offer is used and an unrelated offer is absent. |
+| Two active users | PASSED | PGlite rejects a third active member and rejects reactivation at the limit. Pausing frees a slot. |
+| Parallel invitations | PASSED | Two concurrent membership function calls competing for one slot finish with one success, one `active_member_limit` failure and exactly two active rows. |
+| Google Review validation | PASSED | All four approved HTTPS hosts pass; HTTP, other hosts, host suffix attacks and `javascript:` fail. |
+| Activation and approval | PASSED | Database constraint blocks activation without approval. Approval rejects missing config and no active member, then records the owner, timestamp and one audit row after all checks pass. |
+| Existing Café Luna | PASSED | Seeded Café Luna remains active with a preserved approval marker. |
+| Birthday copy | PASSED | Source regression checks the exact approved label and help text. |
+| Direct review NFC | PASSED | Admin and operations doc expose the stored Google URL for direct chip programming; no new public route exists. |
+
+Commands and results:
+
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- Targeted Vitest gate: 5 files, 58/58 tests.
+- Additional database test after coverage expansion: 16/16 tests.
+- `npm run audit:prod`: strict production audit, 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 75/75 tests; standalone Node build complete.
+- GitHub Actions run `37203888837`: `verify` passed in 35 seconds for PR #3 implementation commit `4f864d7`.
+
+## Reviewer: PR #3 onboarding configuration — 2026-10-04
+
+Reviewed `b885958`. Code matches `docs/ONBOARDING_CONFIG.md`; `npm run audit:prod` 0 vulnerabilities; `npm run verify` 0 diagnostics, 75/75.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004130503_onboarding_config` (file renamed to that live version). Hosted checks in a rolled-back block:
+
+| Check | Result |
+|---|---|
+| Café Luna after migration | active and approved |
+| New business default | inactive |
+| Activate without approval | rejected by `businesses_activation_requires_approval_check` |
+| Third active member / reactivation with 2 active | `active_member_limit` / `active_member_limit` |
+| Pausing a member frees a slot | yes |
+| Approval with missing offers, logo or review URL | `approval_configuration_incomplete` |
+| Review URL on another host | rejected by `businesses_google_review_url_check` |
+| Approval complete, then activation | active; 1 `business.owner_approved` audit row |
+| authenticated / anon execute the new functions | false / false |
+| Security advisor | only the known leaked-password WARN |
+
+Residual (accepted for MVP): an approval stays valid if the admin later edits offers or branding; those edits are normal support changes (D-027). The next Builder task adds the changed field names to the `business.updated` audit row so every post-approval change is traceable.
+
+## Builder finish of PR #3 — ChatGPT Codex, 2026-10-04
+
+### NFC mobile page
+
+- Captured the demo capture page before and after at an exact 390×844 Chrome viewport.
+- Before: `docs/evidence/nfc-mobile-before-390x844.png`.
+- After: `docs/evidence/nfc-mobile-after-390x844.png`.
+- After the mobile-only header change, the Nombre label and complete input render inside the first viewport without scrolling. Desktop CSS outside the existing mobile media query is unchanged.
+- The WhatsApp checkbox remains unchecked and optional. Its exact visible text is: `Recibe ofertas y sorpresas de cumpleaños de {negocio} por WhatsApp. Puedes pedir que paren cuando quieras.`
+
+### Audit detail
+
+- `business.updated` stores `details.changedFields` as an array of database column names.
+- `tests/admin-update.test.ts` proves unchanged fields are omitted and changed values are absent from the audit data.
+- Hosted configuration update recorded only these five changed names: `offer_inactive`, `offer_birthday`, `offer_frequent`, `offer_new`, `google_review_url`.
+
+### Hosted admin smoke and cleanup
+
+Target: local Astro dev server at `127.0.0.1:4322` using hosted test Supabase `vrouyhxzxrfkuuqfslrc`. No deploy, migration or `db push` ran.
+
+| Step | Result | Evidence |
+|---|---|---|
+| Temporary AAL2 platform admin | PASSED | Created for the smoke, enrolled and verified TOTP, then `/admin` rendered. |
+| New business secure default | PASSED | Created through `/api/admin/businesses`; hosted row started with `is_active=false`. |
+| First and second users | PASSED | Existing temporary Auth users were assigned through the live invite route as owner and manager. |
+| Third user | PASSED | Live route redirected with `ya tiene 2 usuarios activos`; hosted active count remained 2. |
+| Admin detail screen | PASSED | Rendered `Usuarios: 2 de 2`. |
+| Configuration and audit | PASSED | Four offers and Google URL saved; audit contained the five field names and none of their values. |
+| Owner approval | PASSED | Live approval route succeeded and the detail page rendered `Aprobado por Dueña Smoke`. |
+| Activation | PASSED | Live update route set the approved business active. |
+| WhatsApp suggestion | PASSED | A real hosted check-in returned HTTP 201; the server-built 303 `wa.me` redirect included `Recibe 10% en tu próxima visita.` and the BAJA footer. |
+| Cleanup | PASSED | Temporary business, customers, memberships and four Auth users all count zero. |
+| Preserved state | PASSED | Exactly one business remains: active Café Luna; one expected platform admin; 0 memberships; Café Luna has 3 customers and 7 visits; follow-ups count 0. |
+
+The first smoke attempt stopped after the check-in because the temporary harness expected HTTP 200 while the endpoint correctly returns 201. Its scoped cleanup passed. The expectation was fixed and the full second smoke passed with the same cleanup checks.
+
+### Final local gate
+
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- `npm run audit:prod`: 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 10 files and 78/78 tests; standalone Node build complete.
+
+## Reviewer final pass — PR #3 (Claude Code, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Diff `aa7fd2d` (WhatsApp text, mobile header, `changedFields`) | Correct; audit stores column names only |
+| `npm ci` / `npm run audit:prod` / `npm run verify` | 0 vulnerabilities; 0 diagnostics; 10 files, 78/78 tests; build complete |
+| Mobile layout re-measured at a true 390×844 viewport (Playwright, built server, `/demo/capture`) | No horizontal overflow (scrollWidth 390); Nombre input ends at y=420 of 844 |
+| Committed captures | Cropped on the right by the capture tool; the page itself does not overflow |
+| Hosted state after Builder smoke | 1 business (`cafe-luna`, active, approved), 1 Auth user, 0 members, 3 customers, 7 visits, 0 follow-ups, 1 NFC tag |
+| CI on `aa7fd2d` | `verify` success (run 37205381829) |
+
+Note: the temporary business's `business.updated` audit rows were removed with the smoke cleanup, so the hosted `changedFields` evidence is the Builder's recorded observation; the behavior is covered by `tests/admin-update.test.ts`.
+
+Verdict: **PR #3 approved by the Reviewer.** The CEO merges.

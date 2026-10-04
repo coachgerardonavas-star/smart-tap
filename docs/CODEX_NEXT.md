@@ -2,9 +2,17 @@
 
 Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
-## Next task (after PR #1 merges)
+## Next task — finish PR #3
 
-Implement `docs/ONBOARDING_CONFIG.md` on a new branch `codex/onboarding-config` created from `main`. One new migration, not applied (the Reviewer applies it). Open a new PR to `main` with `verify` green.
+On branch `codex/onboarding-config` (PR #3), after `git pull --ff-only`:
+
+1. NFC page (`src/pages/b/[slug].astro`, `src/pages/demo/capture.astro`, `src/components/CheckInForm.tsx`):
+   - WhatsApp box stays optional and unchecked (D-042); label leads with the benefit: "Recibe ofertas y sorpresas de cumpleaños de {negocio} por WhatsApp. Puedes pedir que paren cuando quieras." No concrete gift promised.
+   - At 390x844 the Nombre field is visible without scrolling: compact the header (logo, greeting, business name) on mobile only; desktop unchanged.
+   - Attach 390x844 before/after screenshots to the PR.
+2. `/api/admin/business/[id]/update`: add `details.changedFields` (field names only, no values) to the `business.updated` audit row.
+3. Live smoke on the hosted test project of the admin screens: create a business, invite 2 users (third rejected), fill offers and Google Review URL, register owner approval, activate, check a WhatsApp suggestion includes the offer. Delete everything afterwards; keep Café Luna and the admin.
+4. No new migration expected. If one is needed, do not apply it.
 
 ## Report for Claude Code
 
