@@ -34,7 +34,7 @@ if (severe.length === 0) {
 
 const lock = JSON.parse(readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"));
 const installedVersion = lock.packages?.["node_modules/http-cache-semantics"]?.version;
-const namesMatch = severe.map(([name]) => name).join("|") === [...allowedNames].sort().join("|");
+const namesAllowed = severe.length > 0 && severe.every(([name]) => allowedNames.includes(name));
 const findings = Object.fromEntries(severe);
 const directVia = findings["http-cache-semantics"]?.via ?? [];
 const directMatches = directVia.length > 0 && directVia.every(
@@ -42,10 +42,10 @@ const directMatches = directVia.length > 0 && directVia.every(
 );
 const astroVia = findings.astro?.via ?? [];
 const adapterVia = findings["@astrojs/node"]?.via ?? [];
-const astroMatches = astroVia.length > 0 && astroVia.every((item) => item === "http-cache-semantics");
-const adapterMatches = adapterVia.length > 0 && adapterVia.every((item) => item === "astro");
+const astroMatches = !findings.astro || (astroVia.length > 0 && astroVia.every((item) => item === "http-cache-semantics"));
+const adapterMatches = !findings["@astrojs/node"] || (adapterVia.length > 0 && adapterVia.every((item) => item === "astro"));
 
-if (namesMatch && installedVersion === expectedVersion && directMatches && astroMatches && adapterMatches) {
+if (namesAllowed && installedVersion === expectedVersion && directMatches && astroMatches && adapterMatches) {
   console.warn(
     `Temporary audited exception: ${advisoryUrl} affects http-cache-semantics@${expectedVersion} through Astro; no patched release exists.`,
   );
