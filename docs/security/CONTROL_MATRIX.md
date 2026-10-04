@@ -12,7 +12,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | Customer PII of tenant B | Member of tenant A | Dashboard/API with B's slug or ids | Cross-tenant disclosure | Server resolves tenant from memberships; RLS | L + H cross-tenant tests |
 | Visit counts / future rewards | Customer with a copied NFC URL | Scripted check-ins | Inflated loyalty | D-017 one visit per day; 3/phone, 40/IP per 10 min | L + H |
 | Customer identity | Anyone knowing a phone | Check-in with that phone | Name overwrite, visit count seen | Accepted residual (D-003) | — |
-| WhatsApp consent and phone | Viewer or member of another tenant | Follow-up form or guessed customer id | Message without permission or cross-tenant disclosure | Separate opt-in; server loads scoped customer; owner/manager/AAL2 guard; no phone/message form fields | L route, RLS and migration tests |
+| WhatsApp consent and phone | Viewer or member of another tenant | Follow-up form or guessed customer id | Message without permission or cross-tenant disclosure | Separate opt-in; server loads scoped customer; owner/manager/AAL2 guard; no phone/message form fields | L route/RLS tests + H owner/viewer smoke |
 | Service availability | Bot | Large or many requests | Resource exhaustion | GS-33 byte-counted body limit; rate limits | L |
 | Admin session | Phishing site | Open redirect after login | Credential theft | safeNextPath | L |
 | Secrets | Build artifact leak | dist/ | Full database access | Runtime env (D-013) | L canary build |
@@ -22,9 +22,9 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | Control | Applies | State | Evidence | Pending |
 |---|---|---|---|---|
 | GS-01 Org isolation | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Memberships resolve tenant; delete filters tenant+customer; H: 0 cross-tenant rows | — |
-| GS-02 Strict RLS | Yes | VERIFICADO (H) for existing tables; VERIFICADO LOCALMENTE for follow_ups | RLS on existing 8 hosted tables plus new follow_ups; authenticated gets select only; service writes | Apply migration after review; decide FORCE RLS (low) |
+| GS-02 Strict RLS | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Hosted follow_ups RLS and composite tenant FK passed Reviewer checks; owner/viewer UI smoke passed | Decide FORCE RLS (low) |
 | GS-03 Robust auth | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | TOTP enrolled and challenged live; signed `aal2` required for all platform-admin data paths; local regressions cover AAL1 denial | — |
-| GS-04 Server authorization | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local Follow-up tests | Follow-up contact, dismiss and opt-out use requireDataAccess + assertBusinessAccess(identity, businessId, false); viewer and AAL1 admin denied | Hosted Follow-up smoke after migration |
+| GS-04 Server authorization | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Hosted owner completed contact, dismiss and opt-out; hosted viewer saw no controls; local tests deny viewer and AAL1 admin | — |
 | GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
@@ -42,7 +42,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-19 SSRF | No | NO APLICA JUSTIFICADO | Server fetches only Supabase | — |
 | GS-20 Own API keys | No | NO APLICA JUSTIFICADO | No API keys issued | — |
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
-| GS-22 Audit | Yes | VERIFICADO LOCALMENTE for WhatsApp opt-out | Opt-out appends consent and customer.whatsapp_opt_out audit rows atomically; service_role can still edit audit_log | Hosted smoke; separate destination (low) |
+| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) for WhatsApp opt-out | Hosted opt-out appended negative consent and one customer.whatsapp_opt_out audit row atomically | Separate destination (low) |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
@@ -60,13 +60,13 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-37 Prompt injection | No | NO APLICA JUSTIFICADO | No AI in product | — |
 | GS-38 Secure defaults | Yes | VERIFICADO LOCALMENTE | Missing env fails closed; private schema; no implicit access | — |
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403 | — |
-| GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + Follow-up local | Viewer, other tenant, foreign customer, no opt-in, stale opportunity and AAL1 admin are rejected; phone/message absent from form | Expired/tampered JWT live; hosted Follow-up smoke |
+| GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
 | GS-42 Account attacks | Yes | IMPLEMENTADO NO VERIFICADO EN VIVO | Generic responses; prefetch-safe callback verifies token_hash only after the user presses Continuar (D-022) | Paste repository templates; verify hosted flow; confirm Auth limits |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
-| GS-45 BOLA/IDOR | Yes | VERIFICADO (H) plus local Follow-up routes | Follow-up and opt-out authorize business before service-role reads; customer query filters business_id + id; foreign customer returns 404 | Hosted Follow-up smoke |
-| GS-46 Mass assignment | Yes | VERIFICADO LOCALMENTE | Follow-up form accepts businessId, customerId, kind and action only; phone and message are server-built | — |
+| GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; customer query filters business_id + id; foreign customer returns 404 locally | — |
+| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Live 303 used database phone and server-built encoded message; browser form accepts only ids, kind and action | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
 | GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
@@ -76,7 +76,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE | Follow-up rules, time-zone edges, consent, route authorization, IDOR, idempotency, server-built redirect and opt-out have permanent tests | Hosted Follow-up smoke |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 66/66 permanent tests plus hosted Follow-up UI smoke and cleanup | — |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -92,3 +92,9 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 
 - GS-26: VERIFICADO LOCALMENTE — `http-cache-semantics` 4.3.0, `npm audit` 0 vulnerabilities; D-023 exception removed.
 - GS-42 / GS-15: IMPLEMENTADO NO VERIFICADO en vivo — `/auth/callback` verifies `token_hash` only on POST; link prefetch cannot consume it. Requires the repository templates in Supabase.
+
+## Update 2026-10-04 (Builder, hosted Follow-up Queue UI smoke)
+
+- GS-02, GS-04, GS-22, GS-45 and GS-46: hosted evidence added for migration/RLS, owner actions, viewer restrictions, audit and the server-built WhatsApp redirect.
+- GS-40: hosted viewer and no-opt-in paths passed; expired/tampered JWT remains a separate live check.
+- GS-56: hosted smoke completed; cleanup restored Café Luna and the platform admin as the only demo business/user state.

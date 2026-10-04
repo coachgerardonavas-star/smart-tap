@@ -256,3 +256,20 @@ Residual risks accepted for the MVP:
 - Anyone who knows a customer's phone can tick the WhatsApp box for that number (same root as D-003: no phone verification). The owner's first message carries "responde BAJA", and the opt-out is one click. Phone verification (OTP) would close it; out of MVP scope.
 - A later check-in with the box ticked re-enables a customer who opted out. This is a new explicit consent, recorded with its own row.
 - The queue loads at most 1,000 customers per business (most recent first), so very large tenants could miss the oldest inactive customers. Move selection into SQL when a business passes ~800 customers.
+
+## Hosted Follow-up Queue UI smoke — ChatGPT Codex, 2026-10-04
+
+Target: standalone Node build at `http://127.0.0.1:4321` using runtime `.env` values and hosted Supabase `vrouyhxzxrfkuuqfslrc`. The Reviewer had already applied `20261004035554_follow_up_queue`; Codex ran no migration, `db push`, deploy or Render action.
+
+| Step | Result | Evidence |
+|---|---|---|
+| Final local gates | PASSED | On `0eb3b6d`: `npm ci` and strict audit found 0 vulnerabilities; `npm run verify` reported 0 diagnostics and 66/66 tests; separate build passed; server returned HTTP 200. |
+| Unchecked WhatsApp consent | PASSED | Visit recorded; New queue showed `Sin permiso para WhatsApp`, no send button, `whatsapp_opt_in=false`, 0 WhatsApp consent rows. |
+| Checked WhatsApp consent | PASSED | Visit recorded with `whatsapp_opt_in=true` and consent version `whatsapp-2026-10-04`; owner UI showed `Enviar WhatsApp`. |
+| Assisted WhatsApp | PASSED | Owner click wrote one `contacted/new/first` action. Endpoint returned 303 to `https://wa.me/12025550102` with encoded text `¡Gracias por tu primera visita a Review FQ, WhatsApp! Esperamos verte pronto. Si prefieres no recibir mensajes, responde BAJA.` Reload reduced active opportunities from 4 to 3. |
+| Dismiss | PASSED | `Descartar` wrote one `dismissed/new/first` action; reload reduced active opportunities from 3 to 2. |
+| Explicit opt-out | PASSED | Flag became false; consent history contains landing true plus admin false `whatsapp-optout-2026-10-04`; one `customer.whatsapp_opt_out` audit row; UI immediately removed send and opt-out controls and showed the no-permission label. |
+| Viewer | PASSED | Viewer saw two active queue rows and all four customers with no contact, dismiss, opt-out or delete buttons. |
+| Cleanup | PASSED | Temporary business, 4 customers, 4 visits, consent rows, 2 follow-up actions, NFC tag and 2 Auth users all removed. Café Luna remains at 3 customers/7 visits; only the platform admin remains; no business memberships remain. |
+
+The smoke ran on `face24b`; the subsequent fast-forward to `0eb3b6d` changed only `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/CLIENT_ONBOARDING.md` and `docs/DECISIONS.md`. The complete gates and build were repeated on `0eb3b6d`, proving the final executable tree remains the tested one.
