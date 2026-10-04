@@ -36,14 +36,14 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 96% of the demonstration MVP and 82% of production readiness.
 
-Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-022 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI passed: GitHub Actions run `37172436364`, job `verify`, commit `9dd0116`.
+Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics and 41/41 tests; the standalone server build completed. `npm run audit:prod` passed with the exact temporary exception in D-023 for GHSA-ch52-4w7c-c8xp; any other high or critical finding fails CI. Post-merge PR CI passed: GitHub Actions run `37172436364`, job `verify`, commit `9dd0116`.
 
 ## Builder live smoke and cleanup — 2026-10-03
 
 - Admin TOTP enrollment and challenge passed; `/admin` opened at AAL2.
 - `review-live` capture created one customer, one visit and two consent records after a repeated same-day submission; the second submission did not add a visit.
 - Dashboard, birthday, NFC pause/reactivation, viewer tenant isolation, `/admin` denial and member pause passed live.
-- Three default recovery emails returned `otp_expired`, consistent with documented link prefetch. A fresh server-generated one-time token completed password recovery. D-021 records the production fix.
+- Three default recovery emails returned `otp_expired`, consistent with documented link prefetch. A fresh server-generated one-time token completed password recovery. D-022 records the production fix.
 - Customer deletion cascaded from 1 visit and 2 consent records to zero; its audit event remains.
 - Cleanup removed `review-live` and the viewer Auth user. Café Luna and the platform admin remain.
 - PR #1: `https://github.com/coachgerardonavas-star/smart-tap/pull/1`.
@@ -56,7 +56,7 @@ Local gate after the Reviewer merge: `npm run verify` passed with 0 diagnostics 
 
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
-- Custom SMTP with tracking disabled and a prefetch-safe recovery template before commercial invitations (D-021).
+- Custom SMTP with tracking disabled and a prefetch-safe recovery template before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
 

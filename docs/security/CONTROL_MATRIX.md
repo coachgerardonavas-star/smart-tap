@@ -34,7 +34,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-12 Headers/transport | Yes | PENDIENTE — MEDIUM | CSP, nosniff, Referrer, Permissions present; CSP keeps 'unsafe-inline'; HSTS needs HTTPS host | Remove inline handlers or hash them; HSTS at deploy |
 | GS-13 Framing | Yes | VERIFICADO LOCALMENTE | frame-ancestors 'none' + X-Frame-Options DENY | — |
 | GS-14 Webhooks | No | NO APLICA JUSTIFICADO | No webhooks | — |
-| GS-15 Replay | Yes | VERIFICADO (H) | Repeat check-in same day did not count; invite and recovery tokens are single-use. Email prefetch risk is tracked in D-021 | Prefetch-safe production template |
+| GS-15 Replay | Yes | VERIFICADO (H) | Repeat check-in same day did not count; invite and recovery tokens are single-use. Email prefetch risk is tracked in D-022 | Prefetch-safe production template |
 | GS-16 Idempotency | Yes | VERIFICADO (H) | Check-in idempotent per customer-day | — |
 | GS-17 Race conditions | Yes | IMPLEMENTADO NO VERIFICADO | Customer upsert row lock serializes same-phone check-ins; UNIQUE(business_id, phone) | Concurrent test against H |
 | GS-18 Transactions | Yes | VERIFICADO LOCALMENTE | Check-in single transaction; business creation compensates tag failure | Membership upsert error ignored in businesses.ts (low) |
@@ -45,7 +45,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
-| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile and exact versions; fail-closed audit gate permits only GHSA-ch52-4w7c-c8xp on http-cache-semantics@4.2.0 while no patch exists (D-022) | Remove exception when upstream ships a fix |
+| GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile and exact versions; fail-closed audit gate permits only GHSA-ch52-4w7c-c8xp on http-cache-semantics@4.2.0 while no patch exists (D-023) | Remove exception when upstream ships a fix |
 | GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; post-merge PR run 37172436364 passed | — |
 | GS-28 Secure Build Gate | Yes | PENDIENTE | verify workflow is blocking only with branch protection | Enable branch protection on main |
 | GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
@@ -61,7 +61,7 @@ Revision: branch `codex/live-smoke-mfa`, 2026-10-04. Prepared by Claude Code (Re
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403 | — |
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial | Anon, other org, known foreign id, spoofed IP, oversized body, self-promotion | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
-| GS-42 Account attacks | Yes | PARCIAL | Generic login error and recovery response verified; default email links were consumed by prefetch | Auth limits + D-021 SMTP/template |
+| GS-42 Account attacks | Yes | PARCIAL | Generic login error and recovery response verified; default email links were consumed by prefetch | Auth limits + D-022 SMTP/template |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO (H) | Viewer isolation and admin denial passed live; delete, member-status and tag-status filter by tenant + id | — |

@@ -5,7 +5,7 @@
 - Read `docs/HANDOFF.md` first. Use `docs/DECISIONS.md` for settled choices.
 - Keep customer data isolated by `business_id`. Any new data table that contains tenant data must include RLS and an explicit cross-tenant test.
 - Keep `SUPABASE_SECRET_KEY` and `CHECK_IN_HASH_SECRET` on the server.
-- Do not add WhatsApp automation, campaigns, CRM, POS, payments, reservations, AI, Wallet, or custom CRM integrations to this MVP.
+- Do not add automated WhatsApp sending (Meta API, templates, webhooks), campaigns, CRM, POS, payments, reservations, AI, Wallet, or custom CRM integrations to this MVP. The owner-sent `wa.me` link of D-021 is in scope.
 - Run targeted tests while editing. Use `npm run verify` at security or release gates.
 - Update `docs/HANDOFF.md` after material changes.
 
