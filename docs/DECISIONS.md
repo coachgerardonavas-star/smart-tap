@@ -191,3 +191,7 @@ Customer-facing NFC screens are personalized per business through 3–4 pre-desi
 ## D-047 — Deploy against the test project until the first client (CEO, 2026-10-04)
 
 The Render service runs against the test Supabase project `vrouyhxzxrfkuuqfslrc` for demos and NFC tests. No real customer data is loaded. At the first signed client the production Pro project is created (D-024) and only `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` change in Render, together with SMTP, templates and Auth URL configuration in the new project.
+
+## D-048 — Four customer styles approved; welcome and form on one screen (CEO, 2026-10-04)
+
+The four styles in `docs/design/customer-styles/` are approved as the catalog for D-046. The welcome content sits above the form on the same screen to avoid an extra tap; the confirmation replaces the form after check-in and offers the Google review link when configured. Spec: `docs/CUSTOMER_SCREENS.md`.

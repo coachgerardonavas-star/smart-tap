@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estilo colorido familiar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&amp;family=Nunito:wght@500;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#3A1240}a:hover{color:#1E0822}
+input::placeholder{color:#9A7F95}
+</style>
+</helmet>
+<div style="width: 1290px; height: 912px; box-sizing: border-box; background: #E8E5E0; font-family: 'Nunito', sans-serif; display: flex; gap: 60px">
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 800; color: #2b2723">1. Bienvenida</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #FFE3EC; color: #3A1240; position: relative; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; padding: 40px 24px 32px">
+<div style="position: absolute; top: -70px; right: -60px; width: 220px; height: 220px; border-radius: 999px; background: #FFD23F"></div>
+<div style="position: absolute; top: 250px; left: -80px; width: 170px; height: 170px; border-radius: 999px; background: #2EC4B6"></div>
+<div style="position: relative; width: 64px; height: 64px; border-radius: 22px; background: {{accent}}; color: #3A1240; display: flex; align-items: center; justify-content: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 28px">CL</div>
+<p style="position: relative; margin: 10px 0 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 42px; line-height: 1">Coco Loco</p>
+<p style="position: relative; margin: 2px 0 0; font-size: 15px; font-weight: 700">Helados de la casa</p>
+<div style="position: relative; margin-top: 20px; width: 300px; height: 190px; border-radius: 32px; background: #FFFFFF; border: 3px dashed #F4A9C4; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px"><span style="font-size: 13px; font-weight: 700; color: #7A5A74">Foto de tus productos · la sube el negocio</span></div>
+<h1 style="position: relative; margin: 22px 0 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05; text-align: center">¡Únete al club Coco Loco!</h1>
+<div style="position: relative; margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center">
+<span style="background: #FFFFFF; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 800">Ofertas para clientes</span>
+<span style="background: #FFFFFF; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 800">Sorpresa en tu cumple</span>
+<span style="background: #FFFFFF; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 800">Te recordamos al volver</span>
+</div>
+<button type="button" style="position: relative; margin-top: auto; width: 100%; height: 58px; border: 0; border-radius: 20px; background: #3A1240; color: #FFFFFF; font-family: 'Baloo 2', sans-serif; font-size: 22px; font-weight: 800; cursor: pointer">¡Me apunto!</button>
+</div>
+</div>
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 800; color: #2b2723">2. Registro</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #FFFFFF; color: #3A1240; box-sizing: border-box; display: flex; flex-direction: column">
+<div style="height: 70px; flex: none; background: #FFE3EC; display: flex; align-items: center; justify-content: center; gap: 10px">
+<div style="width: 38px; height: 38px; border-radius: 14px; background: {{accent}}; display: flex; align-items: center; justify-content: center; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 17px">CL</div>
+<p style="margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 26px">Coco Loco</p>
+</div>
+<div style="flex: 1; padding: 18px 24px 28px; display: flex; flex-direction: column; gap: 13px">
+<div>
+<h1 style="margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 30px; line-height: 1.05">¿Cómo te llamas?</h1>
+<p style="margin: 2px 0 0; font-size: 15px; font-weight: 500; color: #6B4F67">Así te saludamos cuando vuelvas.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="cl-name" style="font-size: 14px; font-weight: 800">Nombre</label>
+<input id="cl-name" type="text" placeholder="Ej. Sofía Gómez" style="height: 52px; box-sizing: border-box; border: 2px solid #F4C3D6; border-radius: 18px; padding: 0 16px; font: inherit; font-size: 16px; color: #3A1240; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="cl-phone" style="font-size: 14px; font-weight: 800">Teléfono</label>
+<input id="cl-phone" type="tel" placeholder="Ej. 407 555 1234" style="height: 52px; box-sizing: border-box; border: 2px solid #F4C3D6; border-radius: 18px; padding: 0 16px; font: inherit; font-size: 16px; color: #3A1240; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="cl-bday" style="font-size: 14px; font-weight: 800">¿Cuándo cumples años? <span style="font-weight: 500; color: #6B4F67">(opcional)</span></label>
+<input id="cl-bday" type="text" placeholder="mm/dd/aaaa" style="height: 52px; box-sizing: border-box; border: 2px solid #F4C3D6; border-radius: 18px; padding: 0 16px; font: inherit; font-size: 16px; color: #3A1240; outline: none">
+<p style="margin: 0; font-size: 12.5px; line-height: 1.4; color: #6B4F67">Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.</p>
+</div>
+<label style="display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: #4A2A47"><input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #3A1240"><span>Acepto que Coco Loco guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href="#">política de privacidad</a>. Tengo 13 años o más.</span></label>
+<label style="display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: #4A2A47"><input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #3A1240"><span>Recibe ofertas y sorpresas de cumpleaños de Coco Loco por WhatsApp. Puedes pedir que paren cuando quieras.</span></label>
+<button type="button" style="margin-top: auto; height: 58px; border: 0; border-radius: 20px; background: #3A1240; color: #FFFFFF; font-family: 'Baloo 2', sans-serif; font-size: 22px; font-weight: 800; cursor: pointer">Registrar mi visita</button>
+</div>
+</div>
+</div>
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 800; color: #2b2723">3. Confirmación</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #FFD23F; color: #3A1240; position: relative; box-sizing: border-box; padding: 36px 24px 32px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px">
+<div style="position: absolute; bottom: 120px; right: -70px; width: 190px; height: 190px; border-radius: 999px; background: #2EC4B6"></div>
+<div style="position: absolute; top: 160px; left: -50px; width: 110px; height: 110px; border-radius: 999px; background: {{accent}}"></div>
+<p style="position: relative; margin: 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 24px">Coco Loco</p>
+<div style="position: relative; margin-top: 80px; width: 124px; height: 124px; border-radius: 999px; background: #3A1240; display: flex; align-items: center; justify-content: center"><svg width="62" height="62" viewBox="0 0 24 24" fill="none" stroke="#FFD23F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+<h1 style="position: relative; margin: 8px 0 0; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 64px; line-height: 1">¡Listo!</h1>
+<p style="position: relative; margin: 0; font-size: 20px; font-weight: 800">Tu visita quedó registrada</p>
+<p style="position: relative; margin: 0; font-size: 16px; font-weight: 500; max-width: 280px; line-height: 1.45">Gracias por venir. La próxima vez solo toca la tarjeta otra vez.</p>
+<a href="#" style="position: relative; margin-top: auto; width: 100%; height: 58px; border-radius: 20px; background: #FFFFFF; display: flex; align-items: center; justify-content: center; gap: 10px; color: #3A1240; text-decoration: none; font-size: 16px; font-weight: 800"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3A1240" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Déjanos una reseña en Google</a>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF6F9E","options":["#FF6F9E","#FF9F43","#7BD389","#8EC5FF"]},"$preview":{"width":1290,"height":912}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF6F9E' };
+}
+}
+</script>
+</body>
+</html>

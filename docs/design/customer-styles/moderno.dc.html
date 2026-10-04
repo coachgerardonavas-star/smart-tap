@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estilo moderno</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#111113}a:hover{color:#444}
+input::placeholder{color:#8B8B93}
+</style>
+</helmet>
+<div style="width: 1290px; height: 912px; box-sizing: border-box; background: #E8E5E0; font-family: 'IBM Plex Sans', sans-serif; display: flex; gap: 60px">
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 600; color: #2b2723">1. Bienvenida</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #0E0E10; color: #F5F5F7; display: flex; flex-direction: column">
+<div style="height: 360px; flex: none; background: #26262B; display: flex; align-items: flex-end; justify-content: space-between; padding: 18px 22px; box-sizing: border-box">
+<p style="margin: 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 15px; letter-spacing: 3px">NORTE</p>
+<span style="font-size: 12px; color: #C6C6CC; border: 1px dashed #5D5D66; padding: 6px 10px">Foto del local · la sube el negocio</span>
+</div>
+<div style="flex: 1; padding: 28px 24px 32px; display: flex; flex-direction: column; gap: 22px">
+<div>
+<div style="width: 44px; height: 4px; background: {{accent}}; margin-bottom: 16px"></div>
+<h1 style="margin: 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 42px; line-height: 0.98; letter-spacing: -0.5px">BARBERÍA NORTE</h1>
+<p style="margin: 10px 0 0; font-size: 16px; color: #C6C6CC">Regístrate y te tenemos presente.</p>
+</div>
+<div style="display: flex; flex-direction: column">
+<div style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-top: 1px solid #2E2E34"><span style="font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 14px; color: {{accent}}">01</span><span style="font-size: 16px">Ofertas para clientes</span></div>
+<div style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-top: 1px solid #2E2E34"><span style="font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 14px; color: {{accent}}">02</span><span style="font-size: 16px">Un detalle en tu cumpleaños</span></div>
+<div style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-top: 1px solid #2E2E34; border-bottom: 1px solid #2E2E34"><span style="font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 14px; color: {{accent}}">03</span><span style="font-size: 16px">Te recordamos sin tarjetas de papel</span></div>
+</div>
+<button type="button" style="margin-top: auto; height: 56px; border: 0; border-radius: 4px; background: {{accent}}; color: #0E0E10; font-family: 'Archivo', sans-serif; font-size: 17px; font-weight: 900; letter-spacing: 1.5px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; cursor: pointer">REGISTRARME <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E0E10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+</div>
+</div>
+</div>
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 600; color: #2b2723">2. Registro</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #FFFFFF; color: #111113; box-sizing: border-box; padding: 26px 24px 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<p style="margin: 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: 3px">NORTE</p>
+<div style="width: 28px; height: 4px; background: {{accent}}"></div>
+</div>
+<h1 style="margin: 6px 0 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 32px; line-height: 1; letter-spacing: -0.5px">TUS DATOS</h1>
+<p style="margin: 0; font-size: 15px; color: #55555C">Te toma menos de un minuto.</p>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="bn-name" style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px">NOMBRE</label>
+<input id="bn-name" type="text" placeholder="Ej. Luis Rivera" style="height: 50px; box-sizing: border-box; border: 1.5px solid #111113; border-radius: 4px; padding: 0 14px; font: inherit; font-size: 16px; color: #111113; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="bn-phone" style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px">TELÉFONO</label>
+<input id="bn-phone" type="tel" placeholder="Ej. 407 555 1234" style="height: 50px; box-sizing: border-box; border: 1.5px solid #111113; border-radius: 4px; padding: 0 14px; font: inherit; font-size: 16px; color: #111113; outline: none">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="bn-bday" style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px">CUMPLEAÑOS <span style="font-weight: 400; color: #55555C; letter-spacing: 0">(opcional)</span></label>
+<input id="bn-bday" type="text" placeholder="mm/dd/aaaa" style="height: 50px; box-sizing: border-box; border: 1.5px solid #111113; border-radius: 4px; padding: 0 14px; font: inherit; font-size: 16px; color: #111113; outline: none">
+<p style="margin: 0; font-size: 12.5px; line-height: 1.4; color: #55555C">Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.</p>
+</div>
+<label style="display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: #2A2A2E"><input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #111113"><span>Acepto que Barbería Norte guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href="#">política de privacidad</a>. Tengo 13 años o más.</span></label>
+<label style="display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; line-height: 1.45; color: #2A2A2E"><input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none; accent-color: #111113"><span>Recibe ofertas y sorpresas de cumpleaños de Barbería Norte por WhatsApp. Puedes pedir que paren cuando quieras.</span></label>
+<button type="button" style="margin-top: auto; height: 56px; border: 0; border-radius: 4px; background: #111113; color: #FFFFFF; font-family: 'Archivo', sans-serif; font-size: 17px; font-weight: 900; letter-spacing: 1.5px; cursor: pointer">REGISTRAR MI VISITA</button>
+</div>
+</div>
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 28px">
+<p style="margin: 0; height: 40px; display: flex; align-items: flex-end; font-size: 15px; font-weight: 600; color: #2b2723">3. Confirmación</p>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #0E0E10; color: #F5F5F7; box-sizing: border-box; padding: 26px 24px 32px; display: flex; flex-direction: column; gap: 16px">
+<p style="margin: 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 18px; letter-spacing: 3px">NORTE</p>
+<div style="margin-top: 120px; width: 96px; height: 96px; background: {{accent}}; display: flex; align-items: center; justify-content: center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#0E0E10" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="miter"><path d="M20 6 9 17l-5-5"/></svg></div>
+<h1 style="margin: 12px 0 0; font-family: 'Archivo', sans-serif; font-weight: 900; font-size: 64px; line-height: 0.95; letter-spacing: -1px">LISTO.</h1>
+<p style="margin: 0; font-size: 18px; font-weight: 600">Tu visita quedó registrada.</p>
+<p style="margin: 0; font-size: 15px; color: #C6C6CC; max-width: 300px; line-height: 1.5">La próxima vez solo toca la tarjeta otra vez.</p>
+<a href="#" style="margin-top: auto; height: 56px; border: 1.5px solid #F5F5F7; border-radius: 4px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: #F5F5F7; text-decoration: none; font-size: 15px; font-weight: 600"><span>Déjanos una reseña en Google</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF6A2B","options":["#FF6A2B","#3DDC97","#5BA8FF","#F5D547"]},"$preview":{"width":1290,"height":912}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#FF6A2B' };
+}
+}
+</script>
+</body>
+</html>
