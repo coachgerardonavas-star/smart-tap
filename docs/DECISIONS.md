@@ -130,3 +130,7 @@ The mandatory onboarding form may be completed by the business owner or an autho
 ## D-032 — Base package includes at most two dashboard users (CEO, 2026-10-04)
 
 The base Smart Tap package includes a maximum of 2 business-side dashboard users total. The owner decides who occupies those two slots. The owner may use one slot personally, or may choose not to have a dashboard login and assign both included slots to authorized employees. Pricing/policy for any additional users is not yet approved and must not be invented.
+
+## D-033 — Customer capture requires name and phone; birthday is optional (CEO, 2026-10-04)
+
+The customer-facing NFC form requires **name** and **phone**. Birthday remains optional. The birthday field should use benefit-oriented copy explaining that sharing the date may enable birthday discounts, gifts or special benefits, so customers understand why it is useful to provide it. The copy must not promise a specific reward unless that business has approved one.
