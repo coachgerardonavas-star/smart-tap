@@ -388,6 +388,6 @@ Verdict: **PR #3 approved by the Reviewer.** The CEO merges.
 | Supabase SMTP (`vrouyhxzxrfkuuqfslrc`) | `smtp.resend.com:465`, user `resend`, sender `Smart Tap <smarttap@yourbizupgraded.com>`, 60 s per-user interval; auth log shows the email limiter moved from 2/h to 30/h |
 | Templates | Invite and Reset password replaced with `supabase/templates/*.html` (prefetch-safe callback) |
 | Delivery test | Recovery email to the admin arrived in the primary inbox, sender Smart Tap, Spanish template |
-| Replies | `smarttap@` added as a Google Workspace alias of the admin mailbox |
+| Replies | CEO adding `smarttap@` as a Google Workspace alias of the admin mailbox (not yet confirmed) |
 
 Pending: the link inside the email points to the Supabase Site URL; test the full click-through after the Render deploy sets Site URL to `https://smarttap.yourbizupgraded.com`. Repeat key + SMTP + templates in the production project (D-024).
