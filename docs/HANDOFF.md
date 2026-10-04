@@ -53,6 +53,7 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - Updated `docs/NFC_OPERATIONS.md` to specify two Smart Tap capture tags and one direct Google Review tag.
 - New migration: `20261004190000_onboarding_config.sql`. It has not been applied to hosted Supabase and no `db push` ran; the Reviewer applies and may rename it to the live version.
 - Targeted gate: 58/58 tests. Final local gate: 75/75 tests, zero Astro diagnostics, complete build and zero production audit findings.
+- PR #3: `https://github.com/coachgerardonavas-star/smart-tap/pull/3`, open from `codex/onboarding-config` to `main`, non-draft and mergeable. GitHub Actions run `37203888837` passed `verify` for implementation commit `4f864d7`.
 
 ## Follow-up Queue implementation — 2026-10-04
 
