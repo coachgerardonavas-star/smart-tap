@@ -321,3 +321,45 @@ Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004130503_onboarding_config
 | Security advisor | only the known leaked-password WARN |
 
 Residual (accepted for MVP): an approval stays valid if the admin later edits offers or branding; those edits are normal support changes (D-027). The next Builder task adds the changed field names to the `business.updated` audit row so every post-approval change is traceable.
+
+## Builder finish of PR #3 — ChatGPT Codex, 2026-10-04
+
+### NFC mobile page
+
+- Captured the demo capture page before and after at an exact 390×844 Chrome viewport.
+- Before: `docs/evidence/nfc-mobile-before-390x844.png`.
+- After: `docs/evidence/nfc-mobile-after-390x844.png`.
+- After the mobile-only header change, the Nombre label and complete input render inside the first viewport without scrolling. Desktop CSS outside the existing mobile media query is unchanged.
+- The WhatsApp checkbox remains unchecked and optional. Its exact visible text is: `Recibe ofertas y sorpresas de cumpleaños de {negocio} por WhatsApp. Puedes pedir que paren cuando quieras.`
+
+### Audit detail
+
+- `business.updated` stores `details.changedFields` as an array of database column names.
+- `tests/admin-update.test.ts` proves unchanged fields are omitted and changed values are absent from the audit data.
+- Hosted configuration update recorded only these five changed names: `offer_inactive`, `offer_birthday`, `offer_frequent`, `offer_new`, `google_review_url`.
+
+### Hosted admin smoke and cleanup
+
+Target: local Astro dev server at `127.0.0.1:4322` using hosted test Supabase `vrouyhxzxrfkuuqfslrc`. No deploy, migration or `db push` ran.
+
+| Step | Result | Evidence |
+|---|---|---|
+| Temporary AAL2 platform admin | PASSED | Created for the smoke, enrolled and verified TOTP, then `/admin` rendered. |
+| New business secure default | PASSED | Created through `/api/admin/businesses`; hosted row started with `is_active=false`. |
+| First and second users | PASSED | Existing temporary Auth users were assigned through the live invite route as owner and manager. |
+| Third user | PASSED | Live route redirected with `ya tiene 2 usuarios activos`; hosted active count remained 2. |
+| Admin detail screen | PASSED | Rendered `Usuarios: 2 de 2`. |
+| Configuration and audit | PASSED | Four offers and Google URL saved; audit contained the five field names and none of their values. |
+| Owner approval | PASSED | Live approval route succeeded and the detail page rendered `Aprobado por Dueña Smoke`. |
+| Activation | PASSED | Live update route set the approved business active. |
+| WhatsApp suggestion | PASSED | A real hosted check-in returned HTTP 201; the server-built 303 `wa.me` redirect included `Recibe 10% en tu próxima visita.` and the BAJA footer. |
+| Cleanup | PASSED | Temporary business, customers, memberships and four Auth users all count zero. |
+| Preserved state | PASSED | Exactly one business remains: active Café Luna; one expected platform admin; 0 memberships; Café Luna has 3 customers and 7 visits; follow-ups count 0. |
+
+The first smoke attempt stopped after the check-in because the temporary harness expected HTTP 200 while the endpoint correctly returns 201. Its scoped cleanup passed. The expectation was fixed and the full second smoke passed with the same cleanup checks.
+
+### Final local gate
+
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- `npm run audit:prod`: 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 10 files and 78/78 tests; standalone Node build complete.

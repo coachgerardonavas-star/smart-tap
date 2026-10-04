@@ -37,12 +37,12 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-14 Webhooks | No | NO APLICA JUSTIFICADO | No webhooks | — |
 | GS-15 Replay | Yes | VERIFICADO (H) plus local callback tests | Repeat check-in same day did not count; invite and recovery tokens are single-use; token_hash is consumed only by an explicit POST (D-022) | Paste repository email templates into Supabase |
 | GS-16 Idempotency | Yes | VERIFICADO (H) | Check-in idempotent per customer-day | — |
-| GS-17 Race conditions | Yes | VERIFICADO LOCALMENTE | Customer check-in row lock plus row-locked member functions; parallel member test competing for one slot ends at exactly 2 active users | Repeat member race against H after Reviewer applies migration |
-| GS-18 Transactions | Yes | VERIFICADO LOCALMENTE | Check-in, WhatsApp opt-out, member slot enforcement and owner approval/audit each run in PostgreSQL functions; business creation compensates tag failure | — |
+| GS-17 Race conditions | Yes | VERIFICADO (L+H) | Local parallel member test ends at exactly 2; hosted admin smoke accepted owner+manager and rejected the third active user | — |
+| GS-18 Transactions | Yes | VERIFICADO (L+H) | Check-in, WhatsApp opt-out, member slot enforcement and owner approval/audit run in PostgreSQL functions; hosted approval plus activation passed | — |
 | GS-19 SSRF | No | NO APLICA JUSTIFICADO | Server fetches only Supabase | — |
 | GS-20 Own API keys | No | NO APLICA JUSTIFICADO | No API keys issued | — |
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
-| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) for WhatsApp opt-out; LOCAL for onboarding | Hosted opt-out appended negative consent and audit atomically; owner approval writes its approval and audit row in one local-tested function | Repeat onboarding audit against H after migration |
+| GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Hosted opt-out and owner approval audit passed; hosted business update stored five changed field names without values | — |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
 | GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
@@ -66,7 +66,7 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
 | GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; customer query filters business_id + id; foreign customer returns 404 locally | — |
-| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Live 303 used database phone and server-built encoded message; browser form accepts only ids, kind and action | — |
+| GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Hosted PR #3 smoke returned a server-built 303 using database phone, message and matching business offer; browser form accepts only ids, kind and action | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | NOT NULL/CHECK/UNIQUE/FK present; visits.tag_id and consent_records lack composite tenant FKs (writes only via service function) | Composite FKs |
 | GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
@@ -76,7 +76,7 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 75/75 permanent tests plus hosted Follow-up UI smoke and cleanup; onboarding section 8 covered locally | Reviewer migration/live smoke |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 78/78 permanent tests; hosted Follow-up smoke; hosted onboarding admin smoke with scoped cleanup; exact 390×844 before/after captures | — |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -105,4 +105,11 @@ Revision: branch `codex/onboarding-config`, 2026-10-04. Prepared by Claude Code 
 - GS-17 / GS-18: row-locked member functions enforce two active users during parallel calls; owner approval plus audit is atomic.
 - GS-22: owner approval audit passed in PGlite.
 - GS-38: new businesses default inactive and activation requires an approval timestamp at the database layer.
-- GS-56: final local gate passed 75/75 tests. Migration remains unapplied pending Reviewer inspection.
+- GS-56: initial local gate passed 75/75 tests; the Reviewer later applied the migration as `20261004130503_onboarding_config`.
+
+## Update 2026-10-04 (Builder, PR #3 finish)
+
+- GS-17 / GS-18: hosted admin flow kept two active members, rejected the third, recorded owner approval and activated the business.
+- GS-22: hosted `business.updated` audit contained only the five changed column names and no offer values.
+- GS-46: hosted WhatsApp suggestion used the New offer loaded from the approved business row.
+- GS-56: local gate passed 78/78; exact 390×844 before/after images are committed; hosted cleanup left only Café Luna and the expected admin.

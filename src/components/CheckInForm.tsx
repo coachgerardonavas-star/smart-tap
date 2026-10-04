@@ -102,7 +102,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       </label>
       <label className="consent whatsapp-consent">
         <input name="whatsappOptIn" type="checkbox" />
-        <span>Quiero recibir mensajes y promociones de {businessName} por WhatsApp. Puedo pedir que paren en cualquier momento.</span>
+        <span>Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.</span>
       </label>
       {error && <div className="form-alert" role="alert">{error}</div>}
       <button type="submit" disabled={pending} style={{ backgroundColor: primaryColor }}>

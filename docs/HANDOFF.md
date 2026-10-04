@@ -18,7 +18,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing the onboardin
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
-| `codex/onboarding-config` | **Current Builder branch.** Implements `docs/ONBOARDING_CONFIG.md` with one unapplied migration. Awaiting independent Reviewer inspection. |
+| `codex/onboarding-config` | **Current PR #3 branch.** Reviewer applied the onboarding migration; Builder finished the NFC mobile page, changed-field audit and hosted admin smoke. Awaiting final Reviewer pass. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -39,7 +39,7 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 75/75 tests and a complete standalone Node build.
+Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 78/78 tests and a complete standalone Node build.
 
 ## Onboarding configuration — Builder implementation, 2026-10-04
 
@@ -51,9 +51,19 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - Kept the inactivity threshold per business and changed its admin label to state that the owner defines it.
 - New businesses default to inactive. Activation has an app check plus a database constraint requiring recorded owner approval. The approval function checks branding, four offers, inactivity days, Google Review URL and an active member, then writes the approval and audit row atomically. The migration preserves already active rows such as Café Luna.
 - Updated `docs/NFC_OPERATIONS.md` to specify two Smart Tap capture tags and one direct Google Review tag.
-- New migration: `20261004130503_onboarding_config.sql`. It has not been applied to hosted Supabase and no `db push` ran; the Reviewer applies and may rename it to the live version.
+- Onboarding migration: `20261004130503_onboarding_config.sql`. Claude Code applied it to hosted Supabase under that exact name. Codex ran no migration and no `db push`.
 - Targeted gate: 58/58 tests. Final local gate: 75/75 tests, zero Astro diagnostics, complete build and zero production audit findings.
 - PR #3: `https://github.com/coachgerardonavas-star/smart-tap/pull/3`, open from `codex/onboarding-config` to `main`, non-draft and mergeable. GitHub Actions run `37203888837` passed `verify` for implementation commit `4f864d7`.
+
+## PR #3 finish — Builder, 2026-10-04
+
+- The optional unchecked WhatsApp box now leads with the approved benefit text and promises no specific gift.
+- Mobile-only header styles were compacted in the live and demo NFC pages. At an exact 390×844 viewport, the Nombre label and full input are visible without scrolling. Desktop rules were left unchanged.
+- Before/after evidence: `docs/evidence/nfc-mobile-before-390x844.png` and `docs/evidence/nfc-mobile-after-390x844.png` (both verified at 390×844).
+- `business.updated` now stores `details.changedFields` with column names only. Unit coverage rejects audit values; the hosted smoke recorded exactly `offer_inactive`, `offer_birthday`, `offer_frequent`, `offer_new` and `google_review_url` for the configuration update.
+- Hosted admin smoke against test project `vrouyhxzxrfkuuqfslrc`: temporary platform admin with AAL2 opened `/admin`; a temporary business started inactive; owner and manager became active; a third viewer was rejected at the two-user limit; detail page showed `Usuarios: 2 de 2`; four offers and the direct Google Review URL saved; owner approval rendered; activation passed; a new WhatsApp-enabled check-in produced a server-built `wa.me` suggestion containing the approved New offer and BAJA footer.
+- Cleanup passed after both smoke attempts: temporary businesses, customers, memberships and Auth users all count zero. Final hosted state is one active `cafe-luna`, one expected platform admin, zero memberships, 3 Café Luna customers, 7 visits and zero follow-ups.
+- First smoke attempt reached the check-in and received the correct HTTP 201 response; the temporary harness expected 200. The harness expectation was corrected, cleanup was confirmed, and the complete second run passed. Product code required no correction for that response.
 
 ## Follow-up Queue implementation — 2026-10-04
 
@@ -97,7 +107,7 @@ Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilitie
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
-- Reviewer: inspect the onboarding branch and apply `20261004130503_onboarding_config.sql` to hosted Supabase only after approving its SQL.
+- Reviewer: complete the final PR #3 pass over the NFC mobile layout, audit detail and hosted-smoke evidence.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
 - Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
@@ -125,3 +135,5 @@ PR #1 is merged. All new work starts from updated `main`, uses a feature branch 
 ## Reviewer status — PR #3 (2026-10-04)
 
 Onboarding configuration reviewed; migration applied live as `20261004130503_onboarding_config`; hosted checks passed (see VERIFICATION). Next Builder task: NFC page polish + audit detail (see `docs/CODEX_NEXT.md`), then the CEO merges PR #3.
+
+Builder follow-up complete: NFC page polish, changed-field audit, exact 390×844 evidence and the full hosted admin smoke are done. PR #3 remains open for the Reviewer's final pass; no deploy or merge occurred.

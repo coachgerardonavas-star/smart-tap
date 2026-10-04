@@ -68,4 +68,11 @@ describe("admin validation", () => {
     expect(form).toContain("¿Cuándo cumples años?");
     expect(form).toContain("Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.");
   });
+
+  it("renders the optional benefit-led WhatsApp consent unchecked", () => {
+    const form = readFileSync(join(process.cwd(), "src/components/CheckInForm.tsx"), "utf8");
+    expect(form).toContain("Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.");
+    expect(form).toMatch(/<input name="whatsappOptIn" type="checkbox" \/>/);
+    expect(form).not.toMatch(/name="whatsappOptIn"[^>]*checked/);
+  });
 });
