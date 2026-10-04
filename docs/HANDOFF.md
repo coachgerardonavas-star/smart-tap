@@ -46,7 +46,7 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 - The dashboard groups inactive, birthday, frequent and new opportunities. Viewer access is read-only. Owner, manager and AAL2 platform admin can contact or dismiss.
 - `/api/dashboard/follow-up` scopes every customer read by business, recomputes the opportunity and builds the `wa.me` URL only from database values. Authorization errors propagate as 403 through the shared middleware.
 - The explicit opt-out is atomic through `record_whatsapp_opt_out`; it updates the customer and appends consent and audit records.
-- New migration: `20261004030000_follow_up_queue.sql`. It is committed only and has not been applied to hosted Supabase.
+- New migration: `20261004035554_follow_up_queue.sql`. It is committed only and has not been applied to hosted Supabase.
 - Follow-up Queue gate remains complete: all sections 1–8 are covered in the combined 66/66-test gate. Strict `npm run audit:prod` reports 0 vulnerabilities. The migration remains unapplied.
 
 ## Builder live smoke and cleanup — 2026-10-03
@@ -70,8 +70,14 @@ Current local gate after integrating `origin/claude/pr1-review`: `npm ci` found 
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
-- Reviewer approval and application of `20261004030000_follow_up_queue.sql`, followed by hosted Follow-up Queue smoke testing.
+- Reviewer approval and application of `20261004035554_follow_up_queue.sql`, followed by hosted Follow-up Queue smoke testing.
 
 ## Coordination rule
 
 Work happens on the PR branch, never directly on `main`. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+
+## Reviewer status — 2026-10-04 (after a6526f2)
+
+- Follow-up Queue migration applied live as `20261004035554_follow_up_queue`; hosted DB checks passed (see VERIFICATION).
+- D-024 merged: Supabase Pro and a separate production project at the first signed client.
+- PR #1: approved by the Reviewer for merge once the CEO enables branch protection on `main`. Remaining before real customer data: GS-25, GS-29 (D-024), templates pasted in Supabase, hosted UI smoke of the queue, host/domain, SMTP, privacy notice, physical NFC.

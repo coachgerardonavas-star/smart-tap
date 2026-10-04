@@ -199,7 +199,7 @@ The merged migration-security test now normalizes CRLF to LF before checking SQL
 Final local result after the merge: `npm run audit:prod` passed the narrow exception; `npm run verify` reported 0 Astro diagnostics, 41/41 tests and a complete standalone Node build. GitHub Actions run `37172436364` passed the same PR gate for commit `9dd0116`.
 ## Follow-up Queue local verification — ChatGPT Codex, 2026-10-04
 
-Migration `20261004030000_follow_up_queue.sql` executed only inside PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
+Migration `20261004035554_follow_up_queue.sql` executed only inside PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
 
 Evidence:
 - unchecked WhatsApp consent records the visit, leaves `whatsapp_opt_in = false` and creates no WhatsApp consent row;
@@ -230,7 +230,29 @@ Final local results before push:
 - `npm ci`: completed; audit found 0 vulnerabilities;
 - `npm run audit:prod`: passed; 0 vulnerabilities;
 - `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 66/66 tests passed; standalone Node build completed;
-- `20261004030000_follow_up_queue.sql` remains unapplied to hosted Supabase;
+- `20261004035554_follow_up_queue.sql` remains unapplied to hosted Supabase;
 - no Supabase or deployment changes were made in this integration.
 
 GitHub Actions run `37174959751` passed for integration commit `cbf817b`; the `verify` job completed npm install, strict audit, the 66-test gate, SBOM generation and artifact upload.
+
+## Reviewer: Follow-up Queue review and hosted migration — 2026-10-04
+
+Reviewed `a6526f2` (PR #1). Code matches `docs/FOLLOW_UP_QUEUE.md` §1–8: optional unchecked WhatsApp box; opportunities recomputed on the server before any action; phone and message built from the database; composite FK keeps follow-ups inside the tenant; opt-out atomic with consent and audit rows. `npm run audit:prod` 0 vulnerabilities; `npm run verify` 0 diagnostics, 66/66.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004035554_follow_up_queue` (file renamed to that live version). Hosted checks inside a rolled-back block:
+
+| Check | Result |
+|---|---|
+| Check-in without the WhatsApp box | opt-in false, 0 WhatsApp consent rows |
+| With the box, then a later visit without it | opt-in stays true, 1 WhatsApp consent row |
+| Opt-out | opt-in false, 1 audit row |
+| Opt-out with another business id | `customer_not_found` |
+| Follow-up row pointing at another tenant's customer | rejected by the composite foreign key |
+| Owner of another business reading follow-ups | 0 rows |
+| anon executes check-in v10 / service_role executes old v9 / authenticated executes opt-out / authenticated inserts follow-ups | false / false / false / false |
+| Security advisor | only the known leaked-password WARN (Pro feature) |
+
+Residual risks accepted for the MVP:
+- Anyone who knows a customer's phone can tick the WhatsApp box for that number (same root as D-003: no phone verification). The owner's first message carries "responde BAJA", and the opt-out is one click. Phone verification (OTP) would close it; out of MVP scope.
+- A later check-in with the box ticked re-enables a customer who opted out. This is a new explicit consent, recorded with its own row.
+- The queue loads at most 1,000 customers per business (most recent first), so very large tenants could miss the oldest inactive customers. Move selection into SQL when a business passes ~800 customers.
