@@ -50,7 +50,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       ownerUserId = listed.data.users.find((user) => user.email?.toLowerCase() === input.ownerEmail.toLowerCase())?.id;
     }
     if (ownerUserId) {
-      await service.from("business_members").upsert({ business_id: business.id, user_id: ownerUserId, role: "owner", is_active: true });
+      const { error: membershipError } = await service.rpc("upsert_business_member_with_limit", {
+        p_business_id: business.id,
+        p_user_id: ownerUserId,
+        p_role: "owner",
+      });
+      if (membershipError) inviteWarning = " El negocio quedó creado; revisa la asignación del dueño.";
     } else {
       inviteWarning = " El negocio quedó creado; revisa la invitación del dueño.";
     }

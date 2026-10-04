@@ -21,6 +21,7 @@ const members = await Promise.all((membersResult.data ?? []).map(async (member) 
   const result = await service.auth.admin.getUserById(member.user_id);
   return { ...member, email: result.data.user?.email ?? "Usuario sin correo" };
 }));
+const activeMemberCount = members.filter((member) => member.is_active).length;
 const siteUrl = configuredSiteUrl();
 const message = Astro.url.searchParams.get("message");
 const formError = Astro.url.searchParams.get("error");
@@ -43,9 +44,21 @@ const formError = Astro.url.searchParams.get("error");
         <div class="field"><label for="legalName">Razón social</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /></div>
         <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
         <div class="field"><label for="privacyUrl">Política de privacidad</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? "/privacy"} /></div>
-        <div class="triple"><div class="field"><label for="primaryColor">Principal</label><input id="primaryColor" name="primaryColor" type="color" value={business.primary_color} /></div><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Inactividad</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
+        <div class="triple"><div class="field"><label for="primaryColor">Principal</label><input id="primaryColor" name="primaryColor" type="color" value={business.primary_color} /></div><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
         <div class="split"><div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value={business.timezone} /></div><div class="field"><label for="defaultCountry">País</label><input id="defaultCountry" name="defaultCountry" value={business.default_country} maxlength="2" /></div></div>
-        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} /> Negocio activo</label>
+        <fieldset>
+          <legend>Ofertas aprobadas por el dueño</legend>
+          <div class="field"><label for="offerInactive">Cliente inactivo</label><input id="offerInactive" name="offerInactive" value={business.offer_inactive ?? ""} minlength="1" maxlength="200" /></div>
+          <div class="field"><label for="offerBirthday">Cumpleaños</label><input id="offerBirthday" name="offerBirthday" value={business.offer_birthday ?? ""} minlength="1" maxlength="200" /></div>
+          <div class="field"><label for="offerFrequent">Cliente frecuente</label><input id="offerFrequent" name="offerFrequent" value={business.offer_frequent ?? ""} minlength="1" maxlength="200" /></div>
+          <div class="field"><label for="offerNew">Cliente nuevo</label><input id="offerNew" name="offerNew" value={business.offer_new ?? ""} minlength="1" maxlength="200" /></div>
+        </fieldset>
+        <fieldset>
+          <legend>NFC de Google Review — grabar esta URL directamente en el chip</legend>
+          <div class="field"><label for="googleReviewUrl">URL directa de Google Review</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /></div>
+        </fieldset>
+        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={!business.owner_approved_at} /> Negocio activo</label>
+        {!business.owner_approved_at && <p class="muted compact-note">Registra la aprobación del dueño para habilitar la activación.</p>}
         <button class="button" type="submit">Guardar cambios</button>
       </form>
     </section>
@@ -53,14 +66,31 @@ const formError = Astro.url.searchParams.get("error");
     <div class="side-stack">
       <section class="card panel">
         <h2>NFC y enlaces</h2>
+        <div class="review-link">
+          <strong>NFC de Google Review — grabar esta URL directamente en el chip</strong>
+          {business.google_review_url
+            ? <a href={business.google_review_url} target="_blank" rel="noreferrer">{business.google_review_url}</a>
+            : <span class="muted">Pendiente de configurar.</span>}
+        </div>
         <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small>{siteUrl}/b/{business.slug}?t={tag.code}</small></div><div class="status"><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/tag-status`} method="post"><input type="hidden" name="targetId" value={tag.id} /><input type="hidden" name="active" value={tag.is_active ? "false" : "true"} /><button class="link-button" type="submit">{tag.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul>
         <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre del nuevo NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Generar</button></form>
       </section>
 
       <section class="card panel">
-        <h2>Usuarios autorizados</h2>
+        <h2>Usuarios: {activeMemberCount} de 2</h2>
         {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
         <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Rol</label><select id="role" name="role"><option value="owner">Dueño</option><option value="manager">Gerente</option><option value="viewer">Consulta</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
+      </section>
+
+      <section class="card panel">
+        <h2>Aprobación para activar</h2>
+        {business.owner_approved_at
+          ? <p class="approval-state"><strong>Aprobado por {business.owner_approved_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.owner_approved_at))}</span></p>
+          : <p class="muted">El dueño debe aprobar la configuración final antes de activar el negocio.</p>}
+        <form class="inline-form" action={`/api/admin/business/${business.id}/approve`} method="post">
+          <div class="field"><label for="ownerName">Nombre del dueño que aprobó</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
+          <button class="button secondary" type="submit">Registrar aprobación del dueño</button>
+        </form>
       </section>
     </div>
   </div>
@@ -72,7 +102,10 @@ const formError = Astro.url.searchParams.get("error");
   .settings-grid { display: grid; grid-template-columns: minmax(440px, 1fr) minmax(380px, .9fr); gap: 20px; margin-top: 20px; align-items: start; }
   .side-stack { display: grid; gap: 20px; } .panel { padding: 24px; } .panel h2 { font-size: 1.1rem; margin-bottom: 22px; }
   .panel > form { display: grid; gap: 16px; } .split { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; } .triple { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 13px; }
+  fieldset { display: grid; gap: 13px; margin: 0; padding: 16px; border: 1px solid #eaecf0; border-radius: 11px; } legend { padding: 0 7px; font-weight: 750; color: #344054; }
   input[type="color"] { padding: 5px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
+  .compact-note { margin: -8px 0 0; } .review-link { display: grid; gap: 8px; margin: -4px 0 20px; padding: 14px; border: 1px solid #eaecf0; border-radius: 11px; overflow-wrap: anywhere; }
+  .approval-state { display: grid; gap: 5px; margin: 0 0 18px; } .approval-state span { color: #667085; }
   .records { list-style: none; padding: 0; margin: -5px 0 20px; border: 1px solid #eaecf0; border-radius: 11px; overflow: hidden; }
   .records li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border-bottom: 1px solid #eaecf0; } .records li:last-child { border: 0; }
   .records li div { min-width: 0; display: grid; gap: 4px; } .records small { color: #98a2b3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

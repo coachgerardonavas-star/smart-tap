@@ -15,6 +15,22 @@ const optionalUrlSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : value,
   z.union([z.literal(""), z.url().max(500)]),
 );
+const optionalOfferSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : value,
+  z.union([z.literal(""), z.string().min(1).max(200)]),
+).transform((value) => value || null);
+const googleReviewHosts = new Set(["g.page", "search.google.com", "www.google.com", "maps.app.goo.gl"]);
+export const googleReviewUrlSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : value,
+  z.union([z.literal(""), z.url().max(500).refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && googleReviewHosts.has(url.hostname.toLowerCase()) && !url.username && !url.password && !url.port;
+    } catch {
+      return false;
+    }
+  }, "La URL de Google Review no es válida.")]),
+).transform((value) => value || null);
 const privacyUrlSchema = z.string().trim().max(500).refine((value) => {
   if (!value || value.startsWith("/")) return true;
   try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
@@ -55,7 +71,15 @@ export const businessInputSchema = z.object({
   ownerEmail: optionalEmailSchema,
 });
 
-export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true });
+export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true }).extend({
+  offerInactive: optionalOfferSchema,
+  offerBirthday: optionalOfferSchema,
+  offerFrequent: optionalOfferSchema,
+  offerNew: optionalOfferSchema,
+  googleReviewUrl: googleReviewUrlSchema,
+});
+
+export const ownerApprovalSchema = z.object({ ownerName: z.string().trim().min(2).max(120) });
 
 export const memberInviteSchema = z.object({
   email: trimmedEmailSchema,

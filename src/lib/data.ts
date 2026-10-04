@@ -84,6 +84,12 @@ export async function dashboardData(identity: AuthIdentity, requestedSlug?: stri
     timezone: business.timezone,
     inactivityDays: business.inactivity_days,
     now,
+    offers: {
+      inactive: business.offer_inactive,
+      birthday: business.offer_birthday,
+      frequent: business.offer_frequent,
+      new: business.offer_new,
+    },
   });
 
   function daysUntilBirthday(birthday: string): number {

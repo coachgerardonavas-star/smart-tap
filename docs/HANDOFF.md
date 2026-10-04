@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after the hosted Follow-up Queue UI smoke test and cleanup on `0eb3b6d`.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing the onboarding configuration on `codex/onboarding-config`.
 
 ## Project identity
 
@@ -14,10 +14,11 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after the hosted Follow-up Queue
 
 | Branch | State |
 |---|---|
-| `main` | Original MVP (`f1ec5d3`). Does not match the live database: its code calls the old 8-argument check-in function, which no role may execute. **Do not deploy or build on `main` until PR #1 is merged.** |
+| `main` | Reviewed MVP at merge `7a6310a`; PR #1 is merged. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
-| `codex/live-smoke-mfa` | **Current PR #1 branch.** At `0eb3b6d` or later; contains hosted Follow-up Queue smoke evidence, decisions D-025 through D-042, Render decision D-030 and the reviewed MVP. |
+| `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
+| `codex/onboarding-config` | **Current Builder branch.** Implements `docs/ONBOARDING_CONFIG.md` with one unapplied migration. Awaiting independent Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -38,7 +39,20 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-Current local gate on `0eb3b6d`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 66/66 tests and a complete standalone Node build. A separate `npm run build` passed and the runtime server answered HTTP 200 at `127.0.0.1:4321`.
+Current local gate on `codex/onboarding-config`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 75/75 tests and a complete standalone Node build.
+
+## Onboarding configuration — Builder implementation, 2026-10-04
+
+- Implemented all eight sections of `docs/ONBOARDING_CONFIG.md` on `codex/onboarding-config`.
+- Added one nullable offer per follow-up kind. The server loads only the selected business's offers and adds the matching offer to the WhatsApp suggestion when present.
+- Replaced the optional birthday label and added the approved benefit text without a promised reward.
+- Enforced two active business members through row-locked PostgreSQL functions used by invite and reactivation routes. Pausing frees a slot; parallel activation attempts cannot exceed two.
+- Added a validated direct Google Review URL for the four approved hosts and displayed it in the admin for direct NFC programming. No review interstitial or new public route was added.
+- Kept the inactivity threshold per business and changed its admin label to state that the owner defines it.
+- New businesses default to inactive. Activation has an app check plus a database constraint requiring recorded owner approval. The approval function checks branding, four offers, inactivity days, Google Review URL and an active member, then writes the approval and audit row atomically. The migration preserves already active rows such as Café Luna.
+- Updated `docs/NFC_OPERATIONS.md` to specify two Smart Tap capture tags and one direct Google Review tag.
+- New migration: `20261004190000_onboarding_config.sql`. It has not been applied to hosted Supabase and no `db push` ran; the Reviewer applies and may rename it to the live version.
+- Targeted gate: 58/58 tests. Final local gate: 75/75 tests, zero Astro diagnostics, complete build and zero production audit findings.
 
 ## Follow-up Queue implementation — 2026-10-04
 
@@ -82,7 +96,7 @@ Current local gate on `0eb3b6d`: `npm ci` found 0 vulnerabilities; strict `npm r
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
 - Business privacy notice and retention (D-011).
 - Physical NFC writing.
-- Merge PR #1 after the final green gate; the migration and hosted Follow-up Queue smoke are complete.
+- Reviewer: inspect the onboarding branch and apply `20261004190000_onboarding_config.sql` to hosted Supabase only after approving its SQL.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
 - Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
@@ -90,7 +104,7 @@ Current local gate on `0eb3b6d`: `npm ci` found 0 vulnerabilities; strict `npm r
 
 ## Coordination
 
-**Single working branch until PR #1 merges: `codex/live-smoke-mfa`** (CEO instruction, 2026-10-04, supersedes the earlier `claude/mfa-review` instruction). Every agent — Codex, ChatGPT, Claude — commits there; after the merge, all work goes through pull requests to `main`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+PR #1 is merged. All new work starts from updated `main`, uses a feature branch and reaches `main` only through a pull request with `verify` green. Current branch: `codex/onboarding-config`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
 
 ## Reviewer and Builder status — 2026-10-04 (after 0eb3b6d)
 

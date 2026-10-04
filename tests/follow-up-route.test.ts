@@ -25,8 +25,30 @@ const baseCustomer: FollowUpCustomer = {
   last_seen_at: "2026-10-03T12:00:00Z",
 };
 const visit: Visit = { id: "50000000-0000-4000-8000-000000000001", business_id: baseCustomer.business_id, customer_id: baseCustomer.id, tag_id: null, source: "nfc", visited_at: baseCustomer.last_seen_at };
+type TestBusiness = {
+  id: string;
+  slug: string;
+  display_name: string;
+  timezone: string;
+  inactivity_days: number;
+  offer_inactive: string | null;
+  offer_birthday: string | null;
+  offer_frequent: string | null;
+  offer_new: string | null;
+};
+const baseBusiness: TestBusiness = {
+  id: baseCustomer.business_id,
+  slug: "cafe-luna",
+  display_name: "Café Luna",
+  timezone: "America/New_York",
+  inactivity_days: 30,
+  offer_inactive: null,
+  offer_birthday: null,
+  offer_frequent: null,
+  offer_new: null,
+};
 
-function dependencies(options: { customer?: FollowUpCustomer | null; visits?: Visit[]; count?: number; authorize?: () => Promise<unknown> } = {}) {
+function dependencies(options: { customer?: FollowUpCustomer | null; visits?: Visit[]; count?: number; authorize?: () => Promise<unknown>; business?: TestBusiness } = {}) {
   const actions = new Map<string, unknown>();
   const recordAction = vi.fn(async (action: { business_id: string; customer_id: string; kind: string; period_key: string }) => {
     actions.set(`${action.business_id}:${action.customer_id}:${action.kind}:${action.period_key}`, action);
@@ -38,7 +60,7 @@ function dependencies(options: { customer?: FollowUpCustomer | null; visits?: Vi
       authorize: options.authorize ?? (async () => ({ role: "owner" })),
       now,
       store: {
-        async getBusiness() { return { id: baseCustomer.business_id, slug: "cafe-luna", display_name: "Café Luna", timezone: "America/New_York", inactivity_days: 30 }; },
+        async getBusiness() { return options.business ?? baseBusiness; },
         async getCustomer() { return options.customer === undefined ? baseCustomer : options.customer; },
         async getVisits() { return options.visits ?? [visit]; },
         async getVisitCount() { return options.count ?? 1; },
@@ -97,6 +119,16 @@ describe("follow-up action route policy", () => {
     expect(Object.keys(input)).not.toContain("message");
   });
 
+  it("uses only the offer loaded for the authorized business", async () => {
+    const deps = dependencies({ business: { ...baseBusiness, offer_new: "Recibe un café gratis." } });
+    const result = await executeFollowUpAction(identity, {
+      businessId: baseCustomer.business_id, customerId: baseCustomer.id, kind: "new", action: "contact",
+    }, deps.value);
+    const message = new URL(result.redirectUrl).searchParams.get("text");
+    expect(message).toContain("Recibe un café gratis.");
+    expect(message).not.toContain("Oferta del otro negocio");
+  });
+
   it("redirects dismiss to the server-loaded business slug", async () => {
     const deps = dependencies();
     await expect(executeFollowUpAction(identity, {
@@ -120,6 +152,7 @@ describe("follow-up action route policy", () => {
     expect(dashboard).toContain("customer.whatsapp_opt_in &&");
     expect(route).toContain("requireDataAccess(request, cookies)");
     expect(route).toContain("assertBusinessAccess(currentIdentity, businessId, false)");
+    expect(route).toContain("offer_inactive,offer_birthday,offer_frequent,offer_new");
     expect(route).toContain("if (error instanceof AuthorizationError) throw error");
     const optOutRoute = readFileSync(join(process.cwd(), "src/pages/api/dashboard/customer/[id]/whatsapp-opt-out.ts"), "utf8");
     expect(optOutRoute).toContain("requireDataAccess(request, cookies)");

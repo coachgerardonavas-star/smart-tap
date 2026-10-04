@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         async getBusiness(businessId) {
           const { data, error } = await service
             .from("businesses")
-            .select("id,slug,display_name,timezone,inactivity_days")
+            .select("id,slug,display_name,timezone,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new")
             .eq("id", businessId)
             .maybeSingle();
           if (error) throw error;

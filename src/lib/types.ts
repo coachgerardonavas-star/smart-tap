@@ -11,6 +11,13 @@ export type Business = {
   default_country: string;
   inactivity_days: number;
   is_active: boolean;
+  offer_inactive: string | null;
+  offer_birthday: string | null;
+  offer_frequent: string | null;
+  offer_new: string | null;
+  google_review_url: string | null;
+  owner_approved_at: string | null;
+  owner_approved_name: string | null;
   created_at: string;
   updated_at: string;
 };

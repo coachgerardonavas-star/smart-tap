@@ -88,8 +88,9 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
         <span className="hint">Usaremos tu teléfono para identificar tus próximas visitas.</span>
       </div>
       <div className="field">
-        <label htmlFor="birthday">Cumpleaños <span className="optional">(opcional)</span></label>
+        <label htmlFor="birthday">¿Cuándo cumples años? <span className="optional">(opcional)</span></label>
         <input id="birthday" name="birthday" type="date" autoComplete="bday" max={new Date().toISOString().slice(0, 10)} />
+        <span className="hint">Déjanos tu fecha de cumpleaños y podremos sorprenderte con descuentos, regalos o beneficios especiales en tu día.</span>
       </div>
       <div className="honeypot" aria-hidden="true">
         <label htmlFor="website">Sitio web</label>

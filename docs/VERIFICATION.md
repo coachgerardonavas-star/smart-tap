@@ -273,3 +273,29 @@ Target: standalone Node build at `http://127.0.0.1:4321` using runtime `.env` va
 | Cleanup | PASSED | Temporary business, 4 customers, 4 visits, consent rows, 2 follow-up actions, NFC tag and 2 Auth users all removed. Café Luna remains at 3 customers/7 visits; only the platform admin remains; no business memberships remain. |
 
 The smoke ran on `face24b`; the subsequent fast-forward to `0eb3b6d` changed only `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/CLIENT_ONBOARDING.md` and `docs/DECISIONS.md`. The complete gates and build were repeated on `0eb3b6d`, proving the final executable tree remains the tested one.
+
+## Onboarding configuration — ChatGPT Codex, 2026-10-04
+
+Branch: `codex/onboarding-config`, created from `main` after confirming merge `7a6310a` for PR #1.
+
+Migration `20261004190000_onboarding_config.sql` ran only in PGlite as part of the automated suite. It was not applied to hosted Supabase and no `db push` ran.
+
+| Requirement | Result | Evidence |
+|---|---|---|
+| Offer present/absent | PASSED | Unit tests preserve the old message without an offer and insert only the matching category offer before the BAJA sentence. |
+| Cross-business offer isolation | PASSED | The action handler loads the authorized business by id; route tests prove the selected business offer is used and an unrelated offer is absent. |
+| Two active users | PASSED | PGlite rejects a third active member and rejects reactivation at the limit. Pausing frees a slot. |
+| Parallel invitations | PASSED | Two concurrent membership function calls competing for one slot finish with one success, one `active_member_limit` failure and exactly two active rows. |
+| Google Review validation | PASSED | All four approved HTTPS hosts pass; HTTP, other hosts, host suffix attacks and `javascript:` fail. |
+| Activation and approval | PASSED | Database constraint blocks activation without approval. Approval rejects missing config and no active member, then records the owner, timestamp and one audit row after all checks pass. |
+| Existing Café Luna | PASSED | Seeded Café Luna remains active with a preserved approval marker. |
+| Birthday copy | PASSED | Source regression checks the exact approved label and help text. |
+| Direct review NFC | PASSED | Admin and operations doc expose the stored Google URL for direct chip programming; no new public route exists. |
+
+Commands and results:
+
+- `npm ci`: 326 packages installed; 0 vulnerabilities.
+- Targeted Vitest gate: 5 files, 58/58 tests.
+- Additional database test after coverage expansion: 16/16 tests.
+- `npm run audit:prod`: strict production audit, 0 vulnerabilities.
+- `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 75/75 tests; standalone Node build complete.
