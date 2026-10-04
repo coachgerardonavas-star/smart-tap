@@ -187,3 +187,7 @@ Approved text in `docs/TERMS_OF_SERVICE.md`. Liability capped at fees paid in th
 ## D-046 — Branded customer screens through customizable styles (CEO, 2026-10-04)
 
 Customer-facing NFC screens are personalized per business through 3–4 pre-designed styles plus per-business data (logo, colors, hero photo, tagline, benefits), not bespoke design or code per client. Styles are designed once (Claude Design), approved by the CEO and built once. Details and constraints in HANDOFF.
+
+## D-047 — Deploy against the test project until the first client (CEO, 2026-10-04)
+
+The Render service runs against the test Supabase project `vrouyhxzxrfkuuqfslrc` for demos and NFC tests. No real customer data is loaded. At the first signed client the production Pro project is created (D-024) and only `PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY` change in Render, together with SMTP, templates and Auth URL configuration in the new project.

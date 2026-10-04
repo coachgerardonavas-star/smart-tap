@@ -493,3 +493,18 @@ Defect found and fixed: `service_role` still had INSERT/UPDATE/DELETE on `terms_
 Not exercised against the hosted project: the HTTP routes (`/privacy/[slug]`, `/terms/accept`, CSV export, 410 after the window), because the Reviewer environment holds no server key. They are covered by the 108 local tests; repeat as part of the post-deploy smoke on Render.
 
 Verdict: **PR #4 approved by the Reviewer.** The CEO merges.
+
+## First Render deploy — production smoke (Claude Code + CEO, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Render Blueprint `render-smart-tap`, service `smart-tap` (Virginia, `0.5c-512mb`), deploys `main` | Live at `smart-tap-y8gd.onrender.com` |
+| DNS `smarttap` CNAME → `smart-tap-y8gd.onrender.com`, DNS only (Cloudflare API) | Resolves; Render domain Verified, certificate issued |
+| `/demo`, `/b/cafe-luna`, `/privacy/cafe-luna`, `/terms`, `/login` over HTTPS on the custom domain | 200; CSP, X-Frame-Options DENY, nosniff present |
+| Form POSTs behind Render's TLS proxy | Were 403 for every form; fixed by `security.allowedDomains` (PR #5). After redeploy: same-origin 303, cross-site 403 |
+| Supabase Auth URL configuration | Site URL `https://smarttap.yourbizupgraded.com`, redirect `https://smarttap.yourbizupgraded.com/**` |
+| Recovery template | Was still Supabase's default (`ConfirmationURL`, consumed on GET). Replaced with `supabase/templates/recovery.html`; Invite template confirmed as the repository version |
+| Recovery email requested by the CEO from `/forgot-password` | Arrived in the inbox (not spam), Spanish template; Gmail's scan of the link did not consume the token (no `/verify` in the auth log) |
+| DMARC | `_dmarc` CNAME to `dmarc.ionos.com` (`p=none`) was proxied, so TXT did not resolve; set to DNS only, now resolves |
+
+Pending on the deployed app: click-through of the recovery button, the IP-identity check for rate limits (two phones on different networks), and physical NFC tests. The app uses the test Supabase project until the first client (D-047).
