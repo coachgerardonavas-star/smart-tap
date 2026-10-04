@@ -19,6 +19,8 @@ Deliver one configurable multi-tenant platform that lets a local business captur
 11. Include a reproducible demo business and a demo that can be shown before production credentials are connected.
 12. Record architecture, decisions, tasks, verification, setup, and current handoff state.
 
+13. Capture separate, optional WhatsApp marketing consent; detect follow-up opportunities; show a follow-up queue with an owner-sent WhatsApp link (D-021, `docs/FOLLOW_UP_QUEUE.md`).
+
 ## Edge cases
 
 - An invalid or inactive business returns a neutral unavailable page.
@@ -32,7 +34,8 @@ Deliver one configurable multi-tenant platform that lets a local business captur
 - An external login redirect is replaced with the dashboard path.
 - An existing invited user can be assigned without creating a duplicate account.
 - The customer, consent, and visit write succeeds or fails as one transaction.
+- Check-in never requires WhatsApp consent; a customer without it never gets a WhatsApp button.
 
 ## Excluded
 
-WhatsApp automation, advanced campaigns, full CRM, POS, payments, reservations, conversational AI, advanced Wallet features, and custom CRM integrations.
+Automated WhatsApp sending (Meta Business Platform, templates, webhooks), WhatsApp automation, advanced campaigns, full CRM, POS, payments, reservations, conversational AI, advanced Wallet features, and custom CRM integrations.

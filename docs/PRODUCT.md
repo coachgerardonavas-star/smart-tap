@@ -1,6 +1,12 @@
 # Smart Tap product
 
-Smart Tap is a $199 setup and $79 monthly entry product for local businesses. A customer touches an NFC, opens the business landing, shares a name and phone, optionally shares a birthday, accepts the privacy notice, and records a visit.
+Smart Tap is a $199 setup and $79 monthly entry product for local businesses.
+
+**Smart Tap te ayuda a saber quién entró, quién regresó y a quién deberías traer de vuelta.**
+
+A customer touches an NFC, opens the business landing, shares a name and phone, optionally shares a birthday, accepts the privacy notice, optionally accepts WhatsApp messages, and records a visit. The dashboard turns visits into a follow-up queue (inactive, birthday, frequent, new); the owner sends each WhatsApp message himself with one tap (D-021, `docs/FOLLOW_UP_QUEUE.md`).
+
+Existing CRM: without one, Smart Tap stands alone; with an underused one, Smart Tap starts standalone and is not integrated by default; with an active CRM and automations, integration is quoted as a separate project. Automated WhatsApp through Meta is a later add-on.
 
 The business gets a small private panel. It shows customers, visits, repeat customers, last visits, inactive customers, upcoming birthdays, and a basic customer list. Owners and managers can remove a customer when handling a privacy request.
 

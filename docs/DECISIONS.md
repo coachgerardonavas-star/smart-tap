@@ -79,3 +79,7 @@ Every `/admin` page and `/api/admin` endpoint uses `requirePlatformAdmin`, which
 ## D-020 — Platform-admin power requires aal2 everywhere (review 2026-10-04)
 
 D-019 guarded `/admin` only. A platform admin also reaches every tenant through `/dashboard`, customer deletion, and the Data API RLS bypass in `private.is_platform_admin()`. All three now require `aal2`: `requireDataAccess` and `assertBusinessAccess(identity, …)` in the app, and the SQL helper checks `auth.jwt() ->> 'aal'` (migration `20261004000000_admin_rls_requires_aal2.sql`). A stolen admin password alone no longer reads customer data by any path.
+
+## D-021 — Assisted WhatsApp follow-up, no Meta API (CEO, 2026-10-04)
+
+The MVP detects follow-up opportunities (inactive, birthday, frequent, new) and shows them in a dashboard queue. "Enviar WhatsApp" opens WhatsApp with the customer's number and a suggested message; the owner presses Send. Smart Tap never sends messages. WhatsApp marketing consent is a separate, optional, unchecked box at check-in, recorded with its own text version. Meta Business Platform, templates and automated sending are a later add-on outside $199 + $79/month. CRM integration is a separately quoted project. Specification: `docs/FOLLOW_UP_QUEUE.md`.
