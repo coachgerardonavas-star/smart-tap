@@ -232,3 +232,5 @@ Final local results before push:
 - `npm run verify`: 0 Astro errors, warnings or hints; 9 files and 66/66 tests passed; standalone Node build completed;
 - `20261004030000_follow_up_queue.sql` remains unapplied to hosted Supabase;
 - no Supabase or deployment changes were made in this integration.
+
+GitHub Actions run `37174959751` passed for integration commit `cbf817b`; the `verify` job completed npm install, strict audit, the 66-test gate, SBOM generation and artifact upload.
