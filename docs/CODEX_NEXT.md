@@ -2,26 +2,9 @@
 
 Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
-## Part A — sync (first, before any new code)
+## Next task (after PR #1 merges)
 
-1. `git fetch origin`; on `codex/live-smoke-mfa`: `git pull --ff-only origin codex/live-smoke-mfa`. `origin/claude/pr1-review` is integrated through `a2dc700`; it adds the prefetch-safe callback and closes D-023 with the upstream dependency fix.
-2. `npm ci`, `npm run audit:prod`, `npm run verify` (current baseline: 0 diagnostics, 66 tests, 0 audit vulnerabilities).
-
-## Part B — Follow-up Queue (D-021)
-
-Implement exactly `docs/FOLLOW_UP_QUEUE.md`, sections 1–8, on the same branch and PR. Smallest change that meets it: reuse the existing dashboard, auth guards and check-in function pattern.
-
-- One new migration file. **Do not apply it to live Supabase** and do not run `db push`; the Reviewer applies it after review.
-- No Meta API, no automatic sending, no message scheduler, no CRM.
-- Glasswing Shield: update `docs/security/CONTROL_MATRIX.md` for the new route and data.
-
-## Live Supabase facts
-
-Project `vrouyhxzxrfkuuqfslrc`. Six migrations applied plus the seed. Admin `automateit@yourbizupgraded.com` exists, confirmed, with one MFA factor. Never paste keys anywhere; `.env` uses `SUPABASE_SECRET_KEY=PEGAR_AQUI` for the CEO to fill in.
-
-## Close every session
-
-Commit, push, PR `verify` green, update `docs/HANDOFF.md`, and give the CEO the report below. Do not merge to `main`. No deploy.
+Implement `docs/ONBOARDING_CONFIG.md` on a new branch `codex/onboarding-config` created from `main`. One new migration, not applied (the Reviewer applies it). Open a new PR to `main` with `verify` green.
 
 ## Report for Claude Code
 
