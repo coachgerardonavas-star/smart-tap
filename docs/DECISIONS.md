@@ -159,3 +159,7 @@ The base Smart Tap setup includes 3 configured NFC tags with fixed roles: **2 ta
 ## D-039 — Google Review NFC opens Google directly (CEO, 2026-10-04)
 
 The dedicated Google Review NFC must open the business's direct Google review URL immediately. No Smart Tap interstitial, rating screen, review gating, or pre-qualification step is inserted before Google.
+
+## D-040 — Owner go-live approval scope (CEO, 2026-10-04)
+
+Before Smart Tap is activated, the business owner must approve the final configuration covering: branding, selected dashboard users, the four category-specific offers, inactivity threshold, recommended/final NFC placement, WhatsApp message/consent text, and the direct Google Review URL. Activation must not proceed until that approval is recorded.
