@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { APIRoute } from "astro";
+import { siteUrl } from "../../../lib/env";
 import { requirePlatformAdmin } from "../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
 import { businessInputSchema } from "../../../lib/validation";
@@ -40,7 +41,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   let inviteWarning = "";
   if (input.ownerEmail) {
     const { data: invite, error: inviteError } = await service.auth.admin.inviteUserByEmail(input.ownerEmail, {
-      redirectTo: `${import.meta.env.PUBLIC_SITE_URL}/auth/callback?next=/set-password`,
+      redirectTo: `${siteUrl()}/auth/callback?next=/set-password`,
       data: { full_name: input.displayName },
     });
     let ownerUserId = invite?.user?.id;

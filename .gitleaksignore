@@ -1,0 +1,5 @@
+# False positive: the referenced values are Supabase publishable browser keys,
+# documented as public configuration. Keep each exception tied to its exact
+# historical commit, file, rule and line so later findings still fail CI.
+6d53ba91717ec2e6ae6638c6729fa48146af6c4e:docs/CODEX_NEXT.md:generic-api-key:20
+6d53ba91717ec2e6ae6638c6729fa48146af6c4e:docs/CODEX_NEXT.md:generic-api-key:32

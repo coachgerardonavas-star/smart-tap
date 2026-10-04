@@ -1,94 +1,108 @@
 # Smart Tap handoff
 
-Updated: 2026-10-01
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after the hosted Follow-up Queue UI smoke test and cleanup on `0eb3b6d`.
 
 ## Project identity
 
-- Absolute path: `C:\automate-it\smart-tap`
-- Git repository: local repository initialized in the project root
-- Branch: `main`
-- Builder: ChatGPT Codex
-- Reviewer: Claude Code
+- Local path: `C:\automate-it\smart-tap` · GitHub: `coachgerardonavas-star/smart-tap`
+- Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
+- Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
+- **CEO-approved commercial/product decisions D-025 through D-042 from the current ChatGPT session:** `docs/CHATGPT_COORDINATION_NOTE.md`. Codex, Claude Code and ChatGPT should read it before changing Smart Tap scope, pricing behavior, CRM/WhatsApp assumptions, location rules or onboarding.
+
+## Branches — which one is current
+
+| Branch | State |
+|---|---|
+| `main` | Original MVP (`f1ec5d3`). Does not match the live database: its code calls the old 8-argument check-in function, which no role may execute. **Do not deploy or build on `main` until PR #1 is merged.** |
+| `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
+| `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
+| `codex/live-smoke-mfa` | **Current PR #1 branch.** At `0eb3b6d` or later; contains hosted Follow-up Queue smoke evidence, decisions D-025 through D-042, Render decision D-030 and the reviewed MVP. |
+| `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
+| `claude/review-hardening` | Superseded; already contained in the branches above. |
+
+## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
+
+Migration history matches `supabase/migrations/` file names exactly:
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`.
+
+Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
+
+Advisors: Security — one WARN, leaked-password protection, Pro-plan feature (compensated by 12-character minimum and admin MFA). Performance — five INFO unindexed foreign keys, deferred until workload evidence.
 
 ## Current state
 
-The complete executable MVP is implemented. Public demo routes work without credentials. The live data path, Auth, invitations, dashboard, and admin require a Supabase project and environment values. No production project or deploy was changed because credentials and a target were not supplied.
+MVP implemented. Security hardening, one visit per customer per day (D-017), admin MFA at `aal2` for `/admin`, `/dashboard`, customer deletion and the Data API (D-019, D-020). The Follow-up Queue (D-021) adds separate optional WhatsApp consent, four server-computed opportunity kinds, owner-assisted `wa.me` actions, dismissal and an audited opt-out. Smart Tap never sends a message.
 
-Estimated completion: 92%. The remaining 8% is live activation, hosted verification, SMTP, domain deployment, and physical NFC writing.
+Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 MFA passed live enrollment and challenge.
 
-## What works
+Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
 
-- branded NFC landing, validation, consent, repeat identification, and confirmation;
-- atomic customer, consent, and visit writes;
-- database rate limiting and opaque NFC codes;
-- strict tenant RLS and exact count dashboard;
-- customers, visits per customer, latest visit, inactivity, and birthdays;
-- Auth login, invitations, password setup, recovery, and logout;
-- Automate IT business, branding, NFC, and member setup;
-- audited admin changes and controlled customer deletion;
-- responsive demo dashboard and capture flow;
-- deterministic database seed.
+Current local gate on `0eb3b6d`: `npm ci` found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 66/66 tests and a complete standalone Node build. A separate `npm run build` passed and the runtime server answered HTTP 200 at `127.0.0.1:4321`.
 
-## Key files
+## Follow-up Queue implementation — 2026-10-04
 
-- Product scope: `specs/smart-tap.md`, `docs/PRODUCT.md`
-- Architecture and decisions: `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`
-- Database: `supabase/migrations/20261001000000_initial_schema.sql`
-- Demo data: `supabase/seed.sql`
-- Public capture: `src/pages/b/[slug].astro`, `src/pages/api/public/check-in.ts`
-- Dashboard: `src/pages/dashboard/index.astro`
-- Admin: `src/pages/admin/index.astro`, `src/pages/admin/[id].astro`
-- Tests: `tests/`, `supabase/tests/`
-- Activation: `docs/SETUP.md`
-- Test record: `docs/VERIFICATION.md`
+- Sections 1–8 of `docs/FOLLOW_UP_QUEUE.md` are implemented locally on PR #1.
+- Capture has a separate optional unchecked WhatsApp consent; the 10-argument check-in preserves a prior opt-in and records consent purpose/version.
+- The dashboard groups inactive, birthday, frequent and new opportunities. Viewer access is read-only. Owner, manager and AAL2 platform admin can contact or dismiss.
+- `/api/dashboard/follow-up` scopes every customer read by business, recomputes the opportunity and builds the `wa.me` URL only from database values. Authorization errors propagate as 403 through the shared middleware.
+- The explicit opt-out is atomic through `record_whatsapp_opt_out`; it updates the customer and appends consent and audit records.
+- Follow-up migration: `20261004035554_follow_up_queue.sql`. Claude Code applied it to hosted Supabase as `20261004035554_follow_up_queue`; Codex did not run a migration or `db push`.
+- Follow-up Queue gate remains complete: all sections 1–8 are covered by 66/66 tests and the hosted UI smoke below. Strict `npm run audit:prod` reports 0 vulnerabilities.
 
-## Directory map
+## Hosted Follow-up Queue UI smoke and cleanup — 2026-10-04
 
-```text
-smart-tap/
-  docs/          product, architecture, decisions, setup, verification, handoff
-  specs/         accepted MVP specification
-  public/        static public assets
-  src/
-    components/  React and Astro UI
-    layouts/     shared page layout
-    lib/         Auth, tenant access, validation, metrics, Supabase clients
-    pages/       public, Auth, dashboard, admin, and API routes
-  supabase/
-    migrations/  reproducible schema and security
-    tests/       pgTAP catalog checks
-    seed.sql     Café Luna demo data
-  tests/         unit, security, and embedded PostgreSQL tests
-```
+- Ran the standalone Node build locally at `127.0.0.1:4321` against hosted Supabase; no deployment was created.
+- Temporary business `review-fq`, one NFC tag, one owner and one viewer were created only for this smoke test.
+- Unchecked WhatsApp box: visit recorded; customer entered the New queue with `Sin permiso para WhatsApp`, no WhatsApp button and zero WhatsApp consent rows.
+- Checked box: `Enviar WhatsApp` appeared. Clicking it wrote one `contacted/new/first` row. The live endpoint returned HTTP 303 to `wa.me/12025550102` with the server-built Review FQ message and BAJA footer; after reload the customer left the queue.
+- `Descartar` wrote one `dismissed/new/first` row and removed that customer from the queue.
+- `Pidió no recibir WhatsApp` changed the flag to false, appended a negative admin consent and one `customer.whatsapp_opt_out` audit row; the queue immediately showed `Sin permiso para WhatsApp` without the send button.
+- Viewer saw the same queue and customer table without contact, dismiss, opt-out or delete buttons.
+- Cleanup passed: `review-fq`, customers, visits, consents, follow-ups, NFC tags and both temporary Auth users all count zero. Café Luna remains with 3 customers and 7 visits; the platform admin remains; business memberships count zero.
+- The final sync from `face24b` to `0eb3b6d` changed documentation only. Gates and build were repeated on `0eb3b6d`; the tested executable tree is unchanged.
+## Builder live smoke and cleanup — 2026-10-03
 
-## Reviewer instructions
+- Admin TOTP enrollment and challenge passed; `/admin` opened at AAL2.
+- `review-live` capture created one customer, one visit and two consent records after a repeated same-day submission; the second submission did not add a visit.
+- Dashboard, birthday, NFC pause/reactivation, viewer tenant isolation, `/admin` denial and member pause passed live.
+- Three default recovery emails returned `otp_expired`, consistent with documented link prefetch. A fresh server-generated one-time token completed password recovery. D-022 records the production fix.
+- Customer deletion cascaded from 1 visit and 2 consent records to zero; its audit event remains.
+- Cleanup removed `review-live` and the viewer Auth user. Café Luna and the platform admin remain.
+- PR #1: `https://github.com/coachgerardonavas-star/smart-tap/pull/1`.
 
-Open the existing folder directly. Do not scaffold another project or create a worktree.
+## Activation documents
 
-```powershell
-cd C:\automate-it\smart-tap
-git status --short --branch
-git log -1 --oneline
-npm ci
-npm run verify
-```
-
-Review these risks first:
-
-1. RLS membership helpers and cross-tenant isolation.
-2. Service-only execution of `record_public_check_in`.
-3. Admin bootstrap, token-hash email templates, and invitation callback behavior against a live Supabase project.
-4. Tenant authorization before every service-role query.
-5. Production privacy notice and retention choices.
-
-Use `docs/VERIFICATION.md` to avoid repeating settled checks unless a later change touches them.
+`docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`, `docs/CODEX_NEXT.md`, `docs/CHATGPT_COORDINATION_NOTE.md`.
 
 ## Real blockers
 
-- Supabase project URL, publishable key, secret key, and Auth access.
-- Production SMTP configuration.
-- Production host, domain, and deployment credentials.
-- Business-specific logo, colors, privacy notice, and NFC hardware.
+- CEO: Supabase plan (backups GS-25, separate production project GS-29).
+- Production host and domain (D-009), then Auth Site URL and redirect.
+- Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
+- Business privacy notice and retention (D-011).
+- Physical NFC writing.
+- Merge PR #1 after the final green gate; the migration and hosted Follow-up Queue smoke are complete.
 
-Continue with `docs/SETUP.md` when these inputs are available.
+- Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
+- Complete onboarding design with the CEO; only the form + verification-session model (D-029) is approved.
+- Offers by category (D-037), the birthday text (D-033) and the two-user limit (D-032) are approved for a later onboarding task; the queue still uses the fixed messages of `docs/FOLLOW_UP_QUEUE.md`.
+
+## Coordination
+
+**Single working branch until PR #1 merges: `codex/live-smoke-mfa`** (CEO instruction, 2026-10-04, supersedes the earlier `claude/mfa-review` instruction). Every agent — Codex, ChatGPT, Claude — commits there; after the merge, all work goes through pull requests to `main`. Read `docs/CHATGPT_COORDINATION_NOTE.md` before changing commercial or product assumptions. Every session ends with commit + push + `docs/HANDOFF.md` + the report for Claude Code (`AGENTS.md`). The Reviewer reviews by diff and gate, not by re-auditing settled areas.
+
+## Reviewer and Builder status — 2026-10-04 (after 0eb3b6d)
+
+- Follow-up Queue migration applied live as `20261004035554_follow_up_queue`; hosted DB checks passed (see VERIFICATION).
+- D-024 merged: Supabase Pro and a separate production project at the first signed client.
+- PR #1: Reviewer-approved and hosted Follow-up Queue UI smoke complete. Remaining before real customer data: GS-25, GS-29 (D-024), templates pasted in Supabase, host/domain, SMTP, privacy notice and physical NFC.
+
+## Production hosting (D-030) — added by ChatGPT, reviewed by Claude Code
+
+- Host: Render Web Service, Virginia, plan `0.5c-512mb` (paid; free tier sleeps), blueprint `render.yaml`, Node `22.22.0` (`.node-version`), URL `https://smarttap.yourbizupgraded.com`.
+- `render.yaml` deploys from `main`. **Do not create the Render service before PR #1 merges**: `main` still has the old code, whose check-in function no longer runs against the database.
+- Per D-024 the production service points at the separate Supabase Pro project created at the first signed client, not at `vrouyhxzxrfkuuqfslrc` (test/demo).
+- `TRUSTED_IP_HEADER=x-forwarded-for` is set in the blueprint. The production smoke test must confirm the rate-limit identity is the visitor's IP (two phones on different networks are limited independently) before the first client goes live; if the domain is proxied through Cloudflare, switch to `cf-connecting-ip` and block direct `onrender.com` traffic.
+- Runbooks: `docs/SETUP.md`, `docs/PRODUCTION_SMOKE_TEST.md`, `docs/CLIENT_ONBOARDING.md`, `docs/NFC_OPERATIONS.md`.
+- Draft PR #2 (`ops/reconcile-live-2026-10-03`) is fully merged into PR #1 and can be closed.

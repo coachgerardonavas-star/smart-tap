@@ -41,7 +41,9 @@ The aggregate view uses `security_invoker = true`, so its source-table RLS remai
 - `SUPABASE_SECRET_KEY` and `CHECK_IN_HASH_SECRET` stay server-side.
 - The public API accepts a slug and tag code, never a caller-supplied business UUID.
 - The check-in function is revoked from `public`, `anon`, and `authenticated`; only `service_role` may run it.
-- PostgreSQL applies an eight-request, ten-minute window per business and keyed identifier.
+- PostgreSQL applies ten-minute windows per business: 40 requests per keyed client IP and 3 per keyed phone. The client IP comes from the socket, or from the single proxy header named in `TRUSTED_IP_HEADER`.
+- Server configuration is read at request time through `astro:env/server` (`src/lib/env.ts`). Nothing secret is compiled into `dist/`.
+- Session cookies are HTTP-only, and `Secure` when `PUBLIC_SITE_URL` uses HTTPS.
 - Admin and customer-deletion routes validate the authenticated user on the server.
 - Astro checks request origins for state-changing form posts.
 - Security headers block framing, MIME sniffing, unnecessary browser permissions, and broad content sources.
@@ -49,4 +51,4 @@ The aggregate view uses `security_invoker = true`, so its source-table RLS remai
 
 ## Deployment shape
 
-The build output is a portable Node server in `dist/server/entry.mjs`. A production host needs HTTPS, the five environment values in `.env.example`, and a reachable Supabase project. Use one application deployment for every tenant.
+The build output is a portable Node server in `dist/server/entry.mjs`. A production host needs HTTPS, the environment values in `.env.example`, and a reachable Supabase project. Use one application deployment for every tenant.

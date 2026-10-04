@@ -3,6 +3,7 @@ import Base from "../layouts/Base.astro";
 import { getAuthIdentity } from "../lib/auth";
 
 const identity = await getAuthIdentity(Astro.request, Astro.cookies).catch(() => null);
+if (identity?.isPlatformAdmin) return Astro.redirect(identity.aal === "aal2" ? "/admin" : "/admin/mfa");
 if (identity) return Astro.redirect("/dashboard");
 const error = Astro.url.searchParams.get("error");
 const next = Astro.url.searchParams.get("next") || "/dashboard";

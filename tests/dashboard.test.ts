@@ -3,7 +3,7 @@ import { buildDashboardMetrics } from "../src/lib/dashboard";
 import type { Customer, Visit } from "../src/lib/types";
 
 const now = new Date("2026-10-01T12:00:00Z");
-const baseCustomer = { business_id: "business-a", phone_e164: "+13055550101", consent_current: true, consent_at: "2026-01-01T00:00:00Z", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z" };
+const baseCustomer = { business_id: "business-a", phone_e164: "+13055550101", consent_current: true, consent_at: "2026-01-01T00:00:00Z", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-09-01T00:00:00Z", whatsapp_opt_in: false, whatsapp_opt_in_at: null };
 
 describe("dashboard metrics", () => {
   it("counts visits, repeat clients, inactivity and birthdays", () => {

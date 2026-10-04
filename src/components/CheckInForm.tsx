@@ -14,6 +14,7 @@ type SuccessData = {
   customerName: string;
   businessName: string;
   visitCount: number;
+  alreadyCounted?: boolean;
 };
 
 export default function CheckInForm({ slug, tagCode = "", businessName, primaryColor, privacyUrl, demo = false }: Props) {
@@ -33,6 +34,7 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       phone: form.get("phone"),
       birthday: form.get("birthday"),
       consent: form.get("consent") === "on",
+      whatsappOptIn: form.get("whatsappOptIn") === "on",
       consentVersion: "2026-10-01",
       website: form.get("website"),
     };
@@ -64,9 +66,11 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
     return (
       <section className="confirmation" aria-live="polite">
         <div className="check" style={{ backgroundColor: primaryColor }} aria-hidden="true">✓</div>
-        <p className="eyebrow">Visita registrada</p>
+        <p className="eyebrow">{success.alreadyCounted ? "Visita de hoy ya registrada" : "Visita registrada"}</p>
         <h2>Gracias, {success.customerName}</h2>
-        <p>Esta es tu visita número {success.visitCount} a {success.businessName}.</p>
+        <p>{success.alreadyCounted
+          ? `Tu visita de hoy a ${success.businessName} ya estaba registrada. Llevas ${success.visitCount} en total.`
+          : `Esta es tu visita número ${success.visitCount} a ${success.businessName}.`}</p>
         <p className="small">Puedes cerrar esta página.</p>
       </section>
     );
@@ -94,6 +98,10 @@ export default function CheckInForm({ slug, tagCode = "", businessName, primaryC
       <label className="consent">
         <input name="consent" type="checkbox" required />
         <span>Acepto que {businessName} guarde estos datos para registrar mis visitas y comunicarse conmigo según su <a href={privacyUrl} target="_blank" rel="noreferrer">política de privacidad</a>.</span>
+      </label>
+      <label className="consent whatsapp-consent">
+        <input name="whatsappOptIn" type="checkbox" />
+        <span>Quiero recibir mensajes y promociones de {businessName} por WhatsApp. Puedo pedir que paren en cualquier momento.</span>
       </label>
       {error && <div className="form-alert" role="alert">{error}</div>}
       <button type="submit" disabled={pending} style={{ backgroundColor: primaryColor }}>

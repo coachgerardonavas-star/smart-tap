@@ -1,19 +1,24 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
-import { hashIdentifier, requestIp } from "../../../lib/security";
+import { BodyTooLargeError, hashIdentifier, readJsonLimited, requestIp } from "../../../lib/security";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 }
 
-export const POST: APIRoute = async ({ request }) => {
-  const length = Number(request.headers.get("content-length") || 0);
-  if (length > 12_000) return json(413, { error: "La solicitud es demasiado grande." });
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (!request.headers.get("content-type")?.includes("application/json")) return json(415, { error: "Formato no válido." });
 
   let raw: Record<string, unknown>;
-  try { raw = await request.json(); } catch { return json(400, { error: "Datos no válidos." }); }
+  try {
+    const body = await readJsonLimited(request, 12_000);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json(400, { error: "Datos no válidos." });
+    raw = body as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) return json(413, { error: "La solicitud es demasiado grande." });
+    return json(400, { error: "Datos no válidos." });
+  }
   if (raw.website) return json(400, { error: "No pudimos registrar la visita." });
 
   const parsed = checkInInputSchema.safeParse(raw);
@@ -42,7 +47,9 @@ export const POST: APIRoute = async ({ request }) => {
       p_phone_e164: phone,
       p_birthday: parsed.data.birthday || null,
       p_consent_version: parsed.data.consentVersion,
-      p_ip_hash: hashIdentifier(requestIp(request)),
+      p_whatsapp_opt_in: parsed.data.whatsappOptIn,
+      p_ip_hash: hashIdentifier(`ip:${requestIp(request, clientAddress)}`),
+      p_phone_hash: hashIdentifier(`phone:${phone}`),
       p_user_agent: request.headers.get("user-agent") || "unknown",
     });
 

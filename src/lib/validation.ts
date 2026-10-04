@@ -27,6 +27,7 @@ export const checkInInputSchema = z.object({
   phone: z.string().trim().min(7).max(32),
   birthday: z.iso.date().optional().or(z.literal("")),
   consent: z.literal(true),
+  whatsappOptIn: z.boolean().optional().default(false),
   consentVersion: z.string().trim().min(1).max(30),
 }).refine((value) => !value.birthday || value.birthday <= new Date().toISOString().slice(0, 10), {
   message: "El cumpleaños no puede estar en el futuro.",
@@ -79,8 +80,29 @@ export function normalizePhone(value: string, defaultCountry: string): string | 
 }
 
 export function safeNextPath(value: FormDataEntryValue | null): string {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-    return "/dashboard";
+  const fallback = "/dashboard";
+  // Browsers read "/\host" as "//host", and strip tabs and newlines before resolving.
+  if (typeof value !== "string" || !value.startsWith("/") || /[\\\u0000-\u001f\u007f]/.test(value)) return fallback;
+  try {
+    const base = "https://smart-tap.invalid";
+    const resolved = new URL(value, base);
+    if (resolved.origin !== base) return fallback;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return fallback;
   }
-  return value;
 }
+
+export const followUpActionSchema = z.object({
+  businessId: z.uuid(),
+  customerId: z.uuid(),
+  kind: z.enum(["inactive", "birthday", "frequent", "new"]),
+  action: z.enum(["contact", "dismiss"]),
+});
+
+export const businessIdSchema = z.uuid();
+
+export const statusChangeSchema = z.object({
+  targetId: z.uuid(),
+  active: z.enum(["true", "false"]).transform((value) => value === "true"),
+});

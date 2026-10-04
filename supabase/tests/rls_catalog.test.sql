@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(13);
 
 select ok((select relrowsecurity from pg_class where oid = 'public.profiles'::regclass), 'profiles has RLS');
 select ok((select relrowsecurity from pg_class where oid = 'public.businesses'::regclass), 'businesses has RLS');
@@ -9,8 +9,11 @@ select ok((select relrowsecurity from pg_class where oid = 'public.customers'::r
 select ok((select relrowsecurity from pg_class where oid = 'public.consent_records'::regclass), 'consent_records has RLS');
 select ok((select relrowsecurity from pg_class where oid = 'public.visits'::regclass), 'visits has RLS');
 select ok((select relrowsecurity from pg_class where oid = 'public.audit_log'::regclass), 'audit_log has RLS');
+select ok((select relrowsecurity from pg_class where oid = 'public.follow_ups'::regclass), 'follow_ups has RLS');
 select is((select reloptions @> array['security_invoker=true'] from pg_class where oid = 'public.customer_visit_counts'::regclass), true, 'aggregate view uses invoker security');
-select is((select has_function_privilege('anon', 'public.record_public_check_in(text,text,text,text,date,text,text,text)', 'execute')), false, 'anon cannot execute check-in function');
+select is((select has_function_privilege('anon', 'public.record_public_check_in(text,text,text,text,date,text,boolean,text,text,text)', 'execute')), false, 'anon cannot execute check-in function');
+select is((select has_function_privilege('service_role', 'public.record_whatsapp_opt_out(uuid,uuid,uuid,text)', 'execute')), true, 'service role can record WhatsApp opt-out');
+select is((select has_function_privilege('authenticated', 'public.record_whatsapp_opt_out(uuid,uuid,uuid,text)', 'execute')), false, 'authenticated cannot record WhatsApp opt-out directly');
 
 select * from finish();
 rollback;

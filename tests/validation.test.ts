@@ -4,7 +4,8 @@ import { businessInputSchema, checkInInputSchema, normalizePhone, safeNextPath }
 describe("public check-in validation", () => {
   it("accepts a complete check-in and rejects missing consent", () => {
     const valid = { slug: "cafe-luna", tagCode: "demo-cafe-luna-main-2026", fullName: "Elena García", phone: "305-555-0101", birthday: "1992-10-15", consent: true, consentVersion: "2026-10-01" };
-    expect(checkInInputSchema.safeParse(valid).success).toBe(true);
+    expect(checkInInputSchema.parse(valid).whatsappOptIn).toBe(false);
+    expect(checkInInputSchema.safeParse({ ...valid, whatsappOptIn: true }).success).toBe(true);
     expect(checkInInputSchema.safeParse({ ...valid, consent: false }).success).toBe(false);
     expect(checkInInputSchema.safeParse({ ...valid, birthday: "2099-01-01" }).success).toBe(false);
   });
@@ -33,5 +34,8 @@ describe("admin validation", () => {
     expect(safeNextPath("/dashboard?business=cafe-luna")).toBe("/dashboard?business=cafe-luna");
     expect(safeNextPath("https://evil.example")).toBe("/dashboard");
     expect(safeNextPath("//evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/\\evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/\t/evil.example")).toBe("/dashboard");
+    expect(safeNextPath("/admin/../dashboard")).toBe("/dashboard");
   });
 });
