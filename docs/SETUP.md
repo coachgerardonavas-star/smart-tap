@@ -1,11 +1,21 @@
 # Setup and activation
 
+## Current production backend
+
+A Supabase project already exists and is active:
+
+- Project: `smart-tap`
+- Ref: `vrouyhxzxrfkuuqfslrc`
+- Region: `us-east-1`
+
+Do **not** create a second Supabase project for this app unless there is an explicit environment-separation decision.
+
 ## Requirements
 
 - Node.js 22 or newer
 - npm 11 or newer
-- A Supabase project
-- A Node-compatible HTTPS host for production
+- access to the existing Supabase project
+- a Node-compatible HTTPS host for production
 
 ## Local application
 
@@ -18,11 +28,9 @@ npm run dev
 
 Generate `CHECK_IN_HASH_SECRET` with at least 32 random characters. Keep `.env` outside Git.
 
-## Supabase
+## Environment
 
-Apply `supabase/migrations/20261001000000_initial_schema.sql`, then `supabase/seed.sql`. The Supabase CLI can run them after the project is linked. The SQL Editor can also apply each file in order.
-
-Set these values in `.env` and in the production host:
+Set these values locally and in the production host:
 
 ```text
 PUBLIC_SUPABASE_URL=
@@ -33,33 +41,34 @@ CHECK_IN_HASH_SECRET=
 ADMIN_BOOTSTRAP_EMAIL=
 ```
 
-Create the bootstrap email in Supabase Auth. On its first authenticated request, the server sets its `profiles.platform_role` to `platform_admin`.
+Never commit the secret key or `CHECK_IN_HASH_SECRET`.
 
-In Supabase Auth settings:
+## Migration state
+
+The production Supabase database already contains these migrations:
+
+1. `20261002005131_initial_schema`
+2. `20261002014439_review_hardening_rate_limit_helper`
+3. `20261002014453_review_hardening_check_in_v2`
+4. `20261002072441_one_visit_per_day`
+5. `20261004010900_admin_rls_requires_aal2`
+
+Use the reconciled migration history before any future `db push`. Do not apply the stale `20261001000000_initial_schema` filename against production.
+
+## Supabase Auth production configuration
+
+Before commercial use:
 
 1. Disable public signup.
 2. Keep email confirmation enabled.
-3. Add `{PUBLIC_SITE_URL}/auth/callback` to allowed redirect URLs.
-4. Set the Site URL to `PUBLIC_SITE_URL`.
+3. Set Site URL to the final `PUBLIC_SITE_URL`.
+4. Add `{PUBLIC_SITE_URL}/auth/callback` to allowed redirect URLs.
 5. Configure custom SMTP before inviting commercial users.
-6. Replace the hosted **Invite user** template with `supabase/templates/invite.html`.
-7. Replace the hosted **Reset password** template with `supabase/templates/recovery.html`.
-8. Require a password length of at least 12 and enable leaked-password protection when the plan supports it.
-
-## First live test
-
-1. Sign in as the bootstrap admin.
-2. Open `/admin` and create a business.
-3. Copy its NFC URL from the business page.
-4. Open the URL in a private browser window and submit a test customer.
-5. Open `/dashboard` and confirm the customer, consent, and visit.
-6. Submit the same phone again and confirm the visit count rises.
-7. Delete the test customer from the dashboard.
-8. Create a second business user and confirm it cannot see the first business.
-
-## NFC writing
-
-Write the exact HTTPS URL shown beside each tag in the admin page. Lock the tag only after one phone opens the URL and completes a real test visit.
+6. Use `supabase/templates/invite.html` for Invite user.
+7. Use `supabase/templates/recovery.html` for Reset password.
+8. Require password length of at least 12.
+9. Enroll the platform administrator in MFA so admin authorization reaches AAL2.
+10. Leaked-password protection is Pro-and-above only. Enable it after a Pro upgrade; its absence on Free is not an activation blocker.
 
 ## Production command
 
@@ -69,3 +78,15 @@ npm run verify
 npm run build
 node dist/server/entry.mjs
 ```
+
+## Go-live
+
+After deployment, run `docs/PRODUCTION_SMOKE_TEST.md` rather than repeating the complete local audit.
+
+## NFC
+
+Follow `docs/NFC_OPERATIONS.md`. Write the exact HTTPS URL shown for the intended tag and lock the physical NFC only after a phone opens it and completes a real test check-in.
+
+## Client activation
+
+Follow `docs/CLIENT_ONBOARDING.md` so each new customer is configured without custom development.
