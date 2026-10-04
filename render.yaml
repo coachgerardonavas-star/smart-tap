@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: smart-tap
+    runtime: node
+    repo: https://github.com/coachgerardonavas-star/smart-tap
+    branch: main
+    region: virginia
+    plan: 0.5c-512mb
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/server/entry.mjs
+    healthCheckPath: /demo
+    domains:
+      - smarttap.yourbizupgraded.com
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: PUBLIC_SITE_URL
+        value: https://smarttap.yourbizupgraded.com
+      - key: PUBLIC_SUPABASE_URL
+        sync: false
+      - key: PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: CHECK_IN_HASH_SECRET
+        generateValue: true
+      - key: ADMIN_BOOTSTRAP_EMAIL
+        sync: false
