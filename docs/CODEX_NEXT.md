@@ -1,4 +1,4 @@
-# Next Builder task — sync, then Follow-up Queue
+# Next Builder task — onboarding configuration
 
 Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
 
