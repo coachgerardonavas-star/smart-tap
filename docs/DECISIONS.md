@@ -134,3 +134,7 @@ The base Smart Tap package includes a maximum of 2 business-side dashboard users
 ## D-033 — Customer capture requires name and phone; birthday is optional (CEO, 2026-10-04)
 
 The customer-facing NFC form requires **name** and **phone**. Birthday remains optional. The birthday field should use benefit-oriented copy explaining that sharing the date may enable birthday discounts, gifts or special benefits, so customers understand why it is useful to provide it. The copy must not promise a specific reward unless that business has approved one.
+
+## D-034 — Customer email is collected only when the business uses email campaigns (CEO, 2026-10-04)
+
+Customer email is **not** part of the default Smart Tap capture form. It is added only when the business specifically chooses email campaigns/follow-up as a channel. When enabled, the business-specific purpose and consent copy must be configured before collection. Do not silently collect email for businesses that are not using that channel.
