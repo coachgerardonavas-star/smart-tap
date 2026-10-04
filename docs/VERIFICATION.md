@@ -168,5 +168,5 @@ Reviewed `ops/reconcile-live-2026-10-03` (13 commits by the CEO's ChatGPT sessio
 - Correct: migration files reproduce the live history; contents compared with the applied SQL — identical apart from transaction wrappers. Live state checked: 5 migrations, Café Luna demo only, admin confirmed with one MFA factor.
 - Defect: the branch was cut from `main`, whose code calls the old 8-argument check-in function that the live database no longer lets any role execute. Deploying that branch would break every check-in. It was merged into `claude/mfa-review`, which has the matching code.
 - Defect: with both branches merged, the migrations folder would hold two copies of three migrations, and a rebuild would fail on duplicate objects. The duplicates under the old names were removed; the live names were kept.
-- Gap: the manual revoke of the old function was not in any file. Added `20261004020000_revoke_legacy_check_in.sql`, applied live with the same version.
+- Gap: the manual revoke of the old function was not in any file. Added `20261004021305_revoke_legacy_check_in.sql`, the version the live database assigned when it was applied.
 - The handoff instruction "Codex should continue implementation on main" was replaced: work continues on the PR branch.

@@ -22,7 +22,7 @@ Updated: 2026-10-04 by Claude Code (Reviewer), after reconciling the ops branch.
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
 Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004020000_revoke_legacy_check_in`.
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
