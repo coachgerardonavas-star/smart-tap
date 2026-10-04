@@ -522,7 +522,7 @@ PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`. GitHub Acti
 | `npm ci` | 334 packages installed; 0 vulnerabilities |
 | `npm run audit:prod` | 0 vulnerabilities |
 | `npm run verify` | 0 Astro errors, warnings or hints; 13 files and 121/121 tests; standalone Node build complete |
-| Database migration | All migrations, including `20261004203000_customer_styles.sql`, ran in PGlite; valid style data saved; invalid theme, partial benefits and HTTP hero URL were rejected |
+| Database migration | All migrations, including `20261004212542_customer_styles.sql`, ran in PGlite; valid style data saved; invalid theme, partial benefits and HTTP hero URL were rejected |
 | Button contrast | Sampled 4,096 RGB colors; computed black/white label reached at least 4.5:1 for every sample |
 | Fixed body palettes | Every approved foreground/background pair tested at 4.5:1 or higher |
 | Approved copy | Exact birthday, required consent, optional WhatsApp and confirmation strings covered; WhatsApp input has no `checked` state |
@@ -546,3 +546,13 @@ Desktop evidence: `docs/evidence/customer-elegante-form-1440x900.png`, with hero
 - One migration adds `theme`, `tagline`, `benefits` and `hero_image_url` with database checks. It remains unapplied.
 - `/admin/[id]` exposes all fields. The existing update route validates them, updates the row and includes their database column names in `business.updated.details.changedFields`.
 - `/b/[slug]` and `/demo/capture` both render `CustomerCapture.astro`; the demo can select all four styles.
+
+## Reviewer pass — PR #6 customer styles (Claude Code, 2026-10-04)
+
+Diff reviewed at `9dcd07c`: user-supplied URLs render only through React-escaped `src`/`href`; `primary_color` stays a validated hex used as a CSS variable; button label color computed for contrast; fonts self-hosted, CSP unchanged. Local gate: 13 files, 121/121 tests, build complete, `audit:prod` 0 vulnerabilities.
+
+Reviewer screenshots at 390×844 of `/demo/capture?theme=` for the four styles (built server): no horizontal overflow; Nombre input bottom at 417 / 425 / 414 / 425 px; each page loaded only its two font families.
+
+Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004212542_customer_styles` (file renamed). Hosted checks inside a rolled-back transaction: Café Luna defaulted to `calido` and stayed active; a valid style update passed; unknown theme, two benefits, `http://` and `javascript:` hero URLs and an 81-character tagline were rejected.
+
+Verdict: **PR #6 approved by the Reviewer.** After merge, Render redeploys and the Reviewer checks `/demo/capture` on the production domain.

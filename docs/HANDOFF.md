@@ -20,7 +20,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-046 and D-0
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
-| `codex/customer-styles` | **Current Builder branch and PR #6.** Starts at Reviewer-approved `534da86`; implementation commit `ad2d0eb` adds the four D-046/D-048 customer styles. Migration `20261004203000_customer_styles.sql` remains unapplied for Reviewer inspection. |
+| `codex/customer-styles` | **Current Builder branch and PR #6.** Starts at Reviewer-approved `534da86`; implementation commit `ad2d0eb` adds the four D-046/D-048 customer styles. Migration `20261004212542_customer_styles.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
@@ -131,7 +131,7 @@ Current local gate on `codex/customer-styles`: `npm ci` installed 334 packages a
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Reviewer: inspect and apply `20261004203000_customer_styles.sql`, then run the hosted D-046/D-048 admin and capture smoke. The earlier privacy/terms migrations are already live under the names listed above.
+- Reviewer: inspect and apply `20261004212542_customer_styles.sql`, then run the hosted D-046/D-048 admin and capture smoke. The earlier privacy/terms migrations are already live under the names listed above.
 - Physical NFC writing.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
@@ -169,7 +169,7 @@ PR #3 merged to main (a9ebc37). Next: custom SMTP done on the test project; priv
 
 The four approved styles are implemented for `/b/[slug]` and `/demo/capture`: `elegante`, `calido`, `moderno` and `colorido`. Each uses the approved colors, type families and radii with one combined hero/form page.
 
-`public.businesses` receives `theme`, `tagline`, `benefits` and `hero_image_url` through the single unapplied migration `20261004203000_customer_styles.sql`. The admin validates and audits all four values. A null benefits array uses the three approved defaults.
+`public.businesses` receives `theme`, `tagline`, `benefits` and `hero_image_url` through the single unapplied migration `20261004212542_customer_styles.sql`. The admin validates and audits all four values. A null benefits array uses the three approved defaults.
 
 The capture component computes black or white button text from WCAG relative luminance. Exhaustive sampled-color coverage proves a ratio of at least 4.5:1. Hero images have explicit dimensions and a solid fallback. The CSP was not widened.
 
@@ -177,7 +177,7 @@ The eight mobile captures and one desktop capture are under `docs/evidence/custo
 
 The exact consent, birthday and WhatsApp text remains unchanged; WhatsApp stays optional and unchecked. Confirmation uses the three exact approved lines and displays the Google review link only when configured. Fonts use eight local latin variable packages; the rendered page references only the two families assigned to its selected style.
 
-No Supabase migration, `db push`, deploy or hosted-data change ran in this Builder task. Claude Code must review and apply `20261004203000_customer_styles.sql` before hosted tests.
+No Supabase migration, `db push`, deploy or hosted-data change ran in this Builder task. Claude Code must review and apply `20261004212542_customer_styles.sql` before hosted tests.
 
 PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`, open from `codex/customer-styles` to `main`, with no merge or deploy. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
 
