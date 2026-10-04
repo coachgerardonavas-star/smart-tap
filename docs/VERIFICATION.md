@@ -378,3 +378,16 @@ The first smoke attempt stopped after the check-in because the temporary harness
 Note: the temporary business's `business.updated` audit rows were removed with the smoke cleanup, so the hosted `changedFields` evidence is the Builder's recorded observation; the behavior is covered by `tests/admin-update.test.ts`.
 
 Verdict: **PR #3 approved by the Reviewer.** The CEO merges.
+
+## Custom SMTP — test project (Claude Code + CEO, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Sending domain | `yourbizupgraded.com` verified in Resend (DKIM `resend._domainkey`, SPF/MX on `send.`); click and open tracking not configured |
+| Resend key | `smart-tap-supabase-pruebas`, Sending access restricted to the domain; pasted by the CEO directly into Supabase, never shared |
+| Supabase SMTP (`vrouyhxzxrfkuuqfslrc`) | `smtp.resend.com:465`, user `resend`, sender `Smart Tap <smarttap@yourbizupgraded.com>`, 60 s per-user interval; auth log shows the email limiter moved from 2/h to 30/h |
+| Templates | Invite and Reset password replaced with `supabase/templates/*.html` (prefetch-safe callback) |
+| Delivery test | Recovery email to the admin arrived in the primary inbox, sender Smart Tap, Spanish template |
+| Replies | `smarttap@` added as a Google Workspace alias of the admin mailbox |
+
+Pending: the link inside the email points to the Supabase Site URL; test the full click-through after the Render deploy sets Site URL to `https://smarttap.yourbizupgraded.com`. Repeat key + SMTP + templates in the production project (D-024).
