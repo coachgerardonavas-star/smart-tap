@@ -17,21 +17,32 @@ Commercial baseline:
 ## Approved onboarding flow
 
 1. Client completes a mandatory onboarding form after payment.
-2. Automate IT reviews the form for missing or conflicting information.
-3. Automate IT holds a short verification meeting with the business owner or responsible manager.
-4. The verification may happen by phone/video call or in person.
-5. Only after verification is the business configuration finalized and NFC tags programmed.
+2. The form may be completed by the business owner or an authorized responsible manager.
+3. Automate IT reviews the form for missing or conflicting information.
+4. Automate IT holds a short verification meeting with the business owner or responsible manager.
+5. The verification may happen by phone/video call or in person.
+6. The business owner must give final approval before Smart Tap is activated, even when an authorized manager completed the form or attended the verification session.
+7. Only after owner approval is the business configuration finalized and NFC tags programmed/activated.
 
 The detailed form is still being designed. Do not invent new required fields, pricing or commercial promises without a CEO decision.
+
+## Dashboard users included
+
+The base Smart Tap package includes a maximum of **2 dashboard users total**.
+
+- The business owner controls who occupies those two included user slots.
+- The owner may use one slot personally, or may choose not to have a dashboard login and assign both included slots to authorized employees.
+- The two-user limit counts all business-side dashboard users included in the base package.
+- Additional-user pricing or policy is not yet approved; do not invent it.
 
 ## Information to collect
 
 Required:
 - business display name;
 - legal/business name when needed for records;
-- owner/admin full name;
-- owner/admin email;
-- owner/admin phone;
+- owner full name and approval contact information;
+- authorized responsible manager information when applicable;
+- names/emails of the maximum 2 included dashboard users selected by the owner;
 - logo file or approved logo URL;
 - primary brand color;
 - business timezone;
@@ -56,19 +67,21 @@ The owner defines which offers are permitted. Smart Tap may recommend one of tho
 1. Confirm payment is active.
 2. Confirm mandatory onboarding form is complete.
 3. Complete the verification meeting with owner/responsible manager.
-4. Create business in Smart Tap admin.
-5. Configure name, branding, timezone, privacy URL and inactivity threshold.
-6. Load the owner-approved offers.
-7. Create NFC tag record(s) and labels.
-8. Invite the business owner/admin.
-9. Confirm invite delivery and account activation.
-10. Copy the exact production NFC URL for each physical tag.
-11. Program and test each tag using `docs/NFC_OPERATIONS.md`.
-12. Run a customer capture test.
-13. Confirm the test customer appears in the correct dashboard.
-14. Confirm follow-up queue behavior for at least one safe test case.
-15. Remove test data when appropriate.
-16. Deliver credentials/instructions and record delivery date.
+4. Obtain final owner approval.
+5. Confirm the owner-selected dashboard users (maximum 2 included).
+6. Create business in Smart Tap admin.
+7. Configure name, branding, timezone, privacy URL and inactivity threshold.
+8. Load the owner-approved offers.
+9. Create NFC tag record(s) and labels.
+10. Invite the approved dashboard users.
+11. Confirm invite delivery and account activation.
+12. Copy the exact production NFC URL for each physical tag.
+13. Program and test each tag using `docs/NFC_OPERATIONS.md`.
+14. Run a customer capture test.
+15. Confirm the test customer appears in the correct dashboard.
+16. Confirm follow-up queue behavior for at least one safe test case.
+17. Remove test data when appropriate.
+18. Deliver credentials/instructions and record delivery date.
 
 ## Do not include by default
 
@@ -81,7 +94,8 @@ Base Smart Tap does not silently include:
 - AI agents;
 - custom software development;
 - advanced loyalty/Wallet work;
-- additional locations inside the base $79 monthly fee.
+- additional locations inside the base $79 monthly fee;
+- more than 2 included business-side dashboard users.
 
 CRM integration or broader automation is handled through Plan Asistente or higher depending on scope.
 
@@ -93,6 +107,8 @@ The $79 monthly fee includes normal platform operation, basic support, and up to
 
 A customer is considered configured when:
 - onboarding form and verification meeting are complete;
+- final owner approval is recorded;
+- no more than 2 included dashboard users are provisioned according to the owner's choice;
 - account access works;
 - branding is correct;
 - privacy link is present;
