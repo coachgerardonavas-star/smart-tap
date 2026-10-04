@@ -207,3 +207,7 @@ After an adversarial review (Claude Code acting as a client looking for loophole
 ## D-051 — Terms v2 final; Master Services Agreement follow-ups (attorney, 2026-10-04)
 
 The attorney approved the Smart Tap Terms v2 as written in `docs/TERMS_OF_SERVICE.md` (supersedes v1 and the draft). For Asistente/Estratega/Manager the attorney decided the same two rules: the first monthly fee is prepaid on the Go-Live date, and the customer data export at termination is delivered even with unpaid balances. Pending: update the Master Services Agreement (5.3, 17.5), the SOW template (§13, §17) and `Manual_de_Pricing.md` in Drive to v3.12.
+
+## D-052 — Security hardening from the adversarial review (CEO, 2026-10-04)
+
+All findings in `docs/SECURITY_HARDENING.md` approved. Builder order: security hardening PR first, then the Terms v2 PR. Cloudflare proxy is enabled only after the Builder's change is deployed.
