@@ -363,3 +363,18 @@ The first smoke attempt stopped after the check-in because the temporary harness
 - `npm ci`: 326 packages installed; 0 vulnerabilities.
 - `npm run audit:prod`: 0 vulnerabilities.
 - `npm run verify`: 0 Astro errors, warnings or hints; 10 files and 78/78 tests; standalone Node build complete.
+
+## Reviewer final pass — PR #3 (Claude Code, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Diff `aa7fd2d` (WhatsApp text, mobile header, `changedFields`) | Correct; audit stores column names only |
+| `npm ci` / `npm run audit:prod` / `npm run verify` | 0 vulnerabilities; 0 diagnostics; 10 files, 78/78 tests; build complete |
+| Mobile layout re-measured at a true 390×844 viewport (Playwright, built server, `/demo/capture`) | No horizontal overflow (scrollWidth 390); Nombre input ends at y=420 of 844 |
+| Committed captures | Cropped on the right by the capture tool; the page itself does not overflow |
+| Hosted state after Builder smoke | 1 business (`cafe-luna`, active, approved), 1 Auth user, 0 members, 3 customers, 7 visits, 0 follow-ups, 1 NFC tag |
+| CI on `aa7fd2d` | `verify` success (run 37205381829) |
+
+Note: the temporary business's `business.updated` audit rows were removed with the smoke cleanup, so the hosted `changedFields` evidence is the Builder's recorded observation; the behavior is covered by `tests/admin-update.test.ts`.
+
+Verdict: **PR #3 approved by the Reviewer.** The CEO merges.

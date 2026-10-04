@@ -137,3 +137,5 @@ PR #1 is merged. All new work starts from updated `main`, uses a feature branch 
 Onboarding configuration reviewed; migration applied live as `20261004130503_onboarding_config`; hosted checks passed (see VERIFICATION). Next Builder task: NFC page polish + audit detail (see `docs/CODEX_NEXT.md`), then the CEO merges PR #3.
 
 Builder follow-up complete: NFC page polish, changed-field audit, exact 390×844 evidence and the full hosted admin smoke are done. PR #3 remains open for the Reviewer's final pass; no deploy or merge occurred.
+
+Reviewer final pass complete (see VERIFICATION): PR #3 approved; awaiting CEO merge.
