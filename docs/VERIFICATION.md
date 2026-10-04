@@ -28,6 +28,7 @@ Commands and results:
 - `npm run audit:prod`: strict production audit; 0 vulnerabilities.
 - Final `npm run verify`: 0 Astro errors, warnings or hints; 12 files and 108/108 tests; standalone Node build complete.
 - Screenshots: `docs/evidence/privacy-cafe-luna-390x844.png` and `docs/evidence/terms-accept-390x844.png`, each measured at exactly 390×844 and visually checked without horizontal clipping. The production components were rendered with local data fixtures because the migration intentionally remains unapplied; all fixture routes and capture scripts were removed afterward.
+- GitHub Actions: PR #4 implementation commit `acf0459` passed `verify` in 37 seconds, run `37225896122`, job `111505352601`.
 
 ## Existing local gate
 
