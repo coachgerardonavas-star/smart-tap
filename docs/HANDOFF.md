@@ -53,6 +53,7 @@ Current local gate on `codex/privacy-notice`: `npm ci` found 0 vulnerabilities; 
 - The server now sets `PRIVACY_NOTICE_VERSION = 2026-10-04` and strips any browser-supplied version. The required consent says `Tengo 13 años o más`; the form and server reject a birthday younger than 13.
 - New migration: `20261004143000_privacy_notice.sql`. It has not been applied and no `db push` ran.
 - Local evidence: migration and cascade tests passed in PGlite; exact 390×844 capture at `docs/evidence/privacy-cafe-luna-390x844.png` was produced with a local mock business, without Supabase changes.
+- PR #4: `https://github.com/coachgerardonavas-star/smart-tap/pull/4`, open from `codex/privacy-notice` to `main`; implementation commit `fc84603` passed GitHub Actions `verify`.
 
 ## Onboarding configuration — Builder implementation, 2026-10-04
 
