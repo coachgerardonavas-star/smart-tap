@@ -30,7 +30,13 @@ describe("public form hardening", () => {
   });
 
   it("places Turnstile widgets on check-in, login and password reset", () => {
-    expect(source("src/components/CheckInForm.tsx")).toContain('className="cf-turnstile"');
+    // The check-in form is a hydrated React island: implicit `.cf-turnstile`
+    // rendering was wiped by hydration and every live check-in lost its token.
+    const checkIn = source("src/components/CheckInForm.tsx");
+    expect(checkIn).toContain("api.render(turnstileContainer.current");
+    expect(checkIn).toContain("getResponse(turnstileWidget.current)");
+    expect(checkIn).not.toContain('className="cf-turnstile"');
+    expect(source("src/components/CustomerCapture.astro")).toContain("api.js?render=explicit");
     expect(source("src/pages/login.astro")).toContain("<TurnstileWidget");
     expect(source("src/pages/forgot-password.astro")).toContain("<TurnstileWidget");
   });
