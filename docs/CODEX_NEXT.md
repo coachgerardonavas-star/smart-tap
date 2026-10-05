@@ -1,12 +1,25 @@
 # Next Builder task
 
-Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-04.
+Owner: ChatGPT Codex. Reviewer: Claude Code. Updated 2026-10-05.
 
-## Task 1 — security hardening (D-052) — DO THIS FIRST
+## Current branch rule
 
-Base: `origin/main` (after PR #7 merges). Branch `codex/security-hardening`, one PR to `main`. Implement items 1–7 of `docs/SECURITY_HARDENING.md`. One migration file, not applied.
+Reuse `codex/security-hardening`. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule. The branch was fast-forwarded to `main` after PR #11 before the GS-49 work began.
 
-Terms v2 (former Task 2) shipped in PR #7.
+## Current work
+
+1. **GS-49 security alerts**
+   - Application-side event capture and Telegram runner are implemented on `codex/security-hardening`.
+   - Required before approval: `verify` green, Reviewer inspection, runtime configuration, scheduled execution and one controlled Telegram smoke.
+   - Cloudflare rate-limit events remain a separate pending integration/manual weekly review until automated.
+
+2. **GS-25 restore test**
+   - Production Supabase Pro backups are enabled.
+   - Still requires restoring a production backup into an isolated target and verifying integrity.
+   - The current ChatGPT Supabase connection does not expose production project `fzrzrbzxjdezwylzkbkh`, so this remains blocked in this session until the production organization/project is available to the connector.
+
+3. **Documentation reconciliation**
+   - Keep `HANDOFF.md`, `VERIFICATION.md`, `OPERATIONS_POLICY.md` and the Glasswing matrix aligned with the production state after PR #11.
 
 ## Report for Claude Code
 
@@ -14,16 +27,14 @@ One single code block, no keys:
 
 ```
 REPORTE PARA CLAUDE CODE — SMART TAP
-Ramas subidas: rama — último commit — qué contiene
-Trabajo desde la base (por tema): qué cambió, archivos principales
-Tarea: cada punto de la spec — hecho / parcial / no, con archivos
-Migración nueva: nombre del archivo (no aplicada)
+Rama reutilizada: rama — último commit — qué contiene
+Trabajo desde main: qué cambió, archivos principales
+GS-49: señales cubiertas / pendientes / privacidad de alertas
 npm run verify: diagnósticos / aprobadas de total | CI del PR: verde/rojo
-Cambios en Supabase hechos por ti o el CEO
+Cambios en Supabase/Render/Cloudflare hechos por el Builder o CEO
 Prueba local o en vivo: pasos — PASÓ/FALLÓ/BLOQUEADO — evidencia
-Defectos encontrados y corregidos: archivo — síntoma — prueba
-Decisiones nuevas (D-xxx)
-Matriz Glasswing: controles que cambiaron
-Pendientes y bloqueos
+Glasswing: controles que cambiaron
+GS-25: estado exacto del restore test
+Pendientes y bloqueos reales
 Preguntas para el Reviewer
 ```
