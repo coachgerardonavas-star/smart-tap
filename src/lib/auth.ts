@@ -1,6 +1,7 @@
 import type { AstroCookies } from "astro";
 import { serverEnv } from "./env";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "./supabase";
+import { recordSecurityAuditOnce } from "./security-alert-audit";
 
 export type AuthIdentity = {
   id: string;
@@ -43,7 +44,15 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
       .eq("id", subject)
       .select("platform_role")
       .single();
-    if (promoted.data) profile = promoted.data;
+    if (promoted.data) {
+      profile = promoted.data;
+      await recordSecurityAuditOnce(service, `platform-admin:${subject}`, {
+        action: "platform_admin.promoted",
+        entity_type: "profile",
+        entity_id: subject,
+        details: { source: "bootstrap" },
+      });
+    }
   }
 
   return {
