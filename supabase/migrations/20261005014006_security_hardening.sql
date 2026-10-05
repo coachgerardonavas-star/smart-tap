@@ -1,6 +1,18 @@
 alter table public.customers
   add column whatsapp_opted_out_at timestamptz;
 
+-- Customers who already sent BAJA before this migration keep that protection:
+-- the latest negative WhatsApp consent becomes their opt-out timestamp.
+update public.customers c
+set whatsapp_opted_out_at = latest.created_at
+from (
+  select customer_id, max(created_at) as created_at
+  from public.consent_records
+  where purpose = 'whatsapp' and not consented
+  group by customer_id
+) latest
+where latest.customer_id = c.id and not c.whatsapp_opt_in;
+
 create table private.auth_rate_limits (
   bucket text not null check (bucket in ('login_ip', 'login_email', 'forgot_ip', 'forgot_email')),
   identifier_hash text not null check (identifier_hash ~ '^[0-9a-f]{64}$'),

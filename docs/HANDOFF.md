@@ -22,13 +22,13 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-052 on `cod
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
 | `codex/customer-styles` | Merged through PR #6; Reviewer applied migration `20261004212542_customer_styles.sql`. |
 | `codex/terms-v2` | Historical source merged through PR #7. |
-| `codex/security-hardening` | **Current Builder branch.** Starts at `main` commit `b6268ef`. Implements D-052. Migration `20261005002000_security_hardening.sql` remains unapplied for Reviewer inspection. |
+| `codex/security-hardening` | **Current Builder branch.** Starts at `main` commit `b6268ef`. Implements D-052. Migration `20261005014006_security_hardening.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
-Migration history includes all repository files through `20261005001114_terms_signatures_write_via_function_only`. The new `20261005002000_security_hardening.sql` migration is local only and was not applied by Codex.
+Migration history includes all repository files through `20261005001114_terms_signatures_write_via_function_only`. The new `20261005014006_security_hardening.sql` migration is local only and was not applied by Codex.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -54,7 +54,7 @@ Current local gate on `codex/security-hardening`: clean `npm ci` installed 334 p
 - Active owners and platform admins require TOTP `aal2` for customer-data routes. `/mfa` handles enrollment/challenge for any signed-in user; `/admin/mfa` redirects to it. Managers and viewers remain optional.
 - Middleware adds HSTS and the exact Turnstile script/frame CSP origins. `script-src 'unsafe-inline'` remains under D-054 because the built Astro hydration bootstrap is inline.
 - `requestIp` has a regression test for `TRUSTED_IP_HEADER=cf-connecting-ip`.
-- New migration: `20261005002000_security_hardening.sql`. It is intentionally unapplied. Codex ran no `db push`, hosted database change or deploy.
+- New migration: `20261005014006_security_hardening.sql`. It is intentionally unapplied. Codex ran no `db push`, hosted database change or deploy.
 - PR #8: `https://github.com/coachgerardonavas-star/smart-tap/pull/8`. Initial GitHub Actions run `37248148286` passed `verify`, Gitleaks, strict audit, build and SBOM generation for implementation commit `d044c77`.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04

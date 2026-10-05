@@ -599,7 +599,7 @@ Verdict: **PR #7 approved by the Reviewer.**
 
 ## D-052 security hardening — local Builder evidence, 2026-10-04
 
-Migration under test: `20261005002000_security_hardening.sql`, intentionally not applied.
+Migration under test: `20261005014006_security_hardening.sql`, intentionally not applied.
 
 | Check | Local evidence |
 |---|---|
@@ -619,3 +619,11 @@ The CSP hash option was evaluated against the built Astro output. Hydrated React
 Final clean gate: `npm ci` added 334 packages with 0 vulnerabilities; `npm run audit:prod` reported 0 vulnerabilities; `npm run verify` passed 0 diagnostics, 15 files and 144/144 tests, plus the complete standalone Node build.
 
 PR #8 initial GitHub Actions run `37248148286` passed in 28 seconds for implementation commit `d044c77`: Gitleaks, `npm ci`, strict production audit, full verify, CycloneDX SBOM and artifact upload all passed. The workflow emitted informational runner/action deprecation notices and no failing annotation.
+
+## Reviewer pass — PR #8 security hardening (Claude Code, 2026-10-05)
+
+Diff reviewed at `74404ef`. Fix made by the Reviewer: the migration added `whatsapp_opted_out_at` but did not backfill customers who had already sent BAJA, so they could be re-subscribed from the public form. Added a backfill from the latest negative WhatsApp consent. Gate: 15 files, 144/144 tests, 0 Astro errors, `audit:prod` 0 vulnerabilities.
+
+Applied to `vrouyhxzxrfkuuqfslrc` as `20261005014006_security_hardening` (file renamed; applied text md5 equals the file). Hosted smoke inside a rolled-back transaction: a second check-in with the same phone kept the original name and birthday; after an opt-out, a check-in with the box checked kept `whatsapp_opt_in=false` and stored a `whatsapp-blocked-2026-10-04` negative consent; the 6th login attempt for one email within 15 minutes and the 4th forgot-password request for one email within an hour were blocked; `enforce_auth_rate_limit` not executable by anon; `service_role` cannot write `private.auth_rate_limits`; `private.create_profile_for_auth_user` not executable by anon. No earlier opt-outs existed to backfill in the test project.
+
+Verdict: **PR #8 approved by the Reviewer.** After merge: Turnstile keys in Render, Cloudflare proxy with `TRUSTED_IP_HEADER=cf-connecting-ip`, and the `onrender.com` subdomain disabled.
