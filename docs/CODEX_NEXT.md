@@ -15,11 +15,12 @@ Reuse `codex/security-hardening`. Do not create another Builder branch unless th
 
 2. **GS-25 restore test**
    - Production Supabase Pro backups are enabled.
-   - Still requires restoring a production backup into an isolated target and verifying integrity.
-   - The current ChatGPT Supabase connection does not expose production project `fzrzrbzxjdezwylzkbkh`, so this remains blocked in this session until the production organization/project is available to the connector.
+   - Production project `fzrzrbzxjdezwylzkbkh` is directly accessible through the Supabase connector and is ACTIVE_HEALTHY; the organization is confirmed Pro.
+   - The current connector exposes no backup-list or backup-restore action, so the required isolated restore test cannot be executed from this session through Supabase MCP. Do not misreport this as lack of project access.
 
 3. **Documentation reconciliation**
-   - Keep `HANDOFF.md`, `VERIFICATION.md`, `OPERATIONS_POLICY.md` and the Glasswing matrix aligned with the production state after PR #11.
+   - `docs/CURRENT_STATE.md` is the canonical short state.
+   - Keep `HANDOFF.md`, `VERIFICATION.md`, `OPERATIONS_POLICY.md` and the Glasswing matrix aligned with it as gates close.
 
 ## Report for Claude Code
 
