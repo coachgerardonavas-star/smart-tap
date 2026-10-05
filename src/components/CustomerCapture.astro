@@ -51,4 +51,4 @@ const fontCss: Record<CustomerTheme, string> = {
 
 <style is:global set:html={fontCss[props.theme]}></style>
 <CheckInForm client:load {...props} />
-{props.turnstileSiteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+{props.turnstileSiteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>}

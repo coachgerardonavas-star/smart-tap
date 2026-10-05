@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from "react";
 import "./check-in.css";
 import { latestBirthdayForAge } from "../lib/privacy";
 import { businessInitials, buttonTextColor, customerThemeCopy, type CustomerTheme } from "../lib/customer-theme";
@@ -21,6 +21,17 @@ type Props = {
 
 type SuccessData = { ok: true; businessName: string };
 
+type TurnstileApi = {
+  render: (container: HTMLElement, options: { sitekey: string }) => string;
+  getResponse: (widgetId: string) => string | undefined;
+  reset: (widgetId: string) => void;
+  remove: (widgetId: string) => void;
+};
+
+function turnstileApi(): TurnstileApi | undefined {
+  return (window as Window & { turnstile?: TurnstileApi }).turnstile;
+}
+
 export default function CheckInForm({
   slug, tagCode = "", businessName, primaryColor, privacyUrl, theme, tagline,
   benefits, heroImageUrl, logoUrl, googleReviewUrl, demo = false, turnstileSiteKey = null,
@@ -28,6 +39,27 @@ export default function CheckInForm({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<SuccessData | null>(null);
+  const turnstileContainer = useRef<HTMLDivElement>(null);
+  const turnstileWidget = useRef<string | null>(null);
+
+  // Render the challenge explicitly after hydration. Implicit rendering of a
+  // `.cf-turnstile` element inside this island raced React hydration, which
+  // removed the widget, so every live check-in was rejected without a token.
+  useEffect(() => {
+    if (!turnstileSiteKey || demo || success) return;
+    const renderWidget = () => {
+      const api = turnstileApi();
+      if (!api || !turnstileContainer.current || turnstileWidget.current) return Boolean(turnstileWidget.current);
+      turnstileWidget.current = api.render(turnstileContainer.current, { sitekey: turnstileSiteKey });
+      return true;
+    };
+    const timer = renderWidget() ? undefined : window.setInterval(() => { if (renderWidget()) window.clearInterval(timer); }, 200);
+    return () => {
+      if (timer) window.clearInterval(timer);
+      if (turnstileWidget.current) turnstileApi()?.remove(turnstileWidget.current);
+      turnstileWidget.current = null;
+    };
+  }, [turnstileSiteKey, demo, success]);
   const copy = customerThemeCopy[theme];
   const initials = businessInitials(businessName);
   const style = { "--brand-color": primaryColor, "--brand-label": buttonTextColor(primaryColor) } as CSSProperties;
@@ -41,7 +73,7 @@ export default function CheckInForm({
       slug, tagCode, fullName: form.get("fullName"), phone: form.get("phone"),
       birthday: form.get("birthday"), consent: form.get("consent") === "on",
       whatsappOptIn: form.get("whatsappOptIn") === "on", website: form.get("website"),
-      turnstileToken: form.get("cf-turnstile-response"),
+      turnstileToken: turnstileWidget.current ? turnstileApi()?.getResponse(turnstileWidget.current) ?? "" : form.get("cf-turnstile-response"),
     };
     if (demo) {
       setSuccess({ ok: true, businessName });
@@ -58,7 +90,7 @@ export default function CheckInForm({
       setSuccess(body);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No pudimos registrar la visita.");
-      (window as Window & { turnstile?: { reset: () => void } }).turnstile?.reset();
+      if (turnstileWidget.current) turnstileApi()?.reset(turnstileWidget.current);
     } finally {
       setPending(false);
     }
@@ -133,7 +165,7 @@ export default function CheckInForm({
             <input name="whatsappOptIn" type="checkbox" />
             <span>Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.</span>
           </label>
-          {turnstileSiteKey && <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />}
+          {turnstileSiteKey && <div className="turnstile-slot" ref={turnstileContainer} />}
           {error && <div className="form-alert" role="alert">{error}</div>}
           <button type="submit" disabled={pending}>{pending ? "Registrando…" : copy.submitLabel}</button>
           <p className="privacy-note">Puedes pedir al negocio que consulte, corrija o elimine tus datos.</p>
