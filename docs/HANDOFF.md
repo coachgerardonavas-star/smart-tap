@@ -19,7 +19,7 @@ Updated: 2026-10-05 by ChatGPT Codex (Builder), after correcting GS-49 on PR #12
 - `recordSecurityAuditOnce` still deduplicates for five minutes, releases its in-memory key after a failed insert and strips IP, email, phone and hash fields from details.
 - `render.yaml` declares the authorized `smart-tap-security-alerts` Cron Job every 15 minutes with four runtime-only secrets. The CEO supplies them directly in Render; Codex did not create or deploy the service.
 - This correction needs no migration. Production schema and data were not changed.
-- Final local gate: clean `npm ci` (334 packages, 0 vulnerabilities), `npm run check` (0 diagnostics), `npm test` (16 files, 155/155), complete standalone build and strict production audit with 0 vulnerabilities. GitHub CI evidence is added after the push.
+- Final local gate: clean `npm ci` (334 packages, 0 vulnerabilities), `npm run check` (0 diagnostics), `npm test` (16 files, 155/155), complete standalone build and strict production audit with 0 vulnerabilities. Implementation commit `c678ae5`; GitHub Actions `verify` passed in run `37352201602`.
 
 ## Branches — which one is current
 
