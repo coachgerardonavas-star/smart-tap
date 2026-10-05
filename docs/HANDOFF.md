@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-052 on `codex/security-hardening` without deployment or database push.
+Updated: 2026-10-05 by ChatGPT Codex (Builder), after correcting GS-49 on PR #12 without deployment, merge or database changes. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
 ## Project identity
 
@@ -8,13 +8,24 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-052 on `cod
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
-- **CEO/attorney-approved commercial and product decisions D-025 through D-052:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
+- **CEO/attorney-approved commercial and product decisions D-025 through D-056:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
+
+## Current Builder handoff — PR #12 GS-49 corrections
+
+- Branch: `codex/security-hardening`; PR: `https://github.com/coachgerardonavas-star/smart-tap/pull/12`; base `main` includes PR #9, #10 and #11 at `836ea3b`.
+- `src/lib/security-alerts-core.mjs` now owns the allowlist, `business.updated` activation filter, aggregation, 20-minute fallback, cursor reading and 3,500-character cap.
+- The runner reads `created_at >` the last successful `alerts.digest_sent.details.until`, orders ascending and limits at 1,000. It writes `{ until, count }` only after Telegram returns success. A delivery failure leaves the cursor untouched for retry.
+- The action allowlist now covers customer exports/deletes, NFC lifecycle, business creation/approval/term extension and the existing security, platform-admin, member and business lifecycle events. Telegram receives action names and counts only.
+- `recordSecurityAuditOnce` still deduplicates for five minutes, releases its in-memory key after a failed insert and strips IP, email, phone and hash fields from details.
+- `render.yaml` declares the authorized `smart-tap-security-alerts` Cron Job every 15 minutes with four runtime-only secrets. The CEO supplies them directly in Render; Codex did not create or deploy the service.
+- This correction needs no migration. Production schema and data were not changed.
+- Final local gate: clean `npm ci` (334 packages, 0 vulnerabilities), `npm run check` (0 diagnostics), `npm test` (16 files, 155/155), complete standalone build and strict production audit with 0 vulnerabilities. GitHub CI evidence is added after the push.
 
 ## Branches — which one is current
 
 | Branch | State |
 |---|---|
-| `main` | At `b6268ef`; includes merged PR #7 and the Reviewer's current tag-rejection fix. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
+| `main` | At `836ea3b`; includes merged PR #9, #10 and #11. All later changes require a pull request with `verify` green. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
@@ -22,7 +33,7 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-052 on `cod
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
 | `codex/customer-styles` | Merged through PR #6; Reviewer applied migration `20261004212542_customer_styles.sql`. |
 | `codex/terms-v2` | Historical source merged through PR #7. |
-| `codex/security-hardening` | **Current Builder branch.** Starts at `main` commit `b6268ef`. Implements D-052. Migration `20261005014006_security_hardening.sql` remains unapplied for Reviewer inspection. |
+| `codex/security-hardening` | **Current Builder branch and PR #12.** Fast-forwarded from `main` at `836ea3b`; contains GS-49 and the Reviewer's cursor/action/test corrections. This correction adds no migration. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 

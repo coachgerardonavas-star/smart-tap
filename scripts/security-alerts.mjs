@@ -1,4 +1,13 @@
+import { pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
+import {
+  buildSecurityAlertMessage,
+  calculateSecurityAlertSince,
+  filterSecurityAlertEvents,
+  lastSecurityAlertTimestamp,
+  SECURITY_ALERT_LIMIT,
+  SECURITY_ALERT_QUERY_ACTIONS,
+} from "../src/lib/security-alerts-core.mjs";
 
 function required(name) {
   const value = process.env[name]?.trim();
@@ -6,62 +15,97 @@ function required(name) {
   return value;
 }
 
-function positiveInt(name, fallback) {
-  const parsed = Number.parseInt(process.env[name] || "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+async function loadLatestCursor(supabase) {
+  const { data, error } = await supabase
+    .from("audit_log")
+    .select("details,created_at")
+    .eq("action", "alerts.digest_sent")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`cursor query failed: ${error.code || "unknown"}`);
+  return data;
 }
 
-const supabaseUrl = required("PUBLIC_SUPABASE_URL");
-const supabaseKey = required("SUPABASE_SECRET_KEY");
-const telegramToken = required("TELEGRAM_BOT_TOKEN");
-const telegramChatId = required("TELEGRAM_CHAT_ID");
-const windowMinutes = positiveInt("SECURITY_ALERT_WINDOW_MINUTES", 20);
+async function loadSecurityEvents(supabase, since) {
+  const { data, error } = await supabase
+    .from("audit_log")
+    .select("action,details,created_at")
+    .in("action", SECURITY_ALERT_QUERY_ACTIONS)
+    .gt("created_at", since)
+    .order("created_at", { ascending: true })
+    .limit(SECURITY_ALERT_LIMIT);
+  if (error) throw new Error(`audit_log query failed: ${error.code || "unknown"}`);
+  return data || [];
+}
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
+async function sendTelegram(fetchImpl, telegramToken, telegramChatId, text) {
+  const response = await fetchImpl(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ chat_id: telegramChatId, text, disable_web_page_preview: true }),
+  });
+  if (!response.ok) throw new Error(`Telegram delivery failed: HTTP ${response.status}`);
+}
 
-const since = new Date(Date.now() - windowMinutes * 60_000).toISOString();
-const { data, error } = await supabase
-  .from("audit_log")
-  .select("action,business_id,entity_type,entity_id,details,created_at")
-  .gte("created_at", since)
-  .order("created_at", { ascending: true })
-  .limit(250);
+async function writeCursor(supabase, until, count) {
+  const { error } = await supabase.from("audit_log").insert({
+    actor_user_id: null,
+    business_id: null,
+    action: "alerts.digest_sent",
+    entity_type: "system",
+    entity_id: null,
+    details: { until, count },
+  });
+  if (error) throw new Error(`cursor write failed: ${error.code || "unknown"}`);
+}
 
-if (error) throw new Error(`audit_log query failed: ${error.code || "unknown"}`);
-
-const events = (data || []).filter((row) => {
-  if (["business.cancelled", "member.invited", "member.activated", "member.deactivated"].includes(row.action)) return true;
-  if (row.action === "business.updated") {
-    const changed = Array.isArray(row.details?.changedFields) ? row.details.changedFields : [];
-    return changed.includes("is_active");
+export async function runSecurityAlerts({
+  supabase,
+  telegramToken,
+  telegramChatId,
+  fetchImpl = fetch,
+  now = Date.now(),
+  log = console.log,
+}) {
+  const cursor = await loadLatestCursor(supabase);
+  const since = calculateSecurityAlertSince(cursor, now);
+  const rows = await loadSecurityEvents(supabase, since);
+  const events = filterSecurityAlertEvents(rows);
+  if (!events.length) {
+    log("GS-49: no security events after the current cursor.");
+    return { sent: false, count: 0, since };
   }
-  if (row.action.startsWith("security.")) return true;
-  if (row.action.startsWith("platform_admin.")) return true;
-  return false;
-});
 
-if (!events.length) {
-  console.log(`GS-49: no security events in the last ${windowMinutes} minutes.`);
-  process.exit(0);
+  const limitReached = rows.length === SECURITY_ALERT_LIMIT;
+  const until = lastSecurityAlertTimestamp(events);
+  if (!until) throw new Error("Security events have no valid created_at cursor");
+
+  await sendTelegram(
+    fetchImpl,
+    telegramToken,
+    telegramChatId,
+    buildSecurityAlertMessage(events, limitReached),
+  );
+  await writeCursor(supabase, until, events.length);
+  log(`GS-49: sent ${limitReached ? "1000+" : events.length} security event(s) to Telegram.`);
+  return { sent: true, count: events.length, since, until, limitReached };
 }
 
-const counts = new Map();
-for (const event of events) counts.set(event.action, (counts.get(event.action) || 0) + 1);
-const lines = [...counts.entries()].map(([action, count]) => `• ${action}: ${count}`);
-const latest = events.at(-1)?.created_at || since;
-const text = [
-  "⚠️ Smart Tap — alerta de seguridad",
-  `Ventana: últimos ${windowMinutes} min`,
-  ...lines,
-  `Último evento: ${latest}`,
-].join("\n");
+async function main() {
+  const supabase = createClient(required("PUBLIC_SUPABASE_URL"), required("SUPABASE_SECRET_KEY"), {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  await runSecurityAlerts({
+    supabase,
+    telegramToken: required("TELEGRAM_BOT_TOKEN"),
+    telegramChatId: required("TELEGRAM_CHAT_ID"),
+  });
+}
 
-const response = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-  method: "POST",
-  headers: { "content-type": "application/json" },
-  body: JSON.stringify({ chat_id: telegramChatId, text, disable_web_page_preview: true }),
-});
-if (!response.ok) throw new Error(`Telegram delivery failed: HTTP ${response.status}`);
-console.log(`GS-49: sent ${events.length} security event(s) to Telegram.`);
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
+  main().catch((error) => {
+    console.error("GS-49 runner failed:", error instanceof Error ? error.message : "unknown");
+    process.exitCode = 1;
+  });
+}

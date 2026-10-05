@@ -35,3 +35,25 @@ services:
       # D-014/GS-32: Render's proxy appends the client IP. Verify in the production smoke test.
       - key: TRUSTED_IP_HEADER
         value: x-forwarded-for
+
+  - type: cron
+    name: smart-tap-security-alerts
+    runtime: node
+    repo: https://github.com/coachgerardonavas-star/smart-tap
+    branch: main
+    region: virginia
+    schedule: "*/15 * * * *"
+    plan: starter
+    buildCommand: npm ci
+    startCommand: node scripts/security-alerts.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: PUBLIC_SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false

@@ -21,7 +21,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 ## Glasswing gate
 
 - GS-25 backups: daily backups are enabled on Supabase Pro, but a restore has not yet been tested. This remains the formal gate before approval for real customer data. The current Supabase connector can read/manage the production project but exposes no backup-list or backup-restore operation, so the restore test cannot be executed through this connector.
-- GS-49 security alerts: implementation is in progress on the existing Builder branch `codex/security-hardening`; deployment and Telegram smoke are still required.
+- GS-49 security alerts: corrected locally on PR #12 with a successful-delivery cursor, expanded action allowlist, pure behavior-tested core and a 15-minute Render Cron Job in `render.yaml`. State: IMPLEMENTADO NO VERIFICADO; Blueprint creation, production secrets and Telegram smoke remain pending.
 - GS-24 monitoring exists; deliberate end-to-end alert test remains to be recorded.
 - First GS-55 monthly access review: 2026-11-01.
 

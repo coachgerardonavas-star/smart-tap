@@ -231,3 +231,11 @@ Café Luna also lives in production as a synthetic demonstration tenant (fake ph
 - Resend SMTP and the repository templates;
 - sessions limited to 7 days of inactivity and 30 days in total;
 - TOTP enabled.
+
+## D-056 — Cursor-based security alerts and Render Cron Job (CEO, 2026-10-05)
+
+Smart Tap sends GS-49 security summaries to the CEO's internal Telegram chat through a dedicated Render Cron Job named `smart-tap-security-alerts`, every 15 minutes. It runs in Virginia on the Starter plan with Node 22.22.0 and uses the production Supabase URL, secret key, Telegram bot token and Telegram chat ID from Render secrets.
+
+The alert runner reads from `audit_log`, aggregates only the approved security and administrative actions, and sends action names with counts. Audit details, names, phone numbers, email addresses, IP addresses and hashes stay out of the Telegram message. Messages stop at 3,500 characters.
+
+Successful delivery writes `alerts.digest_sent` with `{ until, count }`. The next run reads events with `created_at > until`; the first run falls back 20 minutes. A failed Telegram request writes no cursor, so the next run retries. The query orders by `created_at` and reads at most 1,000 rows; a full page is shown as `1000+`, and the cursor advances only through the events read. The cursor action uses the `alerts.` prefix so the event selector never consumes its own records.

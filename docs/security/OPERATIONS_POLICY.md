@@ -45,17 +45,23 @@ Security events must reach Telegram separately from availability alerts.
 
 | Event | Source | State |
 |---|---|---|
-| Rejected login or recovery because the application rate limit was hit | `security.auth_rate_limit` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
-| Repeated check-in rate limit hit | `security.check_in_rate_limit` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
+| Rejected login or recovery because the application rate limit was hit | `security.auth_rate_limit` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| Repeated check-in rate limit hit | `security.check_in_rate_limit` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| New platform admin via the bootstrap path | `platform_admin.promoted` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| Business created, activated/paused, cancelled, approved, exported or term extended | `business.created`, qualifying `business.updated`, `business.cancelled`, `business.owner_approved`, `business.customers_exported`, `business.term_extended` | IMPLEMENTADO NO VERIFICADO |
+| Member invited, activated or deactivated | `member.invited`, `member.activated`, `member.deactivated` | IMPLEMENTADO NO VERIFICADO |
+| Customer deleted | `customer.deleted` | IMPLEMENTADO NO VERIFICADO |
+| NFC tag created, activated or deactivated | `nfc_tag.created`, `nfc_tag.activated`, `nfc_tag.deactivated` | IMPLEMENTADO NO VERIFICADO |
 | Cloudflare rate-limiting rule blocks | Cloudflare Security Events | PENDING — review weekly until native/API alerting is configured |
-| New platform admin via the bootstrap path | `platform_admin.promoted` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
-| Business activated, paused or cancelled | existing `audit_log` business/member events | IMPLEMENTED LOCALLY — runner consumes these events; deployment pending |
 | Secret detected in a commit | Gitleaks in the `verify` workflow | IMPLEMENTED — the build fails; GitHub notifies the CEO by email |
 
 Implementation:
 - `src/lib/security-alert-audit.ts` writes deduplicated application security events to `audit_log`; raw IPs, email addresses and phone numbers are not stored in these alert rows.
-- `scripts/security-alerts.mjs` reads only security-relevant audit events from a short lookback window, aggregates by action and posts counts to Telegram. It does not send customer PII.
-- `npm run security:alerts` runs one check. The intended schedule is every 15 minutes, with a 20-minute lookback so one missed run does not create a monitoring gap.
+- `src/lib/security-alerts-core.mjs` owns the allowlist, filtering, aggregation, cursor calculation and the 3,500-character message cap. Telegram receives only action names and counts; audit `details` never enter the message.
+- `scripts/security-alerts.mjs` performs I/O. It reads the latest `alerts.digest_sent` row and queries qualifying events with `created_at > details.until`. With no cursor it starts 20 minutes earlier. Rows are ordered by `created_at` and limited to 1,000.
+- The runner writes `alerts.digest_sent` only after Telegram accepts the message. Its details contain the final sent `created_at` as `until` and the sent count. Delivery failure leaves the cursor untouched so the next run retries.
+- `alerts.digest_sent` is outside the event allowlist. A full 1,000-row page adds `1000+` to the message and advances no further than the last event read.
+- `npm run security:alerts` runs one check. The Render Cron Job `smart-tap-security-alerts` is scheduled every 15 minutes on the Starter plan in Virginia.
 - Runtime secrets are `PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; they belong in the runtime secret store and must never be committed or pasted into agent chat.
 - The runtime must use the production Supabase project. Deployment is not considered verified until a controlled security event produces the expected Telegram alert.
 
