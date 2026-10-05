@@ -2,7 +2,7 @@
 
 Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-052 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc`; P = existing Render service. The security-hardening migration has not been deployed or applied to Supabase.
 
-**Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
+**Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project (CEO approved Supabase Pro and GitHub Pro on 2026-10-05; closure pending execution). GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
 
 ## Threat model (GS-57)
 
@@ -45,7 +45,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
 | GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) + L D-049/D-051 | Hosted opt-out/approval/update audits passed; local signature audit stores only its version and extension audit stores prior/new dates | Hosted Terms v2 smoke after Reviewer migration |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
-| GS-24 Monitoring | Yes | PENDIENTE | None | After deploy: health-check Worker |
+| GS-24 Monitoring | Yes | IMPLEMENTADO EN EL ENTORNO OBJETIVO | `health-check` Worker checks `/demo` every 15 min and alerts by Telegram (OPERATIONS_POLICY.md) | Deliberate end-to-end alert test after Cloudflare proxy |
 | GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
 | GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile resolves http-cache-semantics@4.3.0 and eight local latin variable-font packages; strict npm audit reports 0 vulnerabilities; D-023 exception removed | — |
 | GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; Follow-up Queue PR run 37174554236 passed | — |
@@ -64,19 +64,19 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
 | GS-42 Account attacks | Yes | VERIFICADO LOCALMENTE | Generic responses; prefetch-safe callback; Turnstile before database/Auth; own IP/email limits for login and recovery | Hosted flow after deploy |
-| GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
+| GS-43 Sessions | Yes | IMPLEMENTADO NO VERIFICADO | Policy: 1 h JWT, 7-day inactivity, 30-day time-box; logout revokes all sessions (OPERATIONS_POLICY.md) | Set timeouts in the production Supabase project (Pro) and verify |
 | GS-44 Recent auth | Yes | VERIFICADO (H admin + L owner) | Every platform-admin path and active owner customer-data path requires AAL2; managers/viewers remain optional by D-052 | Hosted owner smoke |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
 | GS-48 Edge protection | Yes | IMPLEMENTADO LOCALMENTE | Turnstile widget and server verification cover check-in, login and recovery; missing variables use the documented safe fallback | Configure keys and enable Cloudflare proxy after merge/deploy |
-| GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
+| GS-49 Security alerts | Yes | PENDIENTE | Events, sources and owner defined (OPERATIONS_POLICY.md); Gitleaks failure already alerts | Builder: scheduled threshold check posting to Telegram |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Customer and signer names, phone, birthday, title and consent are confidential PII; keyed IP hash is pseudonymous security evidence; follow-up and term status are internal data | Add handling rules to production privacy notice |
 | GS-51 Retention/deletion | Yes | IMPLEMENTADO Y PROBADO LOCALMENTE | Private daily function deletes at 24 months without a visit and 90 days after cancellation; 31-day cancellation data remains; cascades and count-only audits passed in PGlite | Reviewer applies migration and repeats hosted smoke |
 | GS-52 Encryption keys | No | NO APLICA JUSTIFICADO | No app-level encryption | — |
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
-| GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
-| GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
+| GS-54 Incident response | Yes | IMPLEMENTADO | INCIDENT_RESPONSE.md: CEO decides, Telegram channel, containment steps, evidence, recovery, contract notice (Terms point 12) | Tabletop drill once production exists |
+| GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately; monthly review on the 1st prepared by Reviewer, approved by CEO (OPERATIONS_POLICY.md) | First review 2026-11-01 |
 | GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | Final gate: 144/144 permanent tests, zero diagnostics and complete build; D-052 covers data preservation, opt-out, minimal response, Turnstile, auth limits, owner MFA, grants, HSTS and Cloudflare IP | Final CI and hosted D-052 smoke |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
@@ -152,3 +152,10 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 - GS-12: HSTS is set to one year. CSP adds only the Cloudflare challenge script/frame origin. D-054 records why the Astro hydration bootstrap keeps the inline-script allowance.
 - GS-32 / GS-48: the Cloudflare visitor-IP header and all three Turnstile form paths have local regression coverage.
 - GS-56: final clean gate passed 144/144 tests with zero diagnostics and a complete build; the new migration remains unapplied for Reviewer inspection.
+
+## Update 2026-10-05 (Reviewer, operations documents)
+
+- GS-24: health-check Worker deployed and watching `/demo`; alert path still needs a deliberate test.
+- GS-43 / GS-49 / GS-55: policy and owners in `OPERATIONS_POLICY.md` (CEO decisions: 7/30-day sessions, monthly review approved by CEO, Telegram channel).
+- GS-54: `INCIDENT_RESPONSE.md` adopted.
+- GS-25 / GS-29 / GS-28 / GS-30: CEO approved paid plans; production organization, project, backups and branch protection are being executed.
