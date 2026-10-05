@@ -627,3 +627,34 @@ Diff reviewed at `74404ef`. Fix made by the Reviewer: the migration added `whats
 Applied to `vrouyhxzxrfkuuqfslrc` as `20261005014006_security_hardening` (file renamed; applied text md5 equals the file). Hosted smoke inside a rolled-back transaction: a second check-in with the same phone kept the original name and birthday; after an opt-out, a check-in with the box checked kept `whatsapp_opt_in=false` and stored a `whatsapp-blocked-2026-10-04` negative consent; the 6th login attempt for one email within 15 minutes and the 4th forgot-password request for one email within an hour were blocked; `enforce_auth_rate_limit` not executable by anon; `service_role` cannot write `private.auth_rate_limits`; `private.create_profile_for_auth_user` not executable by anon. No earlier opt-outs existed to backfill in the test project.
 
 Verdict: **PR #8 approved by the Reviewer.** After merge: Turnstile keys in Render, Cloudflare proxy with `TRUSTED_IP_HEADER=cf-connecting-ip`, and the `onrender.com` subdomain disabled.
+
+## Production cutover (Claude Code, 2026-10-05)
+
+**Edge**
+- Cloudflare proxy is on for `smarttap` (A records resolve to Cloudflare). `onrender.com` returns 404. HSTS is present.
+- Turnstile site key `0x4AAAAAAFOTlctUbg87oYCV` is present on `/login`, `/forgot-password` and `/b/cafe-luna`. A login POST without a token returns 400.
+
+**Turnstile defect (PR #10)**
+- The check-in island lost its implicit Turnstile widget to React hydration (console: `Cannot find Widget …`), so every live check-in failed with "No pudimos procesar la solicitud".
+- Reproduced by building the old and the fixed versions and serving both under the production origin with the real site key. The fixed build renders the widget explicitly.
+- After the merge, the CEO completed a real check-in, and the row was confirmed in the database.
+
+**GitHub**
+- PR #9 showed `mergeable_state=blocked` until `verify` passed, then `clean`.
+
+**Production database `fzrzrbzxjdezwylzkbkh`**
+- 14/14 migrations applied; md5 of the applied text equals each file. `initial_schema` was applied without its transaction wrapper.
+- Security advisor: no findings. pg_cron `smart-tap-daily-privacy-purge` is scheduled.
+- Table grants match the test project: `service_role` cannot write `terms_acceptances` or `terms_signatures`; no `anon` grants.
+- Rolled-back smoke test:
+  - first check-in returned `visitCount=1`;
+  - a second check-in with the same phone and a different name kept the original name and returned `alreadyCounted=true`;
+  - an unknown tag code returned `tag_not_found`;
+  - the counts after the transaction were unchanged (3 customers, 7 visits).
+
+**Cutover**
+- Render variables were switched by the CEO; the secret key was created and pasted by the CEO.
+- Production reads were confirmed by temporarily setting a production-only tagline and seeing it on the live page, then reverting it.
+- The CEO's admin account exists in production as `platform_admin`, with the email confirmed and one verified TOTP factor.
+
+**Open item:** GS-25 restore test after the first daily backup.

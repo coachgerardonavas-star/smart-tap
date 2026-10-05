@@ -77,15 +77,11 @@ Never commit the secret key or `CHECK_IN_HASH_SECRET`.
 
 ## Migration state
 
-The production Supabase database already contains these migrations:
+Production is project `fzrzrbzxjdezwylzkbkh` in the Supabase Pro organization "Smart Tap Produccion" (region us-west-2), live since 2026-10-05. The Reviewer applied all 14 files in `supabase/migrations/` in filename order through the Supabase MCP. The connector assigns its own version numbers (`20261005162529` … `20261005162907`), and each live migration keeps the file's name without the timestamp. Every applied text matches its file by md5; the only exception is `initial_schema`, which was applied without the file's `begin;`/`commit;` wrapper because the connector runs each migration in its own transaction.
 
-1. `20261002005131_initial_schema`
-2. `20261002014439_review_hardening_rate_limit_helper`
-3. `20261002014453_review_hardening_check_in_v2`
-4. `20261002072441_one_visit_per_day`
-5. `20261004010900_admin_rls_requires_aal2`
+The old test project `vrouyhxzxrfkuuqfslrc` holds the same schema under the filenames' versions and is no longer used by the app.
 
-Use the reconciled migration history before any future `db push`. Do not apply the stale `20261001000000_initial_schema` filename against production.
+Apply future migrations through the Reviewer only, one at a time, and verify each against its file. Do not run `db push` against production: the live version numbers differ from the filenames.
 
 ## Supabase Auth production configuration
 
