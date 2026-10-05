@@ -2,7 +2,7 @@
 
 Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-052 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc`; P = existing Render service. The security-hardening migration has not been deployed or applied to Supabase.
 
-**Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project (CEO approved Supabase Pro and GitHub Pro on 2026-10-05; closure pending execution). GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
+**Gate result (2026-10-05): production environment live; approval for real customer data waits only on the GS-25 restore test.** GS-29 and GS-28/30 are closed. GS-25 is implemented (daily backups on Supabase Pro) but no restore has been tested yet. The demonstration business runs on the production project with synthetic data.
 
 ## Threat model (GS-57)
 
@@ -45,15 +45,15 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-21 Tokens/links | Yes | VERIFICADO (H) | NFC codes 144-bit random; hosted invite accepted; server-generated recovery token completed once | Prefetch-safe production email path |
 | GS-22 Audit | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) + L D-049/D-051 | Hosted opt-out/approval/update audits passed; local signature audit stores only its version and extension audit stores prior/new dates | Hosted Terms v2 smoke after Reviewer migration |
 | GS-23 Logs | Yes | VERIFICADO LOCALMENTE | Error codes only; IP keyed hash | — |
-| GS-24 Monitoring | Yes | IMPLEMENTADO EN EL ENTORNO OBJETIVO | `health-check` Worker checks `/demo` every 15 min and alerts by Telegram (OPERATIONS_POLICY.md) | Deliberate end-to-end alert test after Cloudflare proxy |
-| GS-25 Backups | Yes | BLOQUEADO — HIGH | Free plan, no backups | CEO: Pro plan or scheduled export + restore test |
+| GS-24 Monitoring | Yes | IMPLEMENTADO EN EL ENTORNO OBJETIVO | `health-check` Worker checks `/demo` every 15 min and alerts by Telegram (OPERATIONS_POLICY.md) | Deliberate end-to-end alert test |
+| GS-25 Backups | Yes | IMPLEMENTADO NO VERIFICADO | Production project `fzrzrbzxjdezwylzkbkh` is in the Pro organization "Smart Tap Produccion" (daily backups, 7-day retention) | Restore test into an isolated project after the first daily backup exists; record date and result |
 | GS-26 Dependencies | Yes | VERIFICADO LOCALMENTE | Lockfile resolves http-cache-semantics@4.3.0 and eight local latin variable-font packages; strict npm audit reports 0 vulnerabilities; D-023 exception removed | — |
 | GS-27 Supply chain/CI | Yes | VERIFICADO | Actions pinned to SHAs, read-only permissions; Follow-up Queue PR run 37174554236 passed | — |
-| GS-28 Secure Build Gate | Yes | PENDIENTE | verify workflow is blocking only with branch protection | Enable branch protection on main |
-| GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
-| GS-30 Production control | Yes | PENDIENTE | PR flow defined (D-018) | Branch protection; deploy identity at hosting decision |
+| GS-28 Secure Build Gate | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | GitHub ruleset `protect-main`: pull request required, `verify` required, no force push, no deletion. PR #9 showed `blocked` until `verify` passed, then `clean` | — |
+| GS-29 Separate environments | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | Production `fzrzrbzxjdezwylzkbkh` (Pro org, us-west-2) is separate from test `vrouyhxzxrfkuuqfslrc`; Render reads production (verified with a production-only value on 2026-10-05) | Retire or pause the test project |
+| GS-30 Production control | Yes | VERIFICADO | Ruleset on `main`; Render deploys only `main`; agents never merge or deploy; the production secret key was created and pasted into Render by the CEO | — |
 | GS-31 Emergency stop | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Paused NFC rejected check-in; reactivation restored it. Paused viewer immediately lost tenant data | — |
-| GS-32 Proxies/IP | Yes | VERIFICADO LOCALMENTE | Spoofed XFF is ignored; `TRUSTED_IP_HEADER=cf-connecting-ip` returns the Cloudflare visitor IP | Set the variable when Cloudflare proxy is enabled |
+| GS-32 Proxies/IP | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | Cloudflare proxy on (A records resolve to Cloudflare); `TRUSTED_IP_HEADER=cf-connecting-ip` set in Render; `onrender.com` subdomain disabled (404), so the header cannot be supplied by bypassing Cloudflare | — |
 | GS-33 Request limits | Yes | VERIFICADO LOCALMENTE | Byte-counted 12 KB limit on check-in; customer list 250, birthdays 1000 | Admin form posts rely on platform limits (low) |
 | GS-34 Content integrity | Yes | VERIFICADO LOCALMENTE | Electronic signature binds user, business and immutable server-set version with timestamp, keyed IP hash and user agent; duplicates do not overwrite original evidence | Hosted signature smoke |
 | GS-35 Immutable versions | Partial | VERIFICADO LOCALMENTE | Visit and WhatsApp consent use append-only rows; the server fixes privacy version `2026-10-04` and terms version `2026-10-04-v2`; each new terms version requires a new signature or acceptance | — |
@@ -69,12 +69,12 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
-| GS-48 Edge protection | Yes | IMPLEMENTADO LOCALMENTE | Turnstile widget and server verification cover check-in, login and recovery; missing variables use the documented safe fallback | Configure keys and enable Cloudflare proxy after merge/deploy |
+| GS-48 Edge protection | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | Turnstile live on check-in, login and recovery (CEO phone test: login and a check-in succeeded after the PR #10 fix); Cloudflare rate-limiting rule `smart-tap-auth-checkin` (POST, 20 per 10 s per IP) | — |
 | GS-49 Security alerts | Yes | PENDIENTE | Events, sources and owner defined (OPERATIONS_POLICY.md); Gitleaks failure already alerts | Builder: scheduled threshold check posting to Telegram |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Customer and signer names, phone, birthday, title and consent are confidential PII; keyed IP hash is pseudonymous security evidence; follow-up and term status are internal data | Add handling rules to production privacy notice |
 | GS-51 Retention/deletion | Yes | IMPLEMENTADO Y PROBADO LOCALMENTE | Private daily function deletes at 24 months without a visit and 90 days after cancellation; 31-day cancellation data remains; cascades and count-only audits passed in PGlite | Reviewer applies migration and repeats hosted smoke |
 | GS-52 Encryption keys | No | NO APLICA JUSTIFICADO | No app-level encryption | — |
-| GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
+| GS-53 Domains/infra accounts | Yes | VERIFICADO (CEO report) | 2FA active on GitHub, Google, Render, Supabase and Resend; Cloudflare uses Google sign-in protected by Google 2FA | Optional native Cloudflare 2FA |
 | GS-54 Incident response | Yes | IMPLEMENTADO | INCIDENT_RESPONSE.md: CEO decides, Telegram channel, containment steps, evidence, recovery, contract notice (Terms point 12) | Tabletop drill once production exists |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately; monthly review on the 1st prepared by Reviewer, approved by CEO (OPERATIONS_POLICY.md) | First review 2026-11-01 |
 | GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | Final gate: 144/144 permanent tests, zero diagnostics and complete build; D-052 covers data preservation, opt-out, minimal response, Turnstile, auth limits, owner MFA, grants, HSTS and Cloudflare IP | Final CI and hosted D-052 smoke |
@@ -159,3 +159,10 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 - GS-43 / GS-49 / GS-55: policy and owners in `OPERATIONS_POLICY.md` (CEO decisions: 7/30-day sessions, monthly review approved by CEO, Telegram channel).
 - GS-54: `INCIDENT_RESPONSE.md` adopted.
 - GS-25 / GS-29 / GS-28 / GS-30: CEO approved paid plans; production organization, project, backups and branch protection are being executed.
+
+## Update 2026-10-05 (Reviewer, production cutover)
+
+- GS-29: production project `fzrzrbzxjdezwylzkbkh` created in the Pro organization; all 14 migrations applied and verified by md5 against the repository files; Supabase security advisor reports no findings; pg_cron purge job scheduled. Render now reads production.
+- GS-48 / GS-56: PR #10 fixed Turnstile in the check-in island (implicit widget removed by React hydration). A regression test now asserts explicit rendering.
+- GS-28 / GS-30: GitHub ruleset verified on PR #9.
+- GS-25: backups exist through Supabase Pro; the restore test is the only open item before real customer data.

@@ -210,3 +210,14 @@ Base: `origin/claude/nfc-evidence` at `df7a275`. Branch: `codex/terms-v2`. No de
 - Evidence: `docs/evidence/terms-sign-v2-390x844.png` and `docs/evidence/terms-v2-390x844.png`. Both are 390×844 and were opened for visual review. The repeatable runner temporarily mounts the production signature components at the exact route and restores the authenticated page in `finally`.
 - Reviewer action: inspect and apply only `20261005001012_terms_v2.sql` to the intended Supabase project, then run the hosted signature, activation, extension and untagged-visit smoke. Do not deploy this branch during review.
 - PR #7: `https://github.com/coachgerardonavas-star/smart-tap/pull/7`, open from `codex/terms-v2` to `main`. Implementation commit `a5a7095`; GitHub Actions `verify` passed in run `37244778853`. No merge or deploy.
+
+## State after production cutover — Claude Code, 2026-10-05
+
+- **App:** `https://smarttap.yourbizupgraded.com` (Render, Virginia) behind the Cloudflare proxy, with Turnstile and the rate-limiting rule active.
+- **Database:** production Supabase `fzrzrbzxjdezwylzkbkh` (Pro). The test project `vrouyhxzxrfkuuqfslrc` is retired from the app.
+- **Demo tenant:** Café Luna, with tag URL `/b/cafe-luna?t=demo-cafe-luna-main-2026`. It has offers, a hero image, a tagline and two WhatsApp-opted customers.
+- **Payments:** Stripe payment link `plink_1UMe6QAHnOzMvXBgoInFroKP` ($199 one-time + $79/month). The subscription does not stop by itself at month 3 (Terms point 7), so the Reviewer sets `cancel_at` on each new subscription.
+- **Open work:**
+  - GS-25 restore test.
+  - GS-49 security alerts (Builder task).
+  - First monthly access review on 2026-11-01.

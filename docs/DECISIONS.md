@@ -219,3 +219,15 @@ All findings in `docs/SECURITY_HARDENING.md` approved. Builder order: security h
 ## D-054 — D-052 security hardening implementation choices (Builder, 2026-10-04)
 
 Turnstile protects check-in, login and password recovery when both Turnstile variables exist. Incomplete configuration logs one safe warning per process and lets the form continue so a missing optional setting cannot take the service down. Login limits are 10 attempts per IP and 5 per normalized email in 15 minutes; recovery limits are 10 per IP and 3 per normalized email in one hour. PostgreSQL stores only keyed hashes and owns the counters through a service-only function. Active owners require a signed `aal2` session for customer-data routes; managers and viewers may enroll through `/mfa` without a current requirement. The CSP keeps `script-src 'unsafe-inline'` because the built Astro pages contain inline hydration bootstrap code; this PR restricts the new external allowance to Cloudflare's challenge origin in `script-src` and `frame-src`. Removing the inline allowance needs Astro CSP hashes plus a full hydration regression gate.
+
+## D-055 — Production environment (CEO, 2026-10-05)
+
+Supabase Pro is enabled in a separate organization, "Smart Tap Produccion", which holds only the production project `fzrzrbzxjdezwylzkbkh`. The organization costs $25/month, and its single project is covered by the included compute credit. The other projects stay on the free plan. GitHub Pro enables the `protect-main` ruleset.
+
+The project was created in us-west-2 while Render runs in Virginia. The CEO chose to keep it rather than recreate it and repeat the Auth configuration; the extra latency is roughly 0.1–0.5 s per page.
+
+Café Luna also lives in production as a synthetic demonstration tenant (fake phone numbers, offers, an Unsplash hero image), isolated by RLS like any business. The CEO's platform-admin account was re-created in production by invitation with a new TOTP factor. Auth was configured in the dashboard per `docs/SETUP.md`:
+- public signup disabled, minimum password length 12, leaked-password protection on;
+- Resend SMTP and the repository templates;
+- sessions limited to 7 days of inactivity and 30 days in total;
+- TOTP enabled.
