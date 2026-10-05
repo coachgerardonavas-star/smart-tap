@@ -617,3 +617,5 @@ Migration under test: `20261005002000_security_hardening.sql`, intentionally not
 The CSP hash option was evaluated against the built Astro output. Hydrated React pages emit inline bootstrap code. D-054 keeps the current inline script allowance until Astro CSP hashes receive a full browser regression gate.
 
 Final clean gate: `npm ci` added 334 packages with 0 vulnerabilities; `npm run audit:prod` reported 0 vulnerabilities; `npm run verify` passed 0 diagnostics, 15 files and 144/144 tests, plus the complete standalone Node build.
+
+PR #8 initial GitHub Actions run `37248148286` passed in 28 seconds for implementation commit `d044c77`: Gitleaks, `npm ci`, strict production audit, full verify, CycloneDX SBOM and artifact upload all passed. The workflow emitted informational runner/action deprecation notices and no failing annotation.

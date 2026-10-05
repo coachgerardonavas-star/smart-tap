@@ -55,6 +55,7 @@ Current local gate on `codex/security-hardening`: clean `npm ci` installed 334 p
 - Middleware adds HSTS and the exact Turnstile script/frame CSP origins. `script-src 'unsafe-inline'` remains under D-054 because the built Astro hydration bootstrap is inline.
 - `requestIp` has a regression test for `TRUSTED_IP_HEADER=cf-connecting-ip`.
 - New migration: `20261005002000_security_hardening.sql`. It is intentionally unapplied. Codex ran no `db push`, hosted database change or deploy.
+- PR #8: `https://github.com/coachgerardonavas-star/smart-tap/pull/8`. Initial GitHub Actions run `37248148286` passed `verify`, Gitleaks, strict audit, build and SBOM generation for implementation commit `d044c77`.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04
 
