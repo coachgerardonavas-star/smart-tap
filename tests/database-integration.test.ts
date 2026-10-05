@@ -80,32 +80,34 @@ describe("database migration and check-in transaction", () => {
     expect(tagged.rows[0]?.untagged).toBe(false);
   });
 
-  it("records blank, unknown and inactive tag codes as untagged visits", async () => {
+  it("records a visit without tag code as untagged and rejects unknown or inactive tags", async () => {
     await database.exec(`
       insert into public.nfc_tags (business_id, code, label, is_active)
       values ('10000000-0000-4000-8000-000000000001', 'inactive-tag-code-2026', 'Inactive', false);
     `);
-    const cases = [
-      { phone: "+13055550201", tag: "", ip: "7" },
+    const blank = await database.query<{ result: { untagged: boolean; visitCount: number } }>(`
+      select public.record_public_check_in(
+        'cafe-luna', '', 'Cliente Sin Etiqueta', '+13055550201',
+        null, '2026-10-04', false, repeat('7', 64), md5('+13055550201') || md5('+13055550201'), 'untagged-test'
+      ) as result
+    `);
+    expect(blank.rows[0]?.result).toMatchObject({ untagged: true, visitCount: 1 });
+    for (const item of [
       { phone: "+13055550202", tag: "unknown-tag-code-2026", ip: "8" },
       { phone: "+13055550203", tag: "inactive-tag-code-2026", ip: "9" },
-    ];
-    for (const item of cases) {
-      const result = await database.query<{ result: { untagged: boolean; visitCount: number } }>(`
+    ]) {
+      await expect(database.query(`
         select public.record_public_check_in(
-          'cafe-luna', '${item.tag}', 'Cliente Sin Etiqueta', '${item.phone}',
+          'cafe-luna', '${item.tag}', 'Cliente Rechazado', '${item.phone}',
           null, '2026-10-04', false, repeat('${item.ip}', 64), md5('${item.phone}') || md5('${item.phone}'), 'untagged-test'
-        ) as result
-      `);
-      expect(result.rows[0]?.result).toMatchObject({ untagged: true, visitCount: 1 });
+        )
+      `)).rejects.toThrow(/tag_not_found/);
     }
     const saved = await database.query<{ count: number }>(`
-      select count(*)::int as count from public.visits v
-      join public.customers c on c.id = v.customer_id
-      where c.phone_e164 in ('+13055550201', '+13055550202', '+13055550203')
-        and v.untagged and v.tag_id is null
+      select count(*)::int as count from public.customers
+      where phone_e164 in ('+13055550202', '+13055550203')
     `);
-    expect(saved.rows[0]?.count).toBe(3);
+    expect(saved.rows[0]?.count).toBe(0);
   });
 });
 

@@ -7,7 +7,7 @@ const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).s
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
 const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances", "terms_signatures"];
 const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004190428_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
-const termsV2Migration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004230000_terms_v2.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
+const termsV2Migration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261005001012_terms_v2.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
   it.each(exposedTables)("enables RLS on %s", (table) => {
@@ -106,9 +106,10 @@ describe("database security migration", () => {
     expect(termsV2Migration).toMatch(/revoke all on function public\.record_term_extension\(uuid, timestamptz, uuid, boolean\)[\s\S]+from public, anon, authenticated/);
   });
 
-  it("stores unregistered tags as untagged visits and never suspends on term expiry", () => {
+  it("flags visits without a tag code, rejects unknown or inactive tags and never suspends on term expiry", () => {
     expect(termsV2Migration).toContain("add column untagged boolean not null default false");
-    expect(termsV2Migration).toContain("v_untagged := v_tag_id is null");
+    expect(termsV2Migration).toContain("message = 'tag_not_found'");
+    expect(termsV2Migration).toContain("v_untagged := false");
     expect(termsV2Migration).toContain("insert into public.visits (business_id, customer_id, tag_id, source, untagged)");
     expect(termsV2Migration).not.toMatch(/term_ends_at[\s\S]{0,200}set\s+is_active\s*=\s*false/);
   });

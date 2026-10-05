@@ -208,6 +208,6 @@ After an adversarial review (Claude Code acting as a client looking for loophole
 
 The attorney approved the Smart Tap Terms v2 as written in `docs/TERMS_OF_SERVICE.md` (supersedes v1 and the draft). For Asistente/Estratega/Manager the attorney decided the same two rules: the first monthly fee is prepaid on the Go-Live date, and the customer data export at termination is delivered even with unpaid balances. Pending: update the Master Services Agreement (5.3, 17.5), the SOW template (§13, §17) and `Manual_de_Pricing.md` in Drive to v3.12.
 
-## D-052 — Terms v2 implementation evidence and term handling (Builder, 2026-10-04)
+## D-053 — Terms v2 implementation evidence and term handling (Builder, 2026-10-04)
 
 `TERMS_VERSION` is `2026-10-04-v2`. An active owner signs with legal name, title, an unchecked explicit confirmation, server time, user and business ids, a keyed IP hash and a bounded user agent. The database writes the signature, matching acceptance and `terms.signed` audit in one transaction; audit details contain only the version. Final owner approval and a new activation require that current signature. Initial activation sets `term_ends_at` three months ahead. Only a platform admin with AAL2 can extend that date through a signed-annex form and an audited database function. Expiry appears in admin 15 days ahead and does not change `is_active`. Blank, unknown and inactive NFC codes create a normal daily visit with `untagged=true` for admin follow-up.

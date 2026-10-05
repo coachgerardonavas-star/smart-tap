@@ -570,7 +570,7 @@ Still open before the first client: second-device test (Android), rate-limit IP 
 
 ## D-049/D-050/D-051 Terms v2 — ChatGPT Codex, 2026-10-04
 
-Scope: exact attorney text, owner e-signature, current-version activation gate, three-month term and signed extensions, untagged visits and admin visibility. Migration: `20261004230000_terms_v2.sql`, intentionally not applied.
+Scope: exact attorney text, owner e-signature, current-version activation gate, three-month term and signed extensions, untagged visits and admin visibility. Migration: `20261005001012_terms_v2.sql`, intentionally not applied.
 
 | Check | Result |
 |---|---|

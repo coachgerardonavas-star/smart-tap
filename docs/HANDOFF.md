@@ -21,14 +21,14 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing Terms v2 on `
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
 | `codex/customer-styles` | Merged through PR #6; Reviewer applied migration `20261004212542_customer_styles.sql`. |
-| `codex/terms-v2` | **Current Builder branch.** Starts at Reviewer branch `origin/claude/nfc-evidence` commit `df7a275`, which is ahead of merged PR #6. Adds D-049/D-050/D-051 Terms v2. Migration `20261004230000_terms_v2.sql` remains unapplied for Reviewer inspection. |
+| `codex/terms-v2` | **Current Builder branch.** Starts at Reviewer branch `origin/claude/nfc-evidence` commit `df7a275`, which is ahead of merged PR #6. Adds D-049/D-050/D-051 Terms v2. Migration `20261005001012_terms_v2.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
 Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`, `20261004212542_customer_styles`. The new `20261004230000_terms_v2` migration is local only.
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`, `20261004212542_customer_styles`. The new `20261005001012_terms_v2` migration is local only.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -190,10 +190,10 @@ Base: `origin/claude/nfc-evidence` at `df7a275`. Branch: `codex/terms-v2`. No de
 
 - `src/lib/terms.ts` renders the exact approved 22-section Spanish and English text from `docs/TERMS_OF_SERVICE.md`; `TERMS_VERSION` is `2026-10-04-v2`, so every business user must create a new version record.
 - Owners use `/terms/sign`. Full legal name, title and an unchecked “Firmo estos Términos de servicio” confirmation are required. The server fixes the version, user, business, time, keyed IP hash and user agent. Managers and viewers keep the separate acceptance flow. A pending owner of an inactive business is sent to signing on first dashboard entry.
-- Migration `20261004230000_terms_v2.sql` adds private `terms_signatures`, `businesses.owner_approved_terms_version`, `businesses.term_ends_at` and `visits.untagged`. Service-only functions make signature and audit writes atomic, require a current active-owner signature before approval/activation, set the initial three-month term and audit signed extensions.
+- Migration `20261005001012_terms_v2.sql` adds private `terms_signatures`, `businesses.owner_approved_terms_version`, `businesses.term_ends_at` and `visits.untagged`. Service-only functions make signature and audit writes atomic, require a current active-owner signature before approval/activation, set the initial three-month term and audit signed extensions.
 - Admin shows each business's untagged visit count, current signature state, term date and all terms ending in 15 days or less. An extension requires the explicit signed-annex checkbox and a later date. Expiry does not suspend the business.
 - Blank, unknown and inactive tag codes create the same daily visit as an absent tag and mark it `untagged=true`; valid active tags store `untagged=false`.
 - PGlite and source tests cover role, tenant, direct-write, idempotency, evidence fields, current-version approval, activation, three-month term, extension audit, expired active state and all tag states. Final local gate: clean install and strict audit with 0 vulnerabilities; 0 diagnostics; 131/131 tests; complete standalone build.
 - Evidence: `docs/evidence/terms-sign-v2-390x844.png` and `docs/evidence/terms-v2-390x844.png`. Both are 390×844 and were opened for visual review. The repeatable runner temporarily mounts the production signature components at the exact route and restores the authenticated page in `finally`.
-- Reviewer action: inspect and apply only `20261004230000_terms_v2.sql` to the intended Supabase project, then run the hosted signature, activation, extension and untagged-visit smoke. Do not deploy this branch during review.
+- Reviewer action: inspect and apply only `20261005001012_terms_v2.sql` to the intended Supabase project, then run the hosted signature, activation, extension and untagged-visit smoke. Do not deploy this branch during review.
 - PR #7: `https://github.com/coachgerardonavas-star/smart-tap/pull/7`, open from `codex/terms-v2` to `main`. Implementation commit `a5a7095`; GitHub Actions `verify` passed in run `37244778853`. No merge or deploy.

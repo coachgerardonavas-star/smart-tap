@@ -130,7 +130,8 @@ grant execute on function public.record_terms_signature(uuid, uuid, text, text, 
 
 revoke all on function public.record_business_owner_approval(uuid, text, uuid)
   from public, anon, authenticated, service_role;
-drop function public.record_business_owner_approval(uuid, text, uuid);
+-- The 3-argument version stays defined but unusable (no role can execute it);
+-- dropping functions through the hosted migration connector has hung before.
 
 create function public.record_business_owner_approval(
   p_business_id uuid,
@@ -330,7 +331,12 @@ begin
   if nullif(btrim(p_tag_code), '') is not null then
     select id into v_tag_id from public.nfc_tags
     where business_id = v_business.id and code = p_tag_code and is_active;
-    v_untagged := v_tag_id is null;
+    -- A lost or replaced tag is deactivated so it stops working (NFC_OPERATIONS.md);
+    -- an unknown code is rejected too. Only visits without any code are untagged.
+    if v_tag_id is null then
+      raise exception using errcode = 'P0002', message = 'tag_not_found';
+    end if;
+    v_untagged := false;
   end if;
 
   perform private.bump_check_in_rate_limit(v_business.id, p_ip_hash, 40);

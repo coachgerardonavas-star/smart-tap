@@ -58,6 +58,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     if (error) {
       if (error.message.includes("rate_limit_exceeded")) return json(429, { error: "Espera unos minutos antes de registrar otra visita." });
+      if (error.message.includes("tag_not_found")) return json(404, { error: "Este NFC no está activo." });
       if (error.message.includes("business_not_found")) return json(404, { error: "Este negocio no está disponible." });
       console.error("check-in rpc failed", error.code);
       return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });
