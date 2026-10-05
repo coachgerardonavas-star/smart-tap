@@ -2,12 +2,13 @@
 
 - Project root: `C:\automate-it\smart-tap`.
 - ChatGPT Codex is the builder. Claude Code is the independent reviewer.
-- Read `docs/HANDOFF.md` first. Use `docs/DECISIONS.md` for settled choices.
+- Read `docs/CURRENT_STATE.md` first, then `docs/HANDOFF.md`. Use `docs/DECISIONS.md` for settled choices.
 - Keep customer data isolated by `business_id`. Any new data table that contains tenant data must include RLS and an explicit cross-tenant test.
 - Keep `SUPABASE_SECRET_KEY` and `CHECK_IN_HASH_SECRET` on the server.
 - Do not add automated WhatsApp sending (Meta API, templates, webhooks), campaigns, CRM, POS, payments, reservations, AI, Wallet, or custom CRM integrations to this MVP. The owner-sent `wa.me` link of D-021 is in scope.
 - Run targeted tests while editing. Use `npm run verify` at security or release gates.
-- Update `docs/HANDOFF.md` after material changes.
+- Update `docs/CURRENT_STATE.md` and `docs/HANDOFF.md` after material changes.
+- Reuse the current Builder branch documented in `docs/CURRENT_STATE.md`; do not create additional Builder branches unless the CEO or Reviewer explicitly changes that rule.
 
 ## Glasswing Shield (mandatory)
 
@@ -20,9 +21,9 @@
 
 Claude Code reviews only what is on GitHub. At the end of every work session, iteration or /goal, without being asked:
 
-1. Commit all work (never `.env`) and push every branch you touched.
+1. Commit all work (never `.env`) and push the existing Builder branch you touched.
 2. Keep the open PR updated and its `verify` check green.
-3. Update `docs/HANDOFF.md`.
+3. Update `docs/CURRENT_STATE.md` and the relevant handoff/evidence docs.
 4. Give the CEO the "REPORTE PARA CLAUDE CODE" in one single code block (format in `docs/CODEX_NEXT.md`), covering everything since the last report.
 
 Do not wait for the CEO to ask. Work that exists only on the local machine counts as not delivered.

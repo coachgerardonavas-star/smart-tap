@@ -41,15 +41,28 @@ Session fixation: sessions are created only by Supabase Auth after credential ve
 
 ## GS-49 Security alerts
 
-These events must reach Telegram separately from availability alerts:
+Security events must reach Telegram separately from availability alerts.
 
 | Event | Source | State |
 |---|---|---|
-| Spike of rejected logins or recovery requests (auth rate limit hit) | `auth_rate_limits` counters / Render logs | PENDING — needs a scheduled check |
-| Check-in rate limit hit repeatedly from one IP hash | check-in function | PENDING |
-| Cloudflare rate-limiting rule blocks | Cloudflare Security Events | PENDING — review weekly until automated |
-| New platform admin or role change | `audit_log` | PENDING |
-| Business activated, paused or cancelled | `audit_log` (`business.*`) | PENDING |
+| Rejected login or recovery because the application rate limit was hit | `security.auth_rate_limit` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| Repeated check-in rate limit hit | `security.check_in_rate_limit` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| New platform admin via the bootstrap path | `platform_admin.promoted` in `audit_log` | IMPLEMENTADO NO VERIFICADO |
+| Business created, activated/paused, cancelled, approved, exported or term extended | `business.created`, qualifying `business.updated`, `business.cancelled`, `business.owner_approved`, `business.customers_exported`, `business.term_extended` | IMPLEMENTADO NO VERIFICADO |
+| Member invited, activated or deactivated | `member.invited`, `member.activated`, `member.deactivated` | IMPLEMENTADO NO VERIFICADO |
+| Customer deleted | `customer.deleted` | IMPLEMENTADO NO VERIFICADO |
+| NFC tag created, activated or deactivated | `nfc_tag.created`, `nfc_tag.activated`, `nfc_tag.deactivated` | IMPLEMENTADO NO VERIFICADO |
+| Cloudflare rate-limiting rule blocks | Cloudflare Security Events | PENDING — review weekly until native/API alerting is configured |
 | Secret detected in a commit | Gitleaks in the `verify` workflow | IMPLEMENTED — the build fails; GitHub notifies the CEO by email |
 
-Planned implementation (Builder task, separate PR): a scheduled check that reads counters and `audit_log` since the last run and posts a summary to the internal Telegram chat only when a threshold is crossed. It must use a service credential held by the runtime, never by an agent. Until it exists, the monthly access review also checks `audit_log` for these events.
+Implementation:
+- `src/lib/security-alert-audit.ts` writes deduplicated application security events to `audit_log`; raw IPs, email addresses and phone numbers are not stored in these alert rows.
+- `src/lib/security-alerts-core.mjs` owns the allowlist, filtering, aggregation, cursor calculation and the 3,500-character message cap. Telegram receives only action names and counts; audit `details` never enter the message.
+- `scripts/security-alerts.mjs` performs I/O. It reads the latest `alerts.digest_sent` row and queries qualifying events with `created_at > details.until`. With no cursor it starts 20 minutes earlier. Rows are ordered by `created_at` and limited to 1,000.
+- The runner writes `alerts.digest_sent` only after Telegram accepts the message. Its details contain the final sent `created_at` as `until` and the sent count. Delivery failure leaves the cursor untouched so the next run retries.
+- `alerts.digest_sent` is outside the event allowlist. A full 1,000-row page adds `1000+` to the message and advances no further than the last event read.
+- `npm run security:alerts` runs one check. The Render Cron Job `smart-tap-security-alerts` is scheduled every 15 minutes on the Starter plan in Virginia.
+- Runtime secrets are `PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; they belong in the runtime secret store and must never be committed or pasted into agent chat.
+- The runtime must use the production Supabase project. Deployment is not considered verified until a controlled security event produces the expected Telegram alert.
+
+Until the scheduled runner is deployed and smoke-tested, the monthly access review also checks `audit_log`, and Cloudflare Security Events are reviewed manually at least weekly.

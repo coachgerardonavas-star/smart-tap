@@ -658,3 +658,20 @@ Verdict: **PR #8 approved by the Reviewer.** After merge: Turnstile keys in Rend
 - The CEO's admin account exists in production as `platform_admin`, with the email confirmed and one verified TOTP factor.
 
 **Open item:** GS-25 restore test after the first daily backup.
+
+## PR #12 GS-49 Reviewer corrections — local Builder evidence, 2026-10-05
+
+| Check | Result |
+|---|---|
+| Cursor | Reads the latest `alerts.digest_sent.details.until`; falls back 20 minutes; queries `created_at > since`; writes the cursor only after successful Telegram delivery |
+| Retry | Simulated HTTP 503 from Telegram leaves the cursor unwritten |
+| Event selector | Covers existing security/admin/member/business events plus customer export/delete, NFC lifecycle, business create/approval/term extension; `business.updated` requires `is_active` |
+| Pagination bound | Ordered 1,000-row page emits `1000+` and stores the last read timestamp |
+| Message privacy | Behavior test proves `details` values for email, phone and IP do not enter the count-only message; output is capped at 3,500 characters |
+| Audit helper | Behavior tests prove five-minute cooldown, key release after failed insert and removal of IP/email/phone/hash fields |
+| Render Blueprint | Declares `smart-tap-security-alerts`, Virginia, Starter, every 15 minutes, Node 22.22.0 and four `sync: false` runtime variables |
+| Database/deploy | This correction adds no migration. No deploy, merge, database mutation, Render service creation or secret handling occurred |
+
+Final local gate: `npm ci` added 334 packages and found 0 vulnerabilities; `npm run check` returned 0 errors/warnings/hints; Vitest passed 16 files and 155/155 tests; `npm run build` completed the standalone Node build with 0 diagnostics; strict `npm run audit:prod` found 0 vulnerabilities.
+
+PR #12 implementation commit `c678ae5` passed GitHub Actions `verify` in run `37352201602` (41 seconds). No deploy, merge, migration or production secret change followed.

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServiceClient } from "../../../lib/supabase";
 import { BodyTooLargeError, hashIdentifier, readJsonLimited, requestIp } from "../../../lib/security";
+import { recordSecurityAuditOnce } from "../../../lib/security-alert-audit";
 import { PRIVACY_NOTICE_VERSION } from "../../../lib/privacy";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
 import { verifyTurnstile } from "../../../lib/turnstile";
@@ -39,7 +40,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const service = createSupabaseServiceClient();
     const { data: business } = await service
       .from("businesses")
-      .select("default_country, display_name")
+      .select("id, default_country, display_name")
       .eq("slug", parsed.data.slug)
       .eq("is_active", true)
       .is("cancelled_at", null)
@@ -49,6 +50,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const phone = normalizePhone(parsed.data.phone, business.default_country);
     if (!phone) return json(400, { error: "Ingresa un número de teléfono válido." });
 
+    const ipHash = hashIdentifier(`ip:${ip}`);
+    const phoneHash = hashIdentifier(`phone:${phone}`);
     const { error } = await service.rpc("record_public_check_in", {
       p_slug: parsed.data.slug,
       p_tag_code: parsed.data.tagCode || null,
@@ -57,13 +60,22 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       p_birthday: parsed.data.birthday || null,
       p_consent_version: PRIVACY_NOTICE_VERSION,
       p_whatsapp_opt_in: parsed.data.whatsappOptIn,
-      p_ip_hash: hashIdentifier(`ip:${ip}`),
-      p_phone_hash: hashIdentifier(`phone:${phone}`),
+      p_ip_hash: ipHash,
+      p_phone_hash: phoneHash,
       p_user_agent: request.headers.get("user-agent") || "unknown",
     });
 
     if (error) {
-      if (error.message.includes("rate_limit_exceeded")) return json(429, { error: "Espera unos minutos antes de registrar otra visita." });
+      if (error.message.includes("rate_limit_exceeded")) {
+        await recordSecurityAuditOnce(service, `check-in:${business.id}:${ipHash}`, {
+          business_id: business.id,
+          action: "security.check_in_rate_limit",
+          entity_type: "business",
+          entity_id: business.id,
+          details: { surface: "public-check-in" },
+        });
+        return json(429, { error: "Espera unos minutos antes de registrar otra visita." });
+      }
       if (error.message.includes("tag_not_found")) return json(404, { error: "Este NFC no está activo." });
       if (error.message.includes("business_not_found")) return json(404, { error: "Este negocio no está disponible." });
       console.error("check-in rpc failed", error.code);

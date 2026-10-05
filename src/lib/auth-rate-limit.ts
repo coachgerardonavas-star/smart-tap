@@ -1,5 +1,6 @@
 import { createSupabaseServiceClient } from "./supabase";
 import { hashIdentifier, requestIp } from "./security";
+import { recordSecurityAuditOnce } from "./security-alert-audit";
 
 export type AuthRateLimitAction = "login" | "forgot_password";
 
@@ -11,12 +12,23 @@ export async function enforceAuthRateLimit(
 ): Promise<boolean> {
   const normalizedEmail = email.trim().toLowerCase().slice(0, 254) || "invalid";
   const ip = requestIp(request, clientAddress);
-  const { error } = await createSupabaseServiceClient().rpc("enforce_auth_rate_limit", {
+  const ipHash = hashIdentifier(`auth:${action}:ip:${ip}`);
+  const emailHash = hashIdentifier(`auth:${action}:email:${normalizedEmail}`);
+  const service = createSupabaseServiceClient();
+  const { error } = await service.rpc("enforce_auth_rate_limit", {
     p_action: action,
-    p_ip_hash: hashIdentifier(`auth:${action}:ip:${ip}`),
-    p_email_hash: hashIdentifier(`auth:${action}:email:${normalizedEmail}`),
+    p_ip_hash: ipHash,
+    p_email_hash: emailHash,
   });
   if (!error) return true;
-  if (!error.message.includes("rate_limit_exceeded")) console.error("auth rate limit failed", error.code);
+  if (error.message.includes("rate_limit_exceeded")) {
+    await recordSecurityAuditOnce(service, `auth:${action}:${ipHash}:${emailHash}`, {
+      action: "security.auth_rate_limit",
+      entity_type: "auth",
+      details: { action },
+    });
+  } else {
+    console.error("auth rate limit failed", error.code);
+  }
   return false;
 }
