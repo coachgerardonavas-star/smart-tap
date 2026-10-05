@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-046 and D-048 on `codex/customer-styles` without deployment.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing Terms v2 on `codex/terms-v2` without deployment or database push.
 
 ## Project identity
 
@@ -8,26 +8,27 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-046 and D-0
 - Builder: ChatGPT Codex · Reviewer: Claude Code
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
-- **CEO-approved commercial/product decisions D-025 through D-048:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
+- **CEO/attorney-approved commercial and product decisions D-025 through D-052:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
 
 ## Branches — which one is current
 
 | Branch | State |
 |---|---|
-| `main` | Includes merged PR #5 at `19e3260`; Render deploy evidence is recorded on the reviewed base. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
+| `main` | Includes merged PRs #4, #5 and #6 at `2945fab`; Render deploy evidence is recorded. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
-| `codex/customer-styles` | **Current Builder branch and PR #6.** Starts at Reviewer-approved `534da86`; implementation commit `ad2d0eb` adds the four D-046/D-048 customer styles. Migration `20261004212542_customer_styles.sql` remains unapplied for Reviewer inspection. |
+| `codex/customer-styles` | Merged through PR #6; Reviewer applied migration `20261004212542_customer_styles.sql`. |
+| `codex/terms-v2` | **Current Builder branch.** Starts at Reviewer branch `origin/claude/nfc-evidence` commit `df7a275`, which is ahead of merged PR #6. Adds D-049/D-050/D-051 Terms v2. Migration `20261005001012_terms_v2.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
 Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`.
+`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`, `20261004212542_customer_styles`. The new `20261005001012_terms_v2` migration is local only.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -39,9 +40,9 @@ MVP implemented. Security hardening, one visit per customer per day (D-017), adm
 
 Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 MFA passed live enrollment and challenge.
 
-Estimated completion: 98% of the demonstration MVP and 82% of production readiness.
+Estimated completion: 98% of the demonstration MVP and 84% of production readiness.
 
-Current local gate on `codex/customer-styles`: `npm ci` installed 334 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 121/121 tests and a complete standalone Node build.
+Current local gate on `codex/terms-v2`: `npm ci` installed 334 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 131/131 tests and a complete standalone Node build. GitHub CI is recorded after the branch push.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04
 
@@ -131,7 +132,7 @@ Current local gate on `codex/customer-styles`: `npm ci` installed 334 packages a
 - CEO: Supabase plan (backups GS-25, separate production project GS-29).
 - Production host and domain (D-009), then Auth Site URL and redirect.
 - Paste `supabase/templates/invite.html` and `recovery.html` into Supabase Auth → Emails (prefetch-safe with the new callback); custom SMTP with tracking disabled before commercial invitations (D-022).
-- Reviewer: inspect and apply `20261004212542_customer_styles.sql`, then run the hosted D-046/D-048 admin and capture smoke. The earlier privacy/terms migrations are already live under the names listed above.
+- Reviewer completed the customer-style review, applied `20261004212542_customer_styles.sql` and approved PR #6. The earlier privacy/terms migrations are live under the names listed above.
 - Physical NFC writing.
 
 - Synchronize the newly approved Smart Tap commercial rules (D-025 to D-042) into contract/SOW and `Manual_de_Pricing.md` in ADN (the repository is not the pricing source of truth).
@@ -169,7 +170,7 @@ PR #3 merged to main (a9ebc37). Next: custom SMTP done on the test project; priv
 
 The four approved styles are implemented for `/b/[slug]` and `/demo/capture`: `elegante`, `calido`, `moderno` and `colorido`. Each uses the approved colors, type families and radii with one combined hero/form page.
 
-`public.businesses` receives `theme`, `tagline`, `benefits` and `hero_image_url` through the single unapplied migration `20261004212542_customer_styles.sql`. The admin validates and audits all four values. A null benefits array uses the three approved defaults.
+`public.businesses` received `theme`, `tagline`, `benefits` and `hero_image_url` through migration `20261004212542_customer_styles.sql`, later applied by the Reviewer. The admin validates and audits all four values. A null benefits array uses the three approved defaults.
 
 The capture component computes black or white button text from WCAG relative luminance. Exhaustive sampled-color coverage proves a ratio of at least 4.5:1. Hero images have explicit dimensions and a solid fallback. The CSP was not widened.
 
@@ -177,8 +178,22 @@ The eight mobile captures and one desktop capture are under `docs/evidence/custo
 
 The exact consent, birthday and WhatsApp text remains unchanged; WhatsApp stays optional and unchecked. Confirmation uses the three exact approved lines and displays the Google review link only when configured. Fonts use eight local latin variable packages; the rendered page references only the two families assigned to its selected style.
 
-No Supabase migration, `db push`, deploy or hosted-data change ran in this Builder task. Claude Code must review and apply `20261004212542_customer_styles.sql` before hosted tests.
+No Supabase migration, `db push`, deploy or hosted-data change ran in the original Builder task. Claude Code later reviewed and applied `20261004212542_customer_styles.sql`.
 
-PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`, open from `codex/customer-styles` to `main`, with no merge or deploy. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
+PR #6: `https://github.com/coachgerardonavas-star/smart-tap/pull/6`, merged to `main`. GitHub Actions `verify` passed on implementation commit `ad2d0eb` in run `37235632682`.
 
-Reviewer pass on PR #4 complete (see VERIFICATION): migrations `20261004190428_privacy_notice` and `20261004190717_terms_acceptances_write_via_function_only` live; PR #4 approved, awaiting CEO merge.
+Reviewer pass on PR #4 complete (see VERIFICATION): migrations `20261004190428_privacy_notice` and `20261004190717_terms_acceptances_write_via_function_only` live; PR #4 merged.
+
+## Terms v2 — ChatGPT Codex, 2026-10-04
+
+Base: `origin/claude/nfc-evidence` at `df7a275`. Branch: `codex/terms-v2`. No deploy, Supabase migration or `db push` ran.
+
+- `src/lib/terms.ts` renders the exact approved 22-section Spanish and English text from `docs/TERMS_OF_SERVICE.md`; `TERMS_VERSION` is `2026-10-04-v2`, so every business user must create a new version record.
+- Owners use `/terms/sign`. Full legal name, title and an unchecked “Firmo estos Términos de servicio” confirmation are required. The server fixes the version, user, business, time, keyed IP hash and user agent. Managers and viewers keep the separate acceptance flow. A pending owner of an inactive business is sent to signing on first dashboard entry.
+- Migration `20261005001012_terms_v2.sql` adds private `terms_signatures`, `businesses.owner_approved_terms_version`, `businesses.term_ends_at` and `visits.untagged`. Service-only functions make signature and audit writes atomic, require a current active-owner signature before approval/activation, set the initial three-month term and audit signed extensions.
+- Admin shows each business's untagged visit count, current signature state, term date and all terms ending in 15 days or less. An extension requires the explicit signed-annex checkbox and a later date. Expiry does not suspend the business.
+- Blank, unknown and inactive tag codes create the same daily visit as an absent tag and mark it `untagged=true`; valid active tags store `untagged=false`.
+- PGlite and source tests cover role, tenant, direct-write, idempotency, evidence fields, current-version approval, activation, three-month term, extension audit, expired active state and all tag states. Final local gate: clean install and strict audit with 0 vulnerabilities; 0 diagnostics; 131/131 tests; complete standalone build.
+- Evidence: `docs/evidence/terms-sign-v2-390x844.png` and `docs/evidence/terms-v2-390x844.png`. Both are 390×844 and were opened for visual review. The repeatable runner temporarily mounts the production signature components at the exact route and restores the authenticated page in `finally`.
+- Reviewer action: inspect and apply only `20261005001012_terms_v2.sql` to the intended Supabase project, then run the hosted signature, activation, extension and untagged-visit smoke. Do not deploy this branch during review.
+- PR #7: `https://github.com/coachgerardonavas-star/smart-tap/pull/7`, open from `codex/terms-v2` to `main`. Implementation commit `a5a7095`; GitHub Actions `verify` passed in run `37244778853`. No merge or deploy.

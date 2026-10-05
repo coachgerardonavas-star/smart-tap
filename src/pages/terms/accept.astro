@@ -5,6 +5,7 @@ import { requireDataAccess } from "../../lib/auth";
 import { accessibleBusinesses } from "../../lib/data";
 import { hasAcceptedCurrentTerms } from "../../lib/terms-access";
 import { TERMS_VERSION } from "../../lib/terms";
+import { assertBusinessAccess } from "../../lib/auth";
 import { safeNextPath } from "../../lib/validation";
 
 const identity = await requireDataAccess(Astro.request, Astro.cookies);
@@ -13,7 +14,13 @@ const businesses = await accessibleBusinesses(identity);
 const requestedBusiness = Astro.url.searchParams.get("business");
 const business = businesses.find((item) => item.id === requestedBusiness) ?? businesses[0] ?? null;
 const next = safeNextPath(Astro.url.searchParams.get("next"));
-if (business && await hasAcceptedCurrentTerms(identity, business.id)) return Astro.redirect(next);
+if (business) {
+  const membership = await assertBusinessAccess(identity, business.id);
+  if (membership.role === "owner") {
+    return Astro.redirect(`/terms/sign?business=${encodeURIComponent(business.id)}&next=${encodeURIComponent(next)}`);
+  }
+  if (await hasAcceptedCurrentTerms(identity, business.id)) return Astro.redirect(next);
+}
 const error = Astro.url.searchParams.get("error");
 ---
 

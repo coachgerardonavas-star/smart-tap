@@ -131,6 +131,18 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
 
 export const ownerApprovalSchema = z.object({ ownerName: z.string().trim().min(2).max(120) });
 
+export const termsSignatureSchema = z.object({
+  businessId: z.uuid(),
+  legalName: z.string().trim().min(2).max(120),
+  title: z.string().trim().min(2).max(120),
+  signed: z.literal("on"),
+});
+
+export const termExtensionSchema = z.object({
+  termEndsAt: z.iso.date(),
+  annexSigned: z.literal("on"),
+});
+
 export const memberInviteSchema = z.object({
   email: trimmedEmailSchema,
   role: z.enum(["owner", "manager", "viewer"]),

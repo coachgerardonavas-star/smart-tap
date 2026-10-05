@@ -12,9 +12,9 @@ describe("dashboard metrics", () => {
       { ...baseCustomer, id: "customer-2", full_name: "Marco", birthday: "1987-03-01", last_seen_at: "2026-07-01T00:00:00Z" },
     ];
     const visits: Visit[] = [
-      { id: "visit-1", business_id: "business-a", customer_id: "customer-1", tag_id: null, source: "nfc", visited_at: "2026-09-20T00:00:00Z" },
-      { id: "visit-2", business_id: "business-a", customer_id: "customer-1", tag_id: null, source: "nfc", visited_at: "2026-09-29T00:00:00Z" },
-      { id: "visit-3", business_id: "business-a", customer_id: "customer-2", tag_id: null, source: "manual", visited_at: "2026-07-01T00:00:00Z" },
+      { id: "visit-1", business_id: "business-a", customer_id: "customer-1", tag_id: null, source: "nfc", untagged: true, visited_at: "2026-09-20T00:00:00Z" },
+      { id: "visit-2", business_id: "business-a", customer_id: "customer-1", tag_id: null, source: "nfc", untagged: true, visited_at: "2026-09-29T00:00:00Z" },
+      { id: "visit-3", business_id: "business-a", customer_id: "customer-2", tag_id: null, source: "manual", untagged: true, visited_at: "2026-07-01T00:00:00Z" },
     ];
     const metrics = buildDashboardMetrics(customers, visits, 45, now);
     expect(metrics.totalCustomers).toBe(2);

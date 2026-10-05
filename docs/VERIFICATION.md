@@ -556,3 +556,43 @@ Reviewer screenshots at 390×844 of `/demo/capture?theme=` for the four styles (
 Migration applied to `vrouyhxzxrfkuuqfslrc` as `20261004212542_customer_styles` (file renamed). Hosted checks inside a rolled-back transaction: Café Luna defaulted to `calido` and stayed active; a valid style update passed; unknown theme, two benefits, `http://` and `javascript:` hero URLs and an 81-character tagline were rejected.
 
 Verdict: **PR #6 approved by the Reviewer.** After merge, Render redeploys and the Reviewer checks `/demo/capture` on the production domain.
+
+## Physical NFC test — production domain (CEO + Claude Code, 2026-10-04)
+
+| Check | Result |
+|---|---|
+| Tag written with `https://smarttap.yourbizupgraded.com/b/cafe-luna?t=<Mostrador principal code>` (not locked) | Opened the Café Luna page in the `calido` style on the CEO's iPhone |
+| Check-in from the tag | Visit recorded at 21:33 UTC against tag "Mostrador principal"; new customer; consent `text_version` = `2026-10-04` (server-set); WhatsApp opt-in recorded as chosen |
+| Confirmation screen | "¡Listo!" shown (CEO) |
+| Cleanup at the CEO's request | The test customer was deleted (visits and consent cascaded); Café Luna back to 3 customers and 7 visits, 0 follow-ups |
+
+Still open before the first client: second-device test (Android), rate-limit IP identity on two networks, tag write-lock after final URL, production Supabase project (D-024/D-047).
+
+## D-049/D-050/D-051 Terms v2 — ChatGPT Codex, 2026-10-04
+
+Scope: exact attorney text, owner e-signature, current-version activation gate, three-month term and signed extensions, untagged visits and admin visibility. Migration: `20261005001012_terms_v2.sql`, intentionally not applied.
+
+| Check | Result |
+|---|---|
+| Approved copy | Exact Spanish and English reconstruction against `docs/TERMS_OF_SERVICE.md`; 22 sections per language; version `2026-10-04-v2` |
+| Signature authorization | Active owner required; manager and cross-tenant calls rejected; direct table writes denied to `authenticated` and `service_role` |
+| Signature evidence | Name, title, version, server time, user, business, 64-character keyed IP hash and bounded user agent stored; duplicate call is idempotent |
+| Audit privacy | `terms.signed.details` contains only `version`; signature fields stay in the private signature row |
+| Approval and activation | Approval rejects a missing current owner signature; activation checks current approval/signature in a database trigger and sets the initial term about three months ahead |
+| Extension | Requires a later future date and checked Anexo de Extensión in the AAL2 admin route; database function writes `business.term_extended` |
+| Expiry | A past `term_ends_at` leaves `is_active=true`; admin shows dates ending within 15 days or already expired |
+| Untagged visits | Blank, unknown and inactive codes each create one daily visit with `untagged=true`; valid active tag creates `untagged=false` |
+| Final local gate | `npm ci`: 334 packages, 0 vulnerabilities; strict production audit: 0 vulnerabilities; `astro check`: 0 errors/warnings/hints; Vitest: 13 files, 131/131 passed; standalone build complete |
+| Mobile evidence | `terms-sign-v2-390x844.png` and `terms-v2-390x844.png`, both opened and visually checked |
+
+GitHub Actions `verify` passed on PR #7 in run `37244778853` (37 seconds). No merge or deploy followed.
+
+## Reviewer pass — PR #7 Terms v2 (Claude Code, 2026-10-05)
+
+Diff reviewed at `9969f9b`. Fix made by the Reviewer: the Builder's check-in accepted unknown and **inactive** tag codes as untagged visits, so a lost or replaced tag kept working (contradicts NFC_OPERATIONS.md). Restored: an unknown or inactive tag code is rejected (`tag_not_found`, HTTP 404); only visits without any code are `untagged`. Tests updated (131/131). The migration no longer drops the 3-argument approval function (connector hangs on drops); that version is left unexecutable by every role.
+
+Applied to `vrouyhxzxrfkuuqfslrc` as `20261005001012_terms_v2` (file renamed; applied text md5 equals the file) and `20261005001114_terms_signatures_write_via_function_only` (Supabase default grants let `service_role` insert signatures directly; revoked).
+
+Hosted smoke inside a rolled-back transaction: approval without an owner signature rejected (`approval_current_owner_signature_required`); signature recorded with audit `{"version": "2026-10-04-v2"}` only; approval then activation passed and set `term_ends_at` ≈ 3 months; extension without a signed annex rejected, with annex accepted; check-in without tag code → `untagged=true`; unknown tag → rejected; registered tag → `untagged=false`; Café Luna stayed active (term backfilled to 2027-01-02). Privileges: signature function not executable by anon/authenticated; old approval function not executable by service_role; authenticated cannot insert signatures. Security advisor: only the known leaked-password WARN.
+
+Verdict: **PR #7 approved by the Reviewer.**

@@ -4,17 +4,20 @@ import { requirePlatformAdmin } from "../../lib/auth";
 import { siteUrl as configuredSiteUrl } from "../../lib/env";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
+import { TERMS_VERSION } from "../../lib/terms";
 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
 const id = Astro.params.id ?? "";
 const service = createSupabaseServiceClient();
-const [businessResult, tagsResult, membersResult] = await Promise.all([
+const [businessResult, tagsResult, membersResult, signaturesResult, untaggedResult] = await Promise.all([
   service.from("businesses").select("*").eq("id", id).maybeSingle(),
   service.from("nfc_tags").select("*").eq("business_id", id).order("created_at"),
   service.from("business_members").select("user_id,role,is_active,created_at").eq("business_id", id).order("created_at"),
+  service.from("terms_signatures").select("signed_at,user_id").eq("business_id", id).eq("terms_version", TERMS_VERSION).order("signed_at", { ascending: false }),
+  service.from("visits").select("id", { count: "exact", head: true }).eq("business_id", id).eq("untagged", true),
 ]);
 if (businessResult.error || !businessResult.data) return Astro.redirect("/admin?error=Negocio%20no%20encontrado", 302);
-if (tagsResult.error || membersResult.error) throw tagsResult.error || membersResult.error;
+if (tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error) throw tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error;
 const business = businessResult.data as Business;
 const tags = tagsResult.data ?? [];
 const members = await Promise.all((membersResult.data ?? []).map(async (member) => {
@@ -22,6 +25,13 @@ const members = await Promise.all((membersResult.data ?? []).map(async (member) 
   return { ...member, email: result.data.user?.email ?? "Usuario sin correo" };
 }));
 const activeMemberCount = members.filter((member) => member.is_active).length;
+const activeOwnerIds = new Set(members.filter((member) => member.is_active && member.role === "owner").map((member) => member.user_id));
+const currentSignature = signaturesResult.data?.find((signature) => activeOwnerIds.has(signature.user_id)) ?? null;
+const currentTermsApproved = business.owner_approved_terms_version === TERMS_VERSION;
+const activationLocked = !business.is_active && (!currentSignature || !currentTermsApproved || Boolean(business.cancelled_at));
+const untaggedVisits = untaggedResult.count ?? 0;
+const currentTermDate = business.term_ends_at?.slice(0, 10) ?? "";
+const minimumExtensionDate = new Date(Math.max(Date.now(), business.term_ends_at ? new Date(business.term_ends_at).getTime() : 0) + 86_400_000).toISOString().slice(0, 10);
 const siteUrl = configuredSiteUrl();
 const message = Astro.url.searchParams.get("message");
 const formError = Astro.url.searchParams.get("error");
@@ -74,8 +84,9 @@ const formError = Astro.url.searchParams.get("error");
           <legend>NFC de Google Review — grabar esta URL directamente en el chip</legend>
           <div class="field"><label for="googleReviewUrl">URL directa de Google Review</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /></div>
         </fieldset>
-        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={!business.owner_approved_at || Boolean(business.cancelled_at)} /> Negocio activo</label>
-        {!business.owner_approved_at && <p class="muted compact-note">Registra la aprobación del dueño para habilitar la activación.</p>}
+        <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={activationLocked} /> Negocio activo</label>
+        {!business.is_active && !currentSignature && <p class="muted compact-note">Un dueño activo debe firmar los Términos vigentes para habilitar la aprobación.</p>}
+        {!business.is_active && currentSignature && !currentTermsApproved && <p class="muted compact-note">Registra la aprobación final del dueño para habilitar la activación.</p>}
         {business.cancelled_at && <p class="alert">El servicio fue cancelado y ya no puede activarse.</p>}
         <button class="button" type="submit">Guardar cambios</button>
       </form>
@@ -84,6 +95,7 @@ const formError = Astro.url.searchParams.get("error");
     <div class="side-stack">
       <section class="card panel">
         <h2>NFC y enlaces</h2>
+        <p class="metric-line"><strong>Visitas sin etiqueta registrada</strong><span>{untaggedVisits}</span></p>
         <div class="review-link">
           <strong>NFC de Google Review — grabar esta URL directamente en el chip</strong>
           {business.google_review_url
@@ -102,12 +114,27 @@ const formError = Astro.url.searchParams.get("error");
 
       <section class="card panel">
         <h2>Aprobación para activar</h2>
+        {currentSignature
+          ? <p class="approval-state"><strong>Firma v2 registrada</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(currentSignature.signed_at))}</span></p>
+          : <p class="alert">Falta la firma electrónica de un dueño activo para la versión {TERMS_VERSION}.</p>}
         {business.owner_approved_at
           ? <p class="approval-state"><strong>Aprobado por {business.owner_approved_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.owner_approved_at))}</span></p>
           : <p class="muted">El dueño debe aprobar la configuración final antes de activar el negocio.</p>}
         <form class="inline-form" action={`/api/admin/business/${business.id}/approve`} method="post">
           <div class="field"><label for="ownerName">Nombre del dueño que aprobó</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
-          <button class="button secondary" type="submit">Registrar aprobación del dueño</button>
+          <button class="button secondary" type="submit" disabled={!currentSignature}>Registrar aprobación del dueño</button>
+        </form>
+      </section>
+
+      <section class="card panel">
+        <h2>Plazo del servicio</h2>
+        {business.term_ends_at
+          ? <p class="approval-state"><strong>Vence el {new Intl.DateTimeFormat("es-US", { dateStyle: "long" }).format(new Date(business.term_ends_at))}</strong><span>Smart Tap no suspende el negocio de forma automática al vencer.</span></p>
+          : <p class="muted">El plazo inicial se fija al activar el negocio por primera vez.</p>}
+        <form action={`/api/admin/business/${business.id}/term-extension`} method="post">
+          <div class="field"><label for="termEndsAt">Nueva fecha de vencimiento</label><input id="termEndsAt" name="termEndsAt" type="date" value={currentTermDate} min={minimumExtensionDate} required /></div>
+          <label class="toggle"><input name="annexSigned" type="checkbox" required /> Anexo de Extensión firmado</label>
+          <button class="button secondary" type="submit">Registrar extensión</button>
         </form>
       </section>
 
@@ -136,6 +163,8 @@ const formError = Astro.url.searchParams.get("error");
   fieldset { display: grid; gap: 13px; margin: 0; padding: 16px; border: 1px solid #eaecf0; border-radius: 11px; } legend { padding: 0 7px; font-weight: 750; color: #344054; }
   input[type="color"] { padding: 5px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
   .compact-note { margin: -8px 0 0; } .review-link { display: grid; gap: 8px; margin: -4px 0 20px; padding: 14px; border: 1px solid #eaecf0; border-radius: 11px; overflow-wrap: anywhere; }
+  .metric-line { display: flex; justify-content: space-between; gap: 16px; padding: 12px 14px; border-radius: 11px; background: #f2f4f7; }
+  .metric-line span { font-size: 1.2rem; font-weight: 800; }
   .approval-state { display: grid; gap: 5px; margin: 0 0 18px; } .approval-state span { color: #667085; }
   .danger-zone { border-color: #fda29b; } .danger-zone > form { margin-bottom: 18px; }
   .button.danger { background: #b42318; }

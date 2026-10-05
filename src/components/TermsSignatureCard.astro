@@ -1,0 +1,47 @@
+---
+type Props = {
+  businessName: string;
+  businessId: string;
+  next: string;
+  error?: boolean;
+  termsVersion: string;
+};
+
+const { businessName, businessId, next, error = false, termsVersion } = Astro.props;
+---
+
+<section class="signature-card card" aria-labelledby="signature-title">
+  <p class="eyebrow">Firma del dueño</p>
+  <h1 id="signature-title">Firma los Términos de servicio</h1>
+  <p class="lead">Registra la firma electrónica de la persona autorizada para <strong>{businessName}</strong>.</p>
+  <p class="version">Versión {termsVersion}</p>
+  {error && <div class="alert" role="alert">Revisa el nombre, el cargo y la confirmación de firma.</div>}
+  <form action="/api/terms/sign" method="post">
+    <input type="hidden" name="businessId" value={businessId} />
+    <input type="hidden" name="next" value={next} />
+    <div class="field">
+      <label for="legalName">Nombre legal completo</label>
+      <input id="legalName" name="legalName" autocomplete="name" minlength="2" maxlength="120" required />
+    </div>
+    <div class="field">
+      <label for="title">Cargo</label>
+      <input id="title" name="title" autocomplete="organization-title" minlength="2" maxlength="120" required placeholder="Dueño" />
+    </div>
+    <label class="signature-confirmation">
+      <input type="checkbox" name="signed" required />
+      <span>Firmo estos Términos de servicio</span>
+    </label>
+    <button class="button" type="submit">Firmar y continuar</button>
+  </form>
+</section>
+
+<style>
+  .signature-card { width: min(720px, 100%); margin: 0 auto 24px; padding: clamp(22px, 6vw, 42px); }
+  h1 { font-size: clamp(2rem, 7vw, 3rem); margin: 10px 0 16px; }
+  .lead { color: #475467; line-height: 1.6; }
+  .version { color: #667085; font-size: .88rem; }
+  form { display: grid; gap: 18px; margin-top: 24px; }
+  .signature-confirmation { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid #d0d5dd; border-radius: 12px; color: #344054; font-weight: 700; }
+  .signature-confirmation input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: #155eef; }
+  .button { width: 100%; }
+</style>

@@ -5,8 +5,9 @@ import { describe, expect, it } from "vitest";
 const migrationsDir = fileURLToPath(new URL("../supabase/migrations/", import.meta.url));
 const sql = readdirSync(migrationsDir).filter((file) => file.endsWith(".sql")).sort()
   .map((file) => readFileSync(`${migrationsDir}${file}`, "utf8").replace(/\r\n/g, "\n")).join("\n").toLowerCase();
-const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances"];
+const exposedTables = ["profiles", "businesses", "business_members", "nfc_tags", "customers", "consent_records", "visits", "audit_log", "follow_ups", "terms_acceptances", "terms_signatures"];
 const privacyMigration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261004190428_privacy_notice.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
+const termsV2Migration = readFileSync(fileURLToPath(new URL("../supabase/migrations/20261005001012_terms_v2.sql", import.meta.url)), "utf8").replace(/\r\n/g, "\n").toLowerCase();
 
 describe("database security migration", () => {
   it.each(exposedTables)("enables RLS on %s", (table) => {
@@ -42,7 +43,7 @@ describe("database security migration", () => {
     for (const signature of [
       "upsert_business_member_with_limit\\(uuid, uuid, public\\.business_role\\)",
       "set_business_member_active_with_limit\\(uuid, uuid, boolean\\)",
-      "record_business_owner_approval\\(uuid, text, uuid\\)",
+      "record_business_owner_approval\\(uuid, text, uuid, text\\)",
     ]) {
       expect(sql).toMatch(new RegExp(`revoke all on function public\\.${signature}[\\s\\S]+?from public, anon, authenticated`));
       expect(sql).toMatch(new RegExp(`grant execute on function public\\.${signature}[\\s\\S]+?to service_role`));
@@ -90,5 +91,26 @@ describe("database security migration", () => {
     expect(privacyMigration).toContain("and cancelled_at is null");
     expect(privacyMigration).toContain("contact_phone is not null or contact_email is not null");
     expect(privacyMigration).toContain("or (v_business.contact_phone is null and v_business.contact_email is null)");
+  });
+
+  it("keeps owner signatures private and requires the current version for activation", () => {
+    expect(termsV2Migration).toContain("create table public.terms_signatures");
+    expect(termsV2Migration).toContain("alter table public.terms_signatures enable row level security");
+    expect(termsV2Migration).toMatch(/create policy terms_signatures_select_own[\s\S]+user_id = \(select auth\.uid\(\)\)/);
+    expect(termsV2Migration).toMatch(/revoke all on table public\.terms_signatures from public, anon, authenticated/);
+    expect(termsV2Migration).toMatch(/revoke all on function public\.record_terms_signature\(uuid, uuid, text, text, text, text, text\)[\s\S]+from public, anon, authenticated/);
+    expect(termsV2Migration).toContain("m.role = 'owner'");
+    expect(termsV2Migration).toContain("s.terms_version = '2026-10-04-v2'");
+    expect(termsV2Migration).toContain("new.term_ends_at := now() + interval '3 months'");
+    expect(termsV2Migration).toContain("extension_annex_signature_required");
+    expect(termsV2Migration).toMatch(/revoke all on function public\.record_term_extension\(uuid, timestamptz, uuid, boolean\)[\s\S]+from public, anon, authenticated/);
+  });
+
+  it("flags visits without a tag code, rejects unknown or inactive tags and never suspends on term expiry", () => {
+    expect(termsV2Migration).toContain("add column untagged boolean not null default false");
+    expect(termsV2Migration).toContain("message = 'tag_not_found'");
+    expect(termsV2Migration).toContain("v_untagged := false");
+    expect(termsV2Migration).toContain("insert into public.visits (business_id, customer_id, tag_id, source, untagged)");
+    expect(termsV2Migration).not.toMatch(/term_ends_at[\s\S]{0,200}set\s+is_active\s*=\s*false/);
   });
 });
