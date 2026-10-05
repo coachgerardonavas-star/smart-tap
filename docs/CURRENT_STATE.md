@@ -7,9 +7,11 @@ Canonical short status for agents. Updated 2026-10-05 after production cutover a
 - App: `https://smarttap.yourbizupgraded.com`
 - Hosting: Render (Virginia) behind Cloudflare.
 - Production database: Supabase Pro project `fzrzrbzxjdezwylzkbkh` in organization `Smart Tap Produccion`, region us-west-2.
+- The Supabase connector can access that production project directly by ID; `list_projects` does not enumerate it because it belongs to a different organization.
+- Production organization `Smart Tap Produccion` is confirmed on the Pro tier.
 - Test database: `vrouyhxzxrfkuuqfslrc`; it is not the app production database.
 - `main` after PR #11: `836ea3b`.
-- Production has all 14 repository migrations applied and the production security advisor was recorded with no findings in `docs/VERIFICATION.md`.
+- Production has all 14 repository migrations applied; a fresh production security-advisor check on 2026-10-05 returned zero lints.
 - Café Luna is a synthetic demo tenant. Do not treat demo records as real customer evidence.
 
 ## Product state
@@ -18,7 +20,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 
 ## Glasswing gate
 
-- GS-25 backups: daily backups are enabled on Supabase Pro, but a restore has not yet been tested. This is the remaining gate before formal approval for real customer data.
+- GS-25 backups: daily backups are enabled on Supabase Pro, but a restore has not yet been tested. This remains the formal gate before approval for real customer data. The current Supabase connector can read/manage the production project but exposes no backup-list or backup-restore operation, so the restore test cannot be executed through this connector.
 - GS-49 security alerts: implementation is in progress on the existing Builder branch `codex/security-hardening`; deployment and Telegram smoke are still required.
 - GS-24 monitoring exists; deliberate end-to-end alert test remains to be recorded.
 - First GS-55 monthly access review: 2026-11-01.
