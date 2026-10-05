@@ -1,12 +1,15 @@
 ---
 import Base from "../layouts/Base.astro";
 import { getAuthIdentity } from "../lib/auth";
+import TurnstileWidget from "../components/TurnstileWidget.astro";
+import { turnstileSiteKey } from "../lib/turnstile";
 
 const identity = await getAuthIdentity(Astro.request, Astro.cookies).catch(() => null);
-if (identity?.isPlatformAdmin) return Astro.redirect(identity.aal === "aal2" ? "/admin" : "/admin/mfa");
+if (identity?.isPlatformAdmin) return Astro.redirect(identity.aal === "aal2" ? "/admin" : "/mfa?next=/admin");
 if (identity) return Astro.redirect("/dashboard");
 const error = Astro.url.searchParams.get("error");
 const next = Astro.url.searchParams.get("next") || "/dashboard";
+const captchaSiteKey = turnstileSiteKey();
 ---
 
 <Base title="Ingresar | Smart Tap" privateArea={false}>
@@ -32,6 +35,7 @@ const next = Astro.url.searchParams.get("next") || "/dashboard";
           <label for="password">Contraseña</label>
           <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required />
         </div>
+        {captchaSiteKey && <TurnstileWidget siteKey={captchaSiteKey} />}
         <button class="button" type="submit">Ingresar</button>
         <a class="forgot" href="/forgot-password">Olvidé mi contraseña</a>
       </form>

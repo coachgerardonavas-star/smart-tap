@@ -1,6 +1,6 @@
 # Smart Tap — Glasswing Shield v1.0 control matrix
 
-Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-049/D-050/D-051 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc`; P = existing Render service. Terms v2 has not been deployed or applied to Supabase.
+Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code (Reviewer), updated by ChatGPT Codex with D-052 local evidence. Environments: L = local tests; H = hosted Supabase `vrouyhxzxrfkuuqfslrc`; P = existing Render service. The security-hardening migration has not been deployed or applied to Supabase.
 
 **Gate result: NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25 backups and GS-29 separate production project. GS-03 admin MFA closed in the hosted smoke test. The demonstration MVP is usable with fictitious data.
 
@@ -11,9 +11,9 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 | Customer PII of all tenants | Outsider with a stolen admin password | /admin, service-role queries | Full cross-tenant disclosure | GS-03 TOTP and server-enforced aal2 for platform_admin | L tests + H enrollment/challenge |
 | Customer PII of tenant B | Member of tenant A | Dashboard/API with B's slug or ids | Cross-tenant disclosure | Server resolves tenant from memberships; RLS | L + H cross-tenant tests |
 | Visit counts / future rewards | Customer with a copied NFC URL | Scripted check-ins | Inflated loyalty | D-017 one visit per day; 3/phone, 40/IP per 10 min | L + H |
-| Customer identity | Anyone knowing a phone | Check-in with that phone | Name overwrite, visit count seen | Accepted residual (D-003) | — |
+| Customer identity | Anyone knowing a phone | Check-in with that phone | Name or birthday overwrite; visit history disclosure | Existing identity fields are preserved; response is identical and omits history | L PGlite + route tests |
 | WhatsApp consent and phone | Viewer or member of another tenant | Follow-up form or guessed customer id | Message without permission or cross-tenant disclosure | Separate opt-in; server loads scoped customer; owner/manager/AAL2 guard; no phone/message form fields | L route/RLS tests + H owner/viewer smoke |
-| Service availability | Bot | Large or many requests | Resource exhaustion | GS-33 byte-counted body limit; rate limits | L |
+| Service availability | Bot | Large or many requests | Resource exhaustion | GS-33 byte-counted body limit; database rate limits; Turnstile on public forms | L |
 | Admin session | Phishing site | Open redirect after login | Credential theft | safeNextPath | L |
 | Business terms | Member of tenant A or a modified browser form | Accept for tenant B or bypass the current version | Unauthorized dashboard use or false legal record | Server-set version, membership check, per-tenant RLS and dashboard gate | L PGlite + route tests |
 | Secrets | Build artifact leak | dist/ | Full database access | Runtime env (D-013) | L canary build |
@@ -24,16 +24,16 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 |---|---|---|---|---|
 | GS-01 Org isolation | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Memberships resolve tenant; delete filters tenant+customer; H: 0 cross-tenant rows | — |
 | GS-02 Strict RLS | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) + L D-045 | Hosted follow_ups RLS and composite tenant FK passed Reviewer checks; local terms acceptance RLS hides foreign rows and denies authenticated writes | Decide FORCE RLS (low) |
-| GS-03 Robust auth | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | TOTP enrolled and challenged live; signed `aal2` required for all platform-admin data paths; local regressions cover AAL1 denial | — |
+| GS-03 Robust auth | Yes | VERIFICADO (H admin + L owner) | TOTP enrolled and challenged live for admin; signed `aal2` required for platform admins and active business owners on customer-data paths | Hosted owner enrollment after migration/deploy |
 | GS-04 Server authorization | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) + L D-045 | Hosted owner completed contact, dismiss and opt-out; local tests deny viewer/AAL1 admin and require current terms on every dashboard data route | Hosted D-045 smoke |
-| GS-05 Least privilege | Yes | VERIFICADO (H) | authenticated select-only; check-in only service_role; old function revoked | Drop old function |
+| GS-05 Least privilege | Yes | VERIFICADO (H + L D-052) | Check-in and auth-limit RPCs are service-only; auth counter table denies direct service-role writes; private trigger functions deny app roles | Reviewer applies migration |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
 | GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts; theme enum, 80-char tagline, exactly three 40-char benefits and HTTPS hero URL have app and DB checks | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
-| GS-10 Anti-abuse | Yes | VERIFICADO (H) for check-in; IMPLEMENTADO NO VERIFICADO for login/recovery | DB counters (multi-instance safe); login/recovery rely on Supabase Auth limits | Confirm Auth rate limits in dashboard |
+| GS-10 Anti-abuse | Yes | VERIFICADO (H check-in + L auth) | Multi-instance PostgreSQL counters enforce login and recovery limits by keyed IP/email hashes; Turnstile runs before database access | Hosted smoke after deploy |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
-| GS-12 Headers/transport | Yes | PENDIENTE — MEDIUM | CSP, nosniff, Referrer, Permissions present; CSP keeps 'unsafe-inline'; HSTS needs HTTPS host | Remove inline handlers or hash them; HSTS at deploy |
+| GS-12 Headers/transport | Yes | VERIFICADO LOCALMENTE | HSTS max-age one year; CSP, nosniff, Referrer and Permissions present; Turnstile adds only its script/frame origin. Built Astro hydration still needs `script-src 'unsafe-inline'` (D-054) | Move to Astro CSP hashes with full hydration regression gate |
 | GS-13 Framing | Yes | VERIFICADO LOCALMENTE | frame-ancestors 'none' + X-Frame-Options DENY | — |
 | GS-14 Webhooks | No | NO APLICA JUSTIFICADO | No webhooks | — |
 | GS-15 Replay | Yes | VERIFICADO (H) plus local callback tests | Repeat check-in same day did not count; invite and recovery tokens are single-use; token_hash is consumed only by an explicit POST (D-022) | Paste repository email templates into Supabase |
@@ -53,7 +53,7 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 | GS-29 Separate environments | Yes | BLOQUEADO — HIGH | One project used for tests; free plan allows two active projects | CEO: separate staging/production before real data |
 | GS-30 Production control | Yes | PENDIENTE | PR flow defined (D-018) | Branch protection; deploy identity at hosting decision |
 | GS-31 Emergency stop | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) | Paused NFC rejected check-in; reactivation restored it. Paused viewer immediately lost tenant data | — |
-| GS-32 Proxies/IP | Yes | VERIFICADO LOCALMENTE | Spoofed XFF ignored (tests) | Set TRUSTED_IP_HEADER at deploy |
+| GS-32 Proxies/IP | Yes | VERIFICADO LOCALMENTE | Spoofed XFF is ignored; `TRUSTED_IP_HEADER=cf-connecting-ip` returns the Cloudflare visitor IP | Set the variable when Cloudflare proxy is enabled |
 | GS-33 Request limits | Yes | VERIFICADO LOCALMENTE | Byte-counted 12 KB limit on check-in; customer list 250, birthdays 1000 | Admin form posts rely on platform limits (low) |
 | GS-34 Content integrity | Yes | VERIFICADO LOCALMENTE | Electronic signature binds user, business and immutable server-set version with timestamp, keyed IP hash and user agent; duplicates do not overwrite original evidence | Hosted signature smoke |
 | GS-35 Immutable versions | Partial | VERIFICADO LOCALMENTE | Visit and WhatsApp consent use append-only rows; the server fixes privacy version `2026-10-04` and terms version `2026-10-04-v2`; each new terms version requires a new signature or acceptance | — |
@@ -63,13 +63,13 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 | GS-39 Deny on doubt | Yes | VERIFICADO LOCALMENTE | Missing claims → 401; no membership → 403; missing current terms → dashboard redirect or API 403 | — |
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
-| GS-42 Account attacks | Yes | IMPLEMENTADO NO VERIFICADO EN VIVO | Generic responses; prefetch-safe callback verifies token_hash only after the user presses Continuar (D-022) | Paste repository templates; verify hosted flow; confirm Auth limits |
+| GS-42 Account attacks | Yes | VERIFICADO LOCALMENTE | Generic responses; prefetch-safe callback; Turnstile before database/Auth; own IP/email limits for login and recovery | Hosted flow after deploy |
 | GS-43 Sessions | Yes | PENDIENTE | Supabase defaults; logout local scope | Document timeouts; global sign-out for admins |
-| GS-44 Recent auth | Yes | VERIFICADO (H) for platform admin; OPEN for business manager delete | Every platform-admin path, including cancellation and CSV export, requires AAL2; owner/manager customer deletion still uses AAL1 | Decide step-up for owner deletions |
+| GS-44 Recent auth | Yes | VERIFICADO (H admin + L owner) | Every platform-admin path and active owner customer-data path requires AAL2; managers/viewers remain optional by D-052 | Hosted owner smoke |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
 | GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
-| GS-48 Edge protection | Yes | PENDIENTE | Decide at hosting (Cloudflare) | — |
+| GS-48 Edge protection | Yes | IMPLEMENTADO LOCALMENTE | Turnstile widget and server verification cover check-in, login and recovery; missing variables use the documented safe fallback | Configure keys and enable Cloudflare proxy after merge/deploy |
 | GS-49 Security alerts | Yes | PENDIENTE | None | After deploy |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Customer and signer names, phone, birthday, title and consent are confidential PII; keyed IP hash is pseudonymous security evidence; follow-up and term status are internal data | Add handling rules to production privacy notice |
 | GS-51 Retention/deletion | Yes | IMPLEMENTADO Y PROBADO LOCALMENTE | Private daily function deletes at 24 months without a visit and 90 days after cancellation; 31-day cancellation data remains; cascades and count-only audits passed in PGlite | Reviewer applies migration and repeats hosted smoke |
@@ -77,7 +77,7 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 | GS-53 Domains/infra accounts | Yes | PENDIENTE | Supabase dashboard MFA requested of CEO | At deploy |
 | GS-54 Incident response | Yes | PENDIENTE | — | Short runbook |
 | GS-55 Access review | Yes | IMPLEMENTADO Y PROBADO (H) | Member pause removed viewer access immediately | Assign monthly review owner |
-| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | 131/131 permanent tests; Terms v2 covers exact copy, owner/tenant/RLS, evidence, approval/activation, term extension and every tag state; two 390×844 captures reviewed | Hosted Terms v2 after Reviewer migration |
+| GS-56 Regression tests | Yes | VERIFICADO LOCALMENTE + smoke H | Final gate: 144/144 permanent tests, zero diagnostics and complete build; D-052 covers data preservation, opt-out, minimal response, Turnstile, auth limits, owner MFA, grants, HSTS and Cloudflare IP | Final CI and hosted D-052 smoke |
 | GS-57 Threat model | Yes | VERIFICADO (H) | Stolen-password path is constrained by hosted TOTP/AAL2; tenant and emergency-stop paths passed live | — |
 | GS-58 Inventory | Yes | VERIFICADO | Lockfile; PR run 37174554236 produced the CycloneDX SBOM artifact | — |
 | GS-59 Malware | No | NO APLICA JUSTIFICADO | No uploads | — |
@@ -144,3 +144,11 @@ Revision: branch `codex/terms-v2`, 2026-10-04. Prepared by Claude Code (Reviewer
 - GS-18 / GS-22 / GS-34 / GS-35: signature, acceptance and version-only audit are atomic and idempotent; the server fixes `2026-10-04-v2` and keeps the original evidence.
 - GS-38 / GS-47: a database trigger gates new activation on current owner signature/approval and sets the initial three-month term. The audited extension function only accepts a later future date.
 - GS-56: directed local gate passed 131/131 with zero diagnostics. PGlite covered untagged visits for blank, unknown, inactive and valid tags. Both 390×844 captures were visually checked. Migration remains unapplied.
+
+## Update 2026-10-04 (Builder, D-052 security hardening)
+
+- GS-03 / GS-44: active business owners now require signed AAL2 on customer-data routes; the shared `/mfa` supports every authenticated role.
+- GS-05 / GS-10 / GS-42: service-only PostgreSQL limits use keyed IP/email hashes; their private table rejects direct service-role writes; Turnstile runs before database/Auth work.
+- GS-12: HSTS is set to one year. CSP adds only the Cloudflare challenge script/frame origin. D-054 records why the Astro hydration bootstrap keeps the inline-script allowance.
+- GS-32 / GS-48: the Cloudflare visitor-IP header and all three Turnstile form paths have local regression coverage.
+- GS-56: final clean gate passed 144/144 tests with zero diagnostics and a complete build; the new migration remains unapplied for Reviewer inspection.

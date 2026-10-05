@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("astro:env/server", () => ({ getSecret: () => undefined }));
 vi.mock("astro:middleware", () => ({ defineMiddleware: (handler: unknown) => handler }));
 
-const { AuthorizationError, assertBusinessAccess, enforcePlatformAdminMfa } = await import("../src/lib/auth");
+const { AuthorizationError, assertBusinessAccess, enforceBusinessOwnerMfa, enforcePlatformAdminMfa } = await import("../src/lib/auth");
 const { onRequest } = await import("../src/middleware");
 
 const admin = (aal: "aal1" | "aal2") => ({
@@ -53,6 +53,14 @@ describe("platform admin MFA policy", () => {
 });
 
 describe("platform admin MFA on customer-data routes", () => {
+  it("requires aal2 for owners while managers and viewers remain optional", () => {
+    const member = { ...admin("aal1"), isPlatformAdmin: false };
+    expect(() => enforceBusinessOwnerMfa(member, "owner")).toThrow(expect.objectContaining({ reason: "mfa_required" }));
+    expect(enforceBusinessOwnerMfa(member, "manager")).toEqual(member);
+    expect(enforceBusinessOwnerMfa(member, "viewer")).toEqual(member);
+    expect(enforceBusinessOwnerMfa({ ...member, aal: "aal2" }, "owner")).toMatchObject({ aal: "aal2" });
+  });
+
   it("denies an aal1 platform_admin tenant access before any query", async () => {
     await expect(assertBusinessAccess(admin("aal1"), "22222222-2222-4222-8222-222222222222", false)).rejects.toMatchObject({ status: 403, reason: "mfa_required" });
   });
@@ -87,8 +95,17 @@ describe("MFA-required responses", () => {
     if (!(response instanceof Response)) throw new Error("Expected a redirect response");
     expect(response.status).toBe(302);
     expect(response.headers.get("location")).toBe(
-      "https://smart-tap.test/admin/mfa?next=%2Fadmin%3Fbusiness%3Dreview-live",
+      "https://smart-tap.test/mfa?next=%2Fadmin%3Fbusiness%3Dreview-live",
     );
+  });
+
+  it("sets HSTS and allows only the Turnstile origin added by this change", async () => {
+    const response = await onRequest(middlewareContext("/demo") as never, async () => new Response("ok"));
+    if (!(response instanceof Response)) throw new Error("Expected a response");
+    expect(response.headers.get("strict-transport-security")).toBe("max-age=31536000");
+    const csp = response.headers.get("content-security-policy") ?? "";
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
+    expect(csp).toContain("frame-src https://challenges.cloudflare.com");
   });
 });
 

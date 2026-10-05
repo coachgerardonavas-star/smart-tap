@@ -76,6 +76,7 @@ export const checkInInputSchema = z.object({
   birthday: z.iso.date().optional().or(z.literal("")),
   consent: z.literal(true),
   whatsappOptIn: z.boolean().optional().default(false),
+  turnstileToken: z.string().max(2048).optional().or(z.literal("")),
 }).refine((value) => !value.birthday || value.birthday <= new Date().toISOString().slice(0, 10), {
   message: "El cumpleaños no puede estar en el futuro.",
   path: ["birthday"],

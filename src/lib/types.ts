@@ -43,6 +43,7 @@ export type Customer = {
   consent_at: string;
   whatsapp_opt_in: boolean;
   whatsapp_opt_in_at: string | null;
+  whatsapp_opted_out_at: string | null;
   created_at: string;
   updated_at: string;
   last_seen_at: string;

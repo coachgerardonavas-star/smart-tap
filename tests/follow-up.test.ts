@@ -16,6 +16,7 @@ function customer(overrides: Partial<FollowUpCustomer> = {}): FollowUpCustomer {
     consent_at: "2026-01-01T00:00:00Z",
     whatsapp_opt_in: true,
     whatsapp_opt_in_at: "2026-01-01T00:00:00Z",
+    whatsapp_opted_out_at: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-10-01T00:00:00Z",
     last_seen_at: "2026-10-01T16:00:00Z",

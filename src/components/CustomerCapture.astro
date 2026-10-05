@@ -24,6 +24,7 @@ type Props = {
   logoUrl?: string | null;
   googleReviewUrl?: string | null;
   demo?: boolean;
+  turnstileSiteKey?: string | null;
 };
 
 const props = Astro.props;
@@ -50,3 +51,4 @@ const fontCss: Record<CustomerTheme, string> = {
 
 <style is:global set:html={fontCss[props.theme]}></style>
 <CheckInForm client:load {...props} />
+{props.turnstileSiteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}

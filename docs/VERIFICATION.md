@@ -596,3 +596,24 @@ Applied to `vrouyhxzxrfkuuqfslrc` as `20261005001012_terms_v2` (file renamed; ap
 Hosted smoke inside a rolled-back transaction: approval without an owner signature rejected (`approval_current_owner_signature_required`); signature recorded with audit `{"version": "2026-10-04-v2"}` only; approval then activation passed and set `term_ends_at` ≈ 3 months; extension without a signed annex rejected, with annex accepted; check-in without tag code → `untagged=true`; unknown tag → rejected; registered tag → `untagged=false`; Café Luna stayed active (term backfilled to 2027-01-02). Privileges: signature function not executable by anon/authenticated; old approval function not executable by service_role; authenticated cannot insert signatures. Security advisor: only the known leaked-password WARN.
 
 Verdict: **PR #7 approved by the Reviewer.**
+
+## D-052 security hardening — local Builder evidence, 2026-10-04
+
+Migration under test: `20261005002000_security_hardening.sql`, intentionally not applied.
+
+| Check | Local evidence |
+|---|---|
+| Existing customer protection | PGlite proves a known phone cannot change the saved name or birthday; a null birthday may be filled once |
+| Durable WhatsApp BAJA | PGlite proves opt-out sets `whatsapp_opted_out_at`, later checked opt-in stays false, and a negative blocked-request consent is appended |
+| Minimal public response | Route regression proves HTTP 201 returns only `ok` plus visible business name; React has no visit count or repeat status |
+| Turnstile | Unit tests cover safe missing-env fallback, one warning, missing-token rejection, Cloudflare request fields and success; source tests place verification before database access on all three routes |
+| Login/recovery limits | PGlite reaches exact email/IP thresholds and rejects the next attempt; source tests retain generic login and recovery responses |
+| Owner MFA | Unit tests require `aal2` for owner and allow current optional manager/viewer behavior; middleware redirects to generalized `/mfa` |
+| Grants and headers | PGlite denies direct service-role inserts to auth counters and denies trigger-function execution to app roles; middleware test proves exact HSTS and Turnstile CSP entries |
+| Cloudflare visitor IP | Unit test sets `TRUSTED_IP_HEADER=cf-connecting-ip` and receives `CF-Connecting-IP` instead of socket address |
+| Tag behavior | Existing PGlite regression remains: blank code is untagged; unknown/inactive code is rejected; active tag is accepted |
+| Database/deploy | No migration apply, `db push`, hosted mutation or deploy was run |
+
+The CSP hash option was evaluated against the built Astro output. Hydrated React pages emit inline bootstrap code. D-054 keeps the current inline script allowance until Astro CSP hashes receive a full browser regression gate.
+
+Final clean gate: `npm ci` added 334 packages with 0 vulnerabilities; `npm run audit:prod` reported 0 vulnerabilities; `npm run verify` passed 0 diagnostics, 15 files and 144/144 tests, plus the complete standalone Node build.

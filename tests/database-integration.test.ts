@@ -292,6 +292,95 @@ describe("WhatsApp consent and opt-out", () => {
   });
 });
 
+describe("security hardening migration", () => {
+  it("preserves existing identity fields and blocks WhatsApp re-enrollment after opt-out", async () => {
+    const actor = "40000000-0000-4000-8000-000000000054";
+    await database.exec(`insert into auth.users (id, email) values ('${actor}', 'security-manager@example.test') on conflict (id) do nothing;`);
+    await database.query(`select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Nombre Original', '+13055555001',
+      '1990-01-02', '2026-10-04', true, repeat('a', 64), repeat('b', 64), 'security-test'
+    )`);
+    await database.query(`select public.record_whatsapp_opt_out(
+      '10000000-0000-4000-8000-000000000001',
+      (select id from public.customers where phone_e164 = '+13055555001'),
+      '${actor}', 'security-test'
+    )`);
+    await database.query(`select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Nombre Alterado', '+13055555001',
+      '1981-09-09', '2026-10-04', true, repeat('c', 64), repeat('b', 64), 'security-test'
+    )`);
+    const protectedCustomer = await database.query<{
+      full_name: string; birthday: string; whatsapp_opt_in: boolean; opted_out: boolean; blocked_requests: number;
+    }>(`
+      select full_name, birthday::text, whatsapp_opt_in, whatsapp_opted_out_at is not null as opted_out,
+        (select count(*)::int from public.consent_records r where r.customer_id = c.id
+          and r.purpose = 'whatsapp' and not r.consented and r.text_version = 'whatsapp-blocked-2026-10-04') as blocked_requests
+      from public.customers c where phone_e164 = '+13055555001'
+    `);
+    expect(protectedCustomer.rows[0]).toEqual({
+      full_name: "Nombre Original",
+      birthday: "1990-01-02",
+      whatsapp_opt_in: false,
+      opted_out: true,
+      blocked_requests: 1,
+    });
+  });
+
+  it("fills a missing birthday once without changing the existing name", async () => {
+    await database.query(`select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Nombre Estable', '+13055555002',
+      null, '2026-10-04', false, repeat('d', 64), repeat('e', 64), 'security-test'
+    )`);
+    await database.query(`select public.record_public_check_in(
+      'cafe-luna', 'demo-cafe-luna-main-2026', 'Intento Cambio', '+13055555002',
+      '1995-03-04', '2026-10-04', false, repeat('f', 64), repeat('e', 64), 'security-test'
+    )`);
+    const customer = await database.query<{ full_name: string; birthday: string }>(
+      "select full_name, birthday::text from public.customers where phone_e164 = '+13055555002'",
+    );
+    expect(customer.rows[0]).toEqual({ full_name: "Nombre Estable", birthday: "1995-03-04" });
+  });
+
+  it("enforces independent login and password-reset limits", async () => {
+    const invoke = (action: string, ip: string, email: string) => database.query(
+      `select public.enforce_auth_rate_limit('${action}', '${ip}', '${email}')`,
+    );
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await invoke("login", `${attempt}`.padStart(64, "1"), "a".repeat(64));
+    }
+    await expect(invoke("login", "9".repeat(64), "a".repeat(64))).rejects.toThrow(/rate_limit_exceeded/);
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await invoke("forgot_password", `${attempt}`.padStart(64, "2"), "b".repeat(64));
+    }
+    await expect(invoke("forgot_password", "8".repeat(64), "b".repeat(64))).rejects.toThrow(/rate_limit_exceeded/);
+
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      await invoke("login", "c".repeat(64), `${attempt}`.padStart(64, "d"));
+    }
+    await expect(invoke("login", "c".repeat(64), "f".repeat(64))).rejects.toThrow(/rate_limit_exceeded/);
+  });
+
+  it("keeps rate-limit storage private and revokes trigger functions", async () => {
+    const privileges = await database.query<{
+      service_insert: boolean; anon_rate: boolean; auth_rate: boolean; anon_profile: boolean; auth_touch: boolean;
+    }>(`
+      select
+        has_table_privilege('service_role', 'private.auth_rate_limits', 'insert') as service_insert,
+        has_function_privilege('anon', 'public.enforce_auth_rate_limit(text,text,text)', 'execute') as anon_rate,
+        has_function_privilege('authenticated', 'public.enforce_auth_rate_limit(text,text,text)', 'execute') as auth_rate,
+        has_function_privilege('anon', 'private.create_profile_for_auth_user()', 'execute') as anon_profile,
+        has_function_privilege('authenticated', 'private.touch_updated_at()', 'execute') as auth_touch
+    `);
+    expect(privileges.rows[0]).toEqual({
+      service_insert: false,
+      anon_rate: false,
+      auth_rate: false,
+      anon_profile: false,
+      auth_touch: false,
+    });
+  });
+});
+
 describe("onboarding configuration", () => {
   it("keeps at most two active members, including parallel invitations, and frees paused slots", async () => {
     const businessA = "10000000-0000-4000-8000-0000000000a1";
