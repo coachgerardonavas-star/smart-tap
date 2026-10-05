@@ -5,6 +5,7 @@ import { isCustomerTheme, resolveCustomerBenefits } from "../../lib/customer-the
 import { businessPrivacyUrl } from "../../lib/privacy";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
+import { turnstileSiteKey } from "../../lib/turnstile";
 
 const slug = Astro.params.slug ?? "";
 const tagCode = Astro.url.searchParams.get("t") ?? "";
@@ -36,6 +37,7 @@ const theme = business && isCustomerTheme(business.theme) ? business.theme : "ca
       heroImageUrl={business.hero_image_url}
       logoUrl={business.logo_url}
       googleReviewUrl={business.google_review_url}
+      turnstileSiteKey={turnstileSiteKey()}
     />
   ) : (
     <section class="not-found"><h1>Este enlace no está disponible</h1><p>Confirma que usaste el NFC o enlace correcto.</p></section>

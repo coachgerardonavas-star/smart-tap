@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("astro:env/server", () => ({ getSecret: () => undefined }));
+const secrets = vi.hoisted(() => new Map<string, string>());
+vi.mock("astro:env/server", () => ({ getSecret: (name: string) => secrets.get(name) }));
 const { BodyTooLargeError, readJsonLimited, requestIp } = await import("../src/lib/security");
 
 const request = (headers: Record<string, string>) => new Request("https://example.test/api/public/check-in", { headers });
@@ -13,6 +14,12 @@ describe("client IP for rate limiting", () => {
   it("uses the proxy-appended entry of the trusted header", () => {
     expect(requestIp(request({ "x-forwarded-for": "6.6.6.6, 203.0.113.9" }), "10.0.0.5", "x-forwarded-for")).toBe("203.0.113.9");
     expect(requestIp(request({ "cf-connecting-ip": "198.51.100.7" }), "10.0.0.5", "CF-Connecting-IP")).toBe("198.51.100.7");
+  });
+
+  it("uses cf-connecting-ip when TRUSTED_IP_HEADER configures it", () => {
+    secrets.set("TRUSTED_IP_HEADER", "cf-connecting-ip");
+    expect(requestIp(request({ "cf-connecting-ip": "198.51.100.44" }), "10.0.0.5")).toBe("198.51.100.44");
+    secrets.delete("TRUSTED_IP_HEADER");
   });
 
   it("falls back to the socket address when the trusted header is missing", () => {

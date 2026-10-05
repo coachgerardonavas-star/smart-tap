@@ -3,6 +3,7 @@ import { createSupabaseServiceClient } from "../../../lib/supabase";
 import { BodyTooLargeError, hashIdentifier, readJsonLimited, requestIp } from "../../../lib/security";
 import { PRIVACY_NOTICE_VERSION } from "../../../lib/privacy";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
+import { verifyTurnstile } from "../../../lib/turnstile";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -22,6 +23,11 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
   if (raw.website) return json(400, { error: "No pudimos registrar la visita." });
 
+  const ip = requestIp(request, clientAddress);
+  if (!await verifyTurnstile(raw.turnstileToken, ip)) {
+    return json(400, { error: "No pudimos procesar la solicitud." });
+  }
+
   const parsed = checkInInputSchema.safeParse(raw);
   if (!parsed.success) {
     const consentIssue = parsed.error.issues.some((issue) => issue.path[0] === "consent");
@@ -33,7 +39,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const service = createSupabaseServiceClient();
     const { data: business } = await service
       .from("businesses")
-      .select("default_country")
+      .select("default_country, display_name")
       .eq("slug", parsed.data.slug)
       .eq("is_active", true)
       .is("cancelled_at", null)
@@ -43,7 +49,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const phone = normalizePhone(parsed.data.phone, business.default_country);
     if (!phone) return json(400, { error: "Ingresa un número de teléfono válido." });
 
-    const { data, error } = await service.rpc("record_public_check_in", {
+    const { error } = await service.rpc("record_public_check_in", {
       p_slug: parsed.data.slug,
       p_tag_code: parsed.data.tagCode || null,
       p_full_name: parsed.data.fullName,
@@ -51,7 +57,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       p_birthday: parsed.data.birthday || null,
       p_consent_version: PRIVACY_NOTICE_VERSION,
       p_whatsapp_opt_in: parsed.data.whatsappOptIn,
-      p_ip_hash: hashIdentifier(`ip:${requestIp(request, clientAddress)}`),
+      p_ip_hash: hashIdentifier(`ip:${ip}`),
       p_phone_hash: hashIdentifier(`phone:${phone}`),
       p_user_agent: request.headers.get("user-agent") || "unknown",
     });
@@ -64,7 +70,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });
     }
 
-    return json(201, { data });
+    return json(201, { ok: true, businessName: business.display_name });
   } catch (error) {
     console.error("check-in failed", error instanceof Error ? error.message : "unknown");
     return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });

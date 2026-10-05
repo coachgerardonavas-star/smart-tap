@@ -16,13 +16,14 @@ type Props = {
   logoUrl?: string | null;
   googleReviewUrl?: string | null;
   demo?: boolean;
+  turnstileSiteKey?: string | null;
 };
 
-type SuccessData = { customerName: string; businessName: string; visitCount: number; alreadyCounted?: boolean };
+type SuccessData = { ok: true; businessName: string };
 
 export default function CheckInForm({
   slug, tagCode = "", businessName, primaryColor, privacyUrl, theme, tagline,
-  benefits, heroImageUrl, logoUrl, googleReviewUrl, demo = false,
+  benefits, heroImageUrl, logoUrl, googleReviewUrl, demo = false, turnstileSiteKey = null,
 }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -40,10 +41,10 @@ export default function CheckInForm({
       slug, tagCode, fullName: form.get("fullName"), phone: form.get("phone"),
       birthday: form.get("birthday"), consent: form.get("consent") === "on",
       whatsappOptIn: form.get("whatsappOptIn") === "on", website: form.get("website"),
+      turnstileToken: form.get("cf-turnstile-response"),
     };
     if (demo) {
-      const name = String(form.get("fullName") || "Cliente demo").trim();
-      setSuccess({ customerName: name || "Cliente demo", businessName, visitCount: 4 });
+      setSuccess({ ok: true, businessName });
       setPending(false);
       return;
     }
@@ -54,9 +55,10 @@ export default function CheckInForm({
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "No pudimos registrar la visita.");
-      setSuccess(body.data);
+      setSuccess(body);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No pudimos registrar la visita.");
+      (window as Window & { turnstile?: { reset: () => void } }).turnstile?.reset();
     } finally {
       setPending(false);
     }
@@ -131,6 +133,7 @@ export default function CheckInForm({
             <input name="whatsappOptIn" type="checkbox" />
             <span>Recibe ofertas y sorpresas de cumpleaños de {businessName} por WhatsApp. Puedes pedir que paren cuando quieras.</span>
           </label>
+          {turnstileSiteKey && <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />}
           {error && <div className="form-alert" role="alert">{error}</div>}
           <button type="submit" disabled={pending}>{pending ? "Registrando…" : copy.submitLabel}</button>
           <p className="privacy-note">Puedes pedir al negocio que consulte, corrija o elimine tus datos.</p>

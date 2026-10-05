@@ -7,7 +7,9 @@ export type ServerEnvName =
   | "PUBLIC_SITE_URL"
   | "CHECK_IN_HASH_SECRET"
   | "ADMIN_BOOTSTRAP_EMAIL"
-  | "TRUSTED_IP_HEADER";
+  | "TRUSTED_IP_HEADER"
+  | "TURNSTILE_SITE_KEY"
+  | "TURNSTILE_SECRET_KEY";
 
 // Read at request time. `import.meta.env` is inlined by Vite at build time:
 // it bakes secrets into dist/ and ignores the host's runtime variables.

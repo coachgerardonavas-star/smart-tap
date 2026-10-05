@@ -59,11 +59,15 @@ PUBLIC_SITE_URL=https://smarttap.yourbizupgraded.com
 CHECK_IN_HASH_SECRET=
 ADMIN_BOOTSTRAP_EMAIL=
 TRUSTED_IP_HEADER=
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
 ```
 
 The server reads these values at runtime. Set them in the host's environment; a rebuild is not required after changing them, and the build output contains none of them.
 
 Set `TRUSTED_IP_HEADER` only to a header your proxy overwrites: `cf-connecting-ip` behind Cloudflare, `x-forwarded-for` behind a single reverse proxy. With no proxy, leave it empty. A wrong value lets a client choose its own rate-limit identity.
+
+Set both Turnstile variables to require Cloudflare's challenge on check-in, login and password recovery. If either value is empty, Smart Tap logs one warning per process and continues without Turnstile so a partial configuration cannot interrupt service.
 
 Create the bootstrap email in Supabase Auth and confirm it. On its first authenticated request with a confirmed email, the server sets its `profiles.platform_role` to `platform_admin`.
 

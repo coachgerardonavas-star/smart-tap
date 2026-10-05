@@ -1,0 +1,7 @@
+---
+type Props = { siteKey: string };
+const { siteKey } = Astro.props;
+---
+
+<div class="cf-turnstile" data-sitekey={siteKey}></div>
+<script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing Terms v2 on `codex/terms-v2` without deployment or database push.
+Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing D-052 on `codex/security-hardening` without deployment or database push.
 
 ## Project identity
 
@@ -14,21 +14,21 @@ Updated: 2026-10-04 by ChatGPT Codex (Builder), after implementing Terms v2 on `
 
 | Branch | State |
 |---|---|
-| `main` | Includes merged PRs #4, #5 and #6 at `2945fab`; Render deploy evidence is recorded. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
+| `main` | At `b6268ef`; includes merged PR #7 and the Reviewer's current tag-rejection fix. All later changes still require a pull request because technical branch protection remains deferred under D-043. |
 | `claude/mfa-review` | Reviewer source integrated through `eeea77d`; contains MFA fixes, ops reconciliation and the approved Follow-up Queue specification. |
 | `claude/pr1-review` | Reviewer pass integrated through `a2dc700`; adds the prefetch-safe callback and closes D-023 with http-cache-semantics 4.3.0. |
 | `codex/live-smoke-mfa` | Merged through PR #1. Historical source for the hosted Follow-up Queue smoke and reviewed MVP. |
 | `codex/onboarding-config` | Merged through PR #3 at `a9ebc37`. |
 | `codex/privacy-notice` | Historical source for merged PR #4. D-044 and D-045 are on `main`. |
 | `codex/customer-styles` | Merged through PR #6; Reviewer applied migration `20261004212542_customer_styles.sql`. |
-| `codex/terms-v2` | **Current Builder branch.** Starts at Reviewer branch `origin/claude/nfc-evidence` commit `df7a275`, which is ahead of merged PR #6. Adds D-049/D-050/D-051 Terms v2. Migration `20261005001012_terms_v2.sql` remains unapplied for Reviewer inspection. |
+| `codex/terms-v2` | Historical source merged through PR #7. |
+| `codex/security-hardening` | **Current Builder branch.** Starts at `main` commit `b6268ef`. Implements D-052. Migration `20261005014006_security_hardening.sql` remains unapplied for Reviewer inspection. |
 | `ops/reconcile-live-2026-10-03` | Merged into `claude/mfa-review`. Its docs and live migration names are kept. Can be deleted after PR #1 merges. |
 | `claude/review-hardening` | Superseded; already contained in the branches above. |
 
 ## Live Supabase (`vrouyhxzxrfkuuqfslrc`, us-east-1, free plan)
 
-Migration history matches `supabase/migrations/` file names exactly:
-`20261002005131_initial_schema`, `20261002014439_review_hardening_rate_limit_helper`, `20261002014453_review_hardening_check_in_v2`, `20261002072441_one_visit_per_day`, `20261004010900_admin_rls_requires_aal2`, `20261004021305_revoke_legacy_check_in`, `20261004035554_follow_up_queue`, `20261004130503_onboarding_config`, `20261004190428_privacy_notice`, `20261004190717_terms_acceptances_write_via_function_only`, `20261004212542_customer_styles`. The new `20261005001012_terms_v2` migration is local only.
+Migration history includes all repository files through `20261005001114_terms_signatures_write_via_function_only`. The new `20261005014006_security_hardening.sql` migration is local only and was not applied by Codex.
 
 Data on 2026-10-04: Café Luna demo only (3 customers, 7 visits); one Auth user `automateit@yourbizupgraded.com`, confirmed, `platform_admin`, one MFA factor enrolled; no business members.
 
@@ -42,7 +42,20 @@ Glasswing Shield gate: **NOT APPROVED FOR REAL CUSTOMER DATA.** Open HIGH: GS-25
 
 Estimated completion: 98% of the demonstration MVP and 84% of production readiness.
 
-Current local gate on `codex/terms-v2`: `npm ci` installed 334 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 131/131 tests and a complete standalone Node build. GitHub CI is recorded after the branch push.
+Current local gate on `codex/security-hardening`: clean `npm ci` installed 334 packages and found 0 vulnerabilities; strict `npm run audit:prod` found 0 vulnerabilities; `npm run verify` passed with 0 diagnostics, 144/144 tests and a complete standalone Node build. GitHub CI is recorded after the branch push.
+
+## D-052 security hardening — Builder, 2026-10-04
+
+- `record_public_check_in` preserves an existing name and birthday, except that it may fill a birthday that was null. Unknown or inactive NFC codes still fail; only a missing code is untagged.
+- `whatsapp_opted_out_at` records a durable BAJA. A later public opt-in request stays disabled and creates a negative `whatsapp-blocked-2026-10-04` consent record.
+- The public API returns only `ok` and the already visible business name. The React confirmation has no visit count, repeat status or customer name.
+- Turnstile covers NFC capture, login and recovery. The server verifies it before any database work. Missing or incomplete variables skip the check with one safe process warning.
+- PostgreSQL rate limits login by IP/email at 10/5 per 15 minutes and recovery at 10/3 per hour. Identifiers are keyed hashes; direct writes to the private table are revoked from `service_role`.
+- Active owners and platform admins require TOTP `aal2` for customer-data routes. `/mfa` handles enrollment/challenge for any signed-in user; `/admin/mfa` redirects to it. Managers and viewers remain optional.
+- Middleware adds HSTS and the exact Turnstile script/frame CSP origins. `script-src 'unsafe-inline'` remains under D-054 because the built Astro hydration bootstrap is inline.
+- `requestIp` has a regression test for `TRUSTED_IP_HEADER=cf-connecting-ip`.
+- New migration: `20261005014006_security_hardening.sql`. It is intentionally unapplied. Codex ran no `db push`, hosted database change or deploy.
+- PR #8: `https://github.com/coachgerardonavas-star/smart-tap/pull/8`. Initial GitHub Actions run `37248148286` passed `verify`, Gitleaks, strict audit, build and SBOM generation for implementation commit `d044c77`.
 
 ## Customer privacy notice — Builder implementation, 2026-10-04
 

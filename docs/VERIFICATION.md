@@ -596,3 +596,34 @@ Applied to `vrouyhxzxrfkuuqfslrc` as `20261005001012_terms_v2` (file renamed; ap
 Hosted smoke inside a rolled-back transaction: approval without an owner signature rejected (`approval_current_owner_signature_required`); signature recorded with audit `{"version": "2026-10-04-v2"}` only; approval then activation passed and set `term_ends_at` ≈ 3 months; extension without a signed annex rejected, with annex accepted; check-in without tag code → `untagged=true`; unknown tag → rejected; registered tag → `untagged=false`; Café Luna stayed active (term backfilled to 2027-01-02). Privileges: signature function not executable by anon/authenticated; old approval function not executable by service_role; authenticated cannot insert signatures. Security advisor: only the known leaked-password WARN.
 
 Verdict: **PR #7 approved by the Reviewer.**
+
+## D-052 security hardening — local Builder evidence, 2026-10-04
+
+Migration under test: `20261005014006_security_hardening.sql`, intentionally not applied.
+
+| Check | Local evidence |
+|---|---|
+| Existing customer protection | PGlite proves a known phone cannot change the saved name or birthday; a null birthday may be filled once |
+| Durable WhatsApp BAJA | PGlite proves opt-out sets `whatsapp_opted_out_at`, later checked opt-in stays false, and a negative blocked-request consent is appended |
+| Minimal public response | Route regression proves HTTP 201 returns only `ok` plus visible business name; React has no visit count or repeat status |
+| Turnstile | Unit tests cover safe missing-env fallback, one warning, missing-token rejection, Cloudflare request fields and success; source tests place verification before database access on all three routes |
+| Login/recovery limits | PGlite reaches exact email/IP thresholds and rejects the next attempt; source tests retain generic login and recovery responses |
+| Owner MFA | Unit tests require `aal2` for owner and allow current optional manager/viewer behavior; middleware redirects to generalized `/mfa` |
+| Grants and headers | PGlite denies direct service-role inserts to auth counters and denies trigger-function execution to app roles; middleware test proves exact HSTS and Turnstile CSP entries |
+| Cloudflare visitor IP | Unit test sets `TRUSTED_IP_HEADER=cf-connecting-ip` and receives `CF-Connecting-IP` instead of socket address |
+| Tag behavior | Existing PGlite regression remains: blank code is untagged; unknown/inactive code is rejected; active tag is accepted |
+| Database/deploy | No migration apply, `db push`, hosted mutation or deploy was run |
+
+The CSP hash option was evaluated against the built Astro output. Hydrated React pages emit inline bootstrap code. D-054 keeps the current inline script allowance until Astro CSP hashes receive a full browser regression gate.
+
+Final clean gate: `npm ci` added 334 packages with 0 vulnerabilities; `npm run audit:prod` reported 0 vulnerabilities; `npm run verify` passed 0 diagnostics, 15 files and 144/144 tests, plus the complete standalone Node build.
+
+PR #8 initial GitHub Actions run `37248148286` passed in 28 seconds for implementation commit `d044c77`: Gitleaks, `npm ci`, strict production audit, full verify, CycloneDX SBOM and artifact upload all passed. The workflow emitted informational runner/action deprecation notices and no failing annotation.
+
+## Reviewer pass — PR #8 security hardening (Claude Code, 2026-10-05)
+
+Diff reviewed at `74404ef`. Fix made by the Reviewer: the migration added `whatsapp_opted_out_at` but did not backfill customers who had already sent BAJA, so they could be re-subscribed from the public form. Added a backfill from the latest negative WhatsApp consent. Gate: 15 files, 144/144 tests, 0 Astro errors, `audit:prod` 0 vulnerabilities.
+
+Applied to `vrouyhxzxrfkuuqfslrc` as `20261005014006_security_hardening` (file renamed; applied text md5 equals the file). Hosted smoke inside a rolled-back transaction: a second check-in with the same phone kept the original name and birthday; after an opt-out, a check-in with the box checked kept `whatsapp_opt_in=false` and stored a `whatsapp-blocked-2026-10-04` negative consent; the 6th login attempt for one email within 15 minutes and the 4th forgot-password request for one email within an hour were blocked; `enforce_auth_rate_limit` not executable by anon; `service_role` cannot write `private.auth_rate_limits`; `private.create_profile_for_auth_user` not executable by anon. No earlier opt-outs existed to backfill in the test project.
+
+Verdict: **PR #8 approved by the Reviewer.** After merge: Turnstile keys in Render, Cloudflare proxy with `TRUSTED_IP_HEADER=cf-connecting-ip`, and the `onrender.com` subdomain disabled.

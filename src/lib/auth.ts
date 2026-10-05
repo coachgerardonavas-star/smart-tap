@@ -82,15 +82,31 @@ export function enforcePlatformAdminMfa(identity: AuthIdentity): AuthIdentity {
   return identity;
 }
 
+export function enforceBusinessOwnerMfa(identity: AuthIdentity, role: string): AuthIdentity {
+  if (role === "owner" && identity.aal !== "aal2") throw new AuthorizationError(403, "mfa_required");
+  return identity;
+}
+
 export async function requirePlatformAdmin(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
   return enforcePlatformAdminMfa(await requirePlatformAdminRole(request, cookies));
 }
 
-// Customer-data routes. A platform admin reaches every tenant through this path, so
-// the same aal2 requirement as /admin applies; members are unaffected.
+// Customer-data routes require aal2 for platform admins and active owners. Managers
+// and viewers may use MFA but it remains optional for them.
 export async function requireDataAccess(request: Request, cookies: AstroCookies): Promise<AuthIdentity> {
   const identity = await requireAuth(request, cookies);
   if (identity.isPlatformAdmin) enforcePlatformAdminMfa(identity);
+  else if (identity.aal !== "aal2") {
+    const { data } = await createSupabaseServiceClient()
+      .from("business_members")
+      .select("role")
+      .eq("user_id", identity.id)
+      .eq("role", "owner")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+    if (data) enforceBusinessOwnerMfa(identity, data.role);
+  }
   return identity;
 }
 
@@ -110,5 +126,6 @@ export async function assertBusinessAccess(identity: AuthIdentity, businessId: s
   if (!allowViewer) query = query.in("role", ["owner", "manager"]);
   const { data } = await query.maybeSingle();
   if (!data) throw new AuthorizationError(403);
+  enforceBusinessOwnerMfa(identity, data.role);
   return data;
 }
