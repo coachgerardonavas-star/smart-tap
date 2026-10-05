@@ -41,15 +41,22 @@ Session fixation: sessions are created only by Supabase Auth after credential ve
 
 ## GS-49 Security alerts
 
-These events must reach Telegram separately from availability alerts:
+Security events must reach Telegram separately from availability alerts.
 
 | Event | Source | State |
 |---|---|---|
-| Spike of rejected logins or recovery requests (auth rate limit hit) | `auth_rate_limits` counters / Render logs | PENDING — needs a scheduled check |
-| Check-in rate limit hit repeatedly from one IP hash | check-in function | PENDING |
-| Cloudflare rate-limiting rule blocks | Cloudflare Security Events | PENDING — review weekly until automated |
-| New platform admin or role change | `audit_log` | PENDING |
-| Business activated, paused or cancelled | `audit_log` (`business.*`) | PENDING |
+| Rejected login or recovery because the application rate limit was hit | `security.auth_rate_limit` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
+| Repeated check-in rate limit hit | `security.check_in_rate_limit` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
+| Cloudflare rate-limiting rule blocks | Cloudflare Security Events | PENDING — review weekly until native/API alerting is configured |
+| New platform admin via the bootstrap path | `platform_admin.promoted` in `audit_log` | IMPLEMENTED LOCALLY — deployment/Telegram smoke pending |
+| Business activated, paused or cancelled | existing `audit_log` business/member events | IMPLEMENTED LOCALLY — runner consumes these events; deployment pending |
 | Secret detected in a commit | Gitleaks in the `verify` workflow | IMPLEMENTED — the build fails; GitHub notifies the CEO by email |
 
-Planned implementation (Builder task, separate PR): a scheduled check that reads counters and `audit_log` since the last run and posts a summary to the internal Telegram chat only when a threshold is crossed. It must use a service credential held by the runtime, never by an agent. Until it exists, the monthly access review also checks `audit_log` for these events.
+Implementation:
+- `src/lib/security-alert-audit.ts` writes deduplicated application security events to `audit_log`; raw IPs, email addresses and phone numbers are not stored in these alert rows.
+- `scripts/security-alerts.mjs` reads only security-relevant audit events from a short lookback window, aggregates by action and posts counts to Telegram. It does not send customer PII.
+- `npm run security:alerts` runs one check. The intended schedule is every 15 minutes, with a 20-minute lookback so one missed run does not create a monitoring gap.
+- Runtime secrets are `PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`; they belong in the runtime secret store and must never be committed or pasted into agent chat.
+- The runtime must use the production Supabase project. Deployment is not considered verified until a controlled security event produces the expected Telegram alert.
+
+Until the scheduled runner is deployed and smoke-tested, the monthly access review also checks `audit_log`, and Cloudflare Security Events are reviewed manually at least weekly.
