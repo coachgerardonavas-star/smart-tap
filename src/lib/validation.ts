@@ -1,7 +1,8 @@
 import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
 import { isAtLeastMinimumAge } from "./privacy";
-import { customerThemes } from "./customer-theme";
+import { customerThemes, isPaletteColor } from "./customer-theme";
+import { businessTypes, stockPhotoLibrary, stockPhotoPattern } from "./business-presets";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
@@ -40,16 +41,35 @@ const optionalBenefitItemSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
   z.union([z.literal(""), z.string().min(1).max(40)]),
 );
-const optionalHttpsUrlSchema = z.preprocess(
+function isPlainHttpsUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+// D-057: the hero photo is an HTTPS URL or one of the bundled stock photos.
+export const heroImageUrlSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
-  z.union([z.literal(""), z.url().max(500).refine((value) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
-    } catch {
-      return false;
-    }
-  }, "La URL debe usar HTTPS.")]),
+  z.union([z.literal(""), z.string().max(500).refine((value) => {
+    if (value.startsWith("/")) return stockPhotoPattern.test(value) && stockPhotoLibrary.includes(value);
+    return z.url().safeParse(value).success && isPlainHttpsUrl(value);
+  }, "La foto debe ser de la biblioteca o una URL HTTPS.")]),
+).transform((value) => value || null);
+// The admin picks a hero photo with radios: a library path, "custom" (uses
+// the HTTPS field) or "none". Without that choice the plain field is used.
+export function heroImageFromForm(form: Record<string, unknown>): unknown {
+  const choice = form.heroSource;
+  if (typeof choice !== "string" || !choice) return form.heroImageUrl;
+  if (choice === "none") return "";
+  if (choice === "custom") return form.heroImageCustom;
+  return choice;
+}
+export const instagramUrlPattern = /^https:\/\/www\.instagram\.com\/[A-Za-z0-9._]{1,30}$/;
+export const instagramUrlSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim().replace(/\/$/, "") : "",
+  z.union([z.literal(""), z.string().max(60).regex(instagramUrlPattern, "Usa https://www.instagram.com/usuario")]),
 ).transform((value) => value || null);
 const googleReviewHosts = new Set(["g.page", "search.google.com", "www.google.com", "maps.app.goo.gl"]);
 export const googleReviewUrlSchema = z.preprocess(
@@ -119,14 +139,20 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
   benefit1: optionalBenefitItemSchema,
   benefit2: optionalBenefitItemSchema,
   benefit3: optionalBenefitItemSchema,
-  heroImageUrl: optionalHttpsUrlSchema,
+  heroImageUrl: heroImageUrlSchema,
+  businessType: z.preprocess((value) => typeof value === "string" && value ? value : "otro", z.enum(businessTypes)),
+  instagramUrl: instagramUrlSchema,
 }).superRefine((value, context) => {
+  if (!isPaletteColor(value.theme, value.primaryColor)) {
+    context.addIssue({ code: "custom", path: ["primaryColor"], message: "Elige uno de los cuatro colores del estilo." });
+  }
   const benefits = [value.benefit1, value.benefit2, value.benefit3];
   if (benefits.some(Boolean) && !benefits.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["benefit1"], message: "Completa los tres beneficios o deja los tres vacíos." });
   }
 }).transform(({ benefit1, benefit2, benefit3, ...value }) => ({
   ...value,
+  primaryColor: value.primaryColor.toUpperCase(),
   benefits: benefit1 && benefit2 && benefit3 ? [benefit1, benefit2, benefit3] : null,
 }));
 

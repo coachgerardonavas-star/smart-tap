@@ -11,7 +11,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | Customer PII of all tenants | Outsider with a stolen admin password | /admin, service-role queries | Full cross-tenant disclosure | GS-03 TOTP and server-enforced aal2 for platform_admin | L tests + H enrollment/challenge |
 | Customer PII of tenant B | Member of tenant A | Dashboard/API with B's slug or ids | Cross-tenant disclosure | Server resolves tenant from memberships; RLS | L + H cross-tenant tests |
 | Visit counts / future rewards | Customer with a copied NFC URL | Scripted check-ins | Inflated loyalty | D-017 one visit per day; 3/phone, 40/IP per 10 min | L + H |
-| Customer identity | Anyone knowing a phone | Check-in with that phone | Name or birthday overwrite; visit history disclosure | Existing identity fields are preserved; response is identical and omits history | L PGlite + route tests |
+| Customer identity | Anyone knowing a phone | Check-in with that phone | Name or birthday overwrite; visit history disclosure | Existing identity fields are preserved; D-057 returns `visitCount` only when the submitted name matches the stored name. Residual (MEDIUM, pending CEO/Reviewer acceptance): phone + name reveals the count; a missing counter reveals that the phone is registered | L PGlite + route + unit tests |
 | WhatsApp consent and phone | Viewer or member of another tenant | Follow-up form or guessed customer id | Message without permission or cross-tenant disclosure | Separate opt-in; server loads scoped customer; owner/manager/AAL2 guard; no phone/message form fields | L route/RLS tests + H owner/viewer smoke |
 | Service availability | Bot | Large or many requests | Resource exhaustion | GS-33 byte-counted body limit; database rate limits; Turnstile on public forms | L |
 | Admin session | Phishing site | Open redirect after login | Credential theft | safeNextPath | L |
@@ -29,7 +29,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-05 Least privilege | Yes | VERIFICADO (H + L D-052) | Check-in and auth-limit RPCs are service-only; auth counter table denies direct service-role writes; private trigger functions deny app roles | Reviewer applies migration |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
-| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts; theme enum, 80-char tagline, exactly three 40-char benefits and HTTPS hero URL have app and DB checks | — |
+| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts; theme enum, 80-char tagline, exactly three 40-char benefits and HTTPS hero URL have app and DB checks; D-057 adds business type enum, canonical Instagram profile URL, library-only `/stock/` hero paths and accent within the style palette (app) | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
 | GS-10 Anti-abuse | Yes | VERIFICADO (H check-in + L auth) | Multi-instance PostgreSQL counters enforce login and recovery limits by keyed IP/email hashes; Turnstile runs before database access | Hosted smoke after deploy |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
@@ -68,7 +68,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-44 Recent auth | Yes | VERIFICADO (H admin + L owner) | Every platform-admin path and active owner customer-data path requires AAL2; managers/viewers remain optional by D-052 | Hosted owner smoke |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
-| GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
+| GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, invalid D-057 business type, Instagram URL and stock hero paths, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
 | GS-48 Edge protection | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | Turnstile live on check-in, login and recovery (CEO phone test: login and a check-in succeeded after the PR #10 fix); Cloudflare rate-limiting rule `smart-tap-auth-checkin` (POST, 20 per 10 s per IP) | — |
 | GS-49 Security alerts | Yes | IMPLEMENTADO NO VERIFICADO | Cursor after successful Telegram delivery, explicit event allowlist, count-only 3,500-character messages, 1,000-row cap and behavior tests (D-056) | Create the Render Cron Job from the Blueprint, paste secrets and run the production Telegram smoke |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Customer and signer names, phone, birthday, title and consent are confidential PII; keyed IP hash is pseudonymous security evidence; follow-up and term status are internal data | Add handling rules to production privacy notice |
@@ -166,3 +166,12 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 - GS-48 / GS-56: PR #10 fixed Turnstile in the check-in island (implicit widget removed by React hydration). A regression test now asserts explicit rendering.
 - GS-28 / GS-30: GitHub ruleset verified on PR #9.
 - GS-25: backups exist through Supabase Pro; the restore test is the only open item before real customer data.
+
+## Update 2026-10-06 (Builder, D-057 customer styles v2)
+
+- GS-08: Zod validates `businessType` against the eight values, `instagramUrl` against `https://www.instagram.com/<usuario>` (30 chars of `[A-Za-z0-9._]`, no query, no credentials, no subdomain tricks), hero photos as HTTPS or one of the 24 bundled `/stock/` files, and the accent as one of the style's four colors. Unit tests cover valid and invalid values.
+- GS-47: migration `20261006020000_customer_styles_v2.sql` adds CHECKs for `business_type` and `instagram_url` and widens the hero CHECK only to `^/stock/[a-z_]+/[a-z0-9-]+\.webp$`. PGlite accepted every valid value and rejected each invalid case. Not applied by the Builder. Composite FKs remain pending.
+- GS-12: no new external host. Fonts are local `@fontsource` files; stock photos are same-origin; the CSP is unchanged.
+- GS-22: `business_type` and `instagram_url` join the `business.updated` audit as column names only.
+- Threat model, customer identity: the visit counter reopens part of D-052 finding 2. Mitigation: name match before returning `visitCount`; `alreadyCounted` and the stored name are never returned. Residual risk recorded as MEDIUM pending acceptance.
+- GS-26: added `@fontsource/great-vibes`, `@fontsource-variable/fraunces` and `@fontsource-variable/caveat`; removed the unused Bricolage Grotesque and DM Sans packages.

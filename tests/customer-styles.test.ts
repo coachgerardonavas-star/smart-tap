@@ -21,7 +21,7 @@ const adminPage = readFileSync(join(root, "src/pages/admin/[id].astro"), "utf8")
 
 const validUpdate = {
   displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "", privacyUrl: "/privacy",
-  contactPhone: "", contactEmail: "", primaryColor: "#155EEF", secondaryColor: "#0B1220",
+  contactPhone: "", contactEmail: "", primaryColor: "#C8412A", secondaryColor: "#0B1220",
   timezone: "America/New_York", defaultCountry: "US", inactivityDays: "45",
   offerInactive: "", offerBirthday: "", offerFrequent: "", offerNew: "", googleReviewUrl: "",
   theme: "calido", tagline: "Café de barrio", benefit1: "Ofertas para clientes",
@@ -59,6 +59,10 @@ describe("customer-facing brand styles", () => {
     expect(businessUpdateSchema.safeParse({ ...validUpdate, benefit2: "" }).success).toBe(false);
     expect(businessUpdateSchema.safeParse({ ...validUpdate, benefit1: "x".repeat(41) }).success).toBe(false);
     expect(businessUpdateSchema.safeParse({ ...validUpdate, heroImageUrl: "http://example.com/hero.jpg" }).success).toBe(false);
+    expect(businessUpdateSchema.safeParse({ ...validUpdate, heroImageUrl: "/stock/cafe/cafe-1.webp" }).success).toBe(true);
+    expect(businessUpdateSchema.safeParse({ ...validUpdate, heroImageUrl: "/stock/cafe/cafe-9.webp" }).success).toBe(false);
+    expect(businessUpdateSchema.safeParse({ ...validUpdate, heroImageUrl: "/stock/../secret.webp" }).success).toBe(false);
+    expect(businessUpdateSchema.safeParse({ ...validUpdate, heroImageUrl: "/uploads/x.webp" }).success).toBe(false);
   });
 
   it("renders the approved legal copy and leaves WhatsApp unchecked", () => {
@@ -73,27 +77,36 @@ describe("customer-facing brand styles", () => {
     expect(formSource).toContain("<h2>Tu visita quedó registrada</h2>");
     expect(formSource).toContain("Gracias por venir. La próxima vez solo toca la tarjeta otra vez.");
     expect(formSource).toContain("{googleReviewUrl && (");
+    expect(formSource).toContain("{instagramUrl && (");
   });
 
-  it("uses explicit hero dimensions, inline SVG icons and accessible native controls", () => {
+  it("uses explicit hero dimensions, high fetch priority, inline SVG icons and accessible native controls", () => {
     expect(formSource).toMatch(/className="hero-image"[^>]*width="1200" height="800"/);
+    expect(formSource).toMatch(/className="hero-image"[^>]*fetchPriority="high"/);
     expect(formSource).toContain("<svg");
     expect(formSource).toContain("<label htmlFor=\"fullName\">");
     expect(formSource).toContain("<input id=\"fullName\"");
     expect(formSource).toContain("<button type=\"submit\"");
   });
 
-  it("self-hosts only the selected theme's two font families", () => {
+  it("self-hosts only the selected theme's fonts, including the script face", () => {
     expect(fonts).toContain("fontCss[props.theme]");
     expect(fonts).toContain("font-display:swap");
     expect(fonts).not.toContain("fonts.googleapis.com");
-    for (const family of ["Cormorant Garamond Local", "Jost Local", "Bricolage Grotesque Local", "DM Sans Local", "Archivo Local", "IBM Plex Sans Local", "Baloo 2 Local", "Nunito Local"]) expect(fonts).toContain(family);
+    expect(fonts).not.toContain("fonts.gstatic.com");
+    for (const family of ["Cormorant Garamond Local", "Jost Local", "Great Vibes Local", "Fraunces Local", "Nunito Local", "Caveat Local", "Archivo Local", "IBM Plex Sans Local", "Baloo 2 Local"]) expect(fonts).toContain(family);
   });
 
-  it("keeps the mobile hero below 360 pixels and touch targets at least 44 pixels", () => {
-    expect(styles).toMatch(/\.brand-hero \{ min-height: 0; max-height: 280px;/);
+  it("keeps touch targets at least 44 pixels and respects reduced motion", () => {
     expect(styles).toContain("min-height: 56px");
     expect(styles).toContain("min-height: 44px");
+    expect(styles).toContain("@media (prefers-reduced-motion: no-preference)");
+    expect(styles).toContain(":focus-visible");
+    const motionStart = styles.indexOf("@media (prefers-reduced-motion: no-preference) {");
+    const motionBlock = styles.slice(motionStart, styles.indexOf("\n}", motionStart));
+    const animations = styles.match(/animation:/g) ?? [];
+    expect(animations.length).toBeGreaterThan(0);
+    expect(motionBlock.match(/animation:/g)?.length).toBe(animations.length);
   });
 
   it("shares one capture component across the live and selectable demo routes", () => {
@@ -103,6 +116,6 @@ describe("customer-facing brand styles", () => {
   });
 
   it("exposes every new business field in the admin form", () => {
-    for (const name of ["theme", "tagline", "heroImageUrl", "benefit1", "benefit2", "benefit3"]) expect(adminPage).toContain(`name="${name}"`);
+    for (const name of ["businessType", "theme", "primaryColor", "tagline", "heroSource", "heroImageCustom", "benefit1", "benefit2", "benefit3", "instagramUrl"]) expect(adminPage).toContain(`name="${name}"`);
   });
 });

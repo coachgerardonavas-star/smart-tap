@@ -2,19 +2,22 @@
 import cormorantNormal from "@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-normal.woff2?url";
 import cormorantItalic from "@fontsource-variable/cormorant-garamond/files/cormorant-garamond-latin-wght-italic.woff2?url";
 import jost from "@fontsource-variable/jost/files/jost-latin-wght-normal.woff2?url";
-import bricolage from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
-import dmSans from "@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url";
+import greatVibes from "@fontsource/great-vibes/files/great-vibes-latin-400-normal.woff2?url";
+import fraunces from "@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2?url";
+import caveat from "@fontsource-variable/caveat/files/caveat-latin-wght-normal.woff2?url";
 import archivo from "@fontsource-variable/archivo/files/archivo-latin-wght-normal.woff2?url";
 import ibmPlexSans from "@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2?url";
 import baloo from "@fontsource-variable/baloo-2/files/baloo-2-latin-wght-normal.woff2?url";
 import nunito from "@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url";
 import CheckInForm from "./CheckInForm";
 import type { CustomerTheme } from "../lib/customer-theme";
+import type { BusinessType } from "../lib/business-presets";
 
 type Props = {
   slug: string;
   tagCode?: string;
   businessName: string;
+  businessType: BusinessType;
   primaryColor: string;
   privacyUrl: string;
   theme: CustomerTheme;
@@ -23,7 +26,9 @@ type Props = {
   heroImageUrl?: string | null;
   logoUrl?: string | null;
   googleReviewUrl?: string | null;
+  instagramUrl?: string | null;
   demo?: boolean;
+  demoVisitCount?: number;
   turnstileSiteKey?: string | null;
 };
 
@@ -33,10 +38,12 @@ const fontCss: Record<CustomerTheme, string> = {
     @font-face{font-family:'Cormorant Garamond Local';src:url('${cormorantNormal}') format('woff2');font-style:normal;font-weight:300 700;font-display:swap}
     @font-face{font-family:'Cormorant Garamond Local';src:url('${cormorantItalic}') format('woff2');font-style:italic;font-weight:300 700;font-display:swap}
     @font-face{font-family:'Jost Local';src:url('${jost}') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+    @font-face{font-family:'Great Vibes Local';src:url('${greatVibes}') format('woff2');font-style:normal;font-weight:400;font-display:swap}
   `,
   calido: `
-    @font-face{font-family:'Bricolage Grotesque Local';src:url('${bricolage}') format('woff2');font-style:normal;font-weight:200 800;font-display:swap}
-    @font-face{font-family:'DM Sans Local';src:url('${dmSans}') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+    @font-face{font-family:'Fraunces Local';src:url('${fraunces}') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
+    @font-face{font-family:'Nunito Local';src:url('${nunito}') format('woff2');font-style:normal;font-weight:200 1000;font-display:swap}
+    @font-face{font-family:'Caveat Local';src:url('${caveat}') format('woff2');font-style:normal;font-weight:400 700;font-display:swap}
   `,
   moderno: `
     @font-face{font-family:'Archivo Local';src:url('${archivo}') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}

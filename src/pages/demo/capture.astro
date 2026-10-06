@@ -1,34 +1,54 @@
 ---
 import Base from "../../layouts/Base.astro";
 import CustomerCapture from "../../components/CustomerCapture.astro";
-import { customerThemes, defaultCustomerBenefits, isCustomerTheme } from "../../lib/customer-theme";
+import { customerThemePalettes, customerThemes, isCustomerTheme } from "../../lib/customer-theme";
+import { businessPresets, businessTypes, isBusinessType } from "../../lib/business-presets";
 
+// Sales demo: fictional businesses, nothing is stored (D-048, D-057).
+const requestedType = Astro.url.searchParams.get("type");
+const businessType = isBusinessType(requestedType) ? requestedType : "cafe";
+const preset = businessPresets[businessType];
 const requestedTheme = Astro.url.searchParams.get("theme");
-const theme = isCustomerTheme(requestedTheme) ? requestedTheme : "calido";
-const accents = { elegante: "#C9A45C", calido: "#C8412A", moderno: "#FF6A2B", colorido: "#FF6F9E" } as const;
+const theme = isCustomerTheme(requestedTheme) ? requestedTheme : preset.theme;
+const requestedVisits = Number.parseInt(Astro.url.searchParams.get("visitas") ?? "", 10);
+const demoVisitCount = Number.isInteger(requestedVisits) && requestedVisits >= 1 && requestedVisits <= 999 ? requestedVisits : 3;
+const demoNames = {
+  restaurante: "La Campiña", food_truck: "Sabor Sobre Ruedas", cafe: "Café Luna", panaderia: "Pan de Casa",
+  heladeria: "Coco Loco", barberia: "Norte", salon: "Studio Bella", otro: "Tienda Sol",
+} as const;
 const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
+const accent = customerThemePalettes[theme][0];
 ---
 
-<Base title={`Café Luna | Demo ${labels[theme]}`} themeColor={accents[theme]}>
+<Base title={`${demoNames[businessType]} | Demo ${labels[theme]}`} themeColor={accent}>
   <div class="demo-bar">
     <strong>Demostración</strong>
     <span>Los datos son ficticios y no se guardan.</span>
-    <form method="get"><label for="theme">Estilo</label><select id="theme" name="theme" onchange="this.form.submit()">
-      {customerThemes.map((value) => <option value={value} selected={value === theme}>{labels[value]}</option>)}
-    </select></form>
+    <form method="get">
+      <label for="type">Tipo</label><select id="type" name="type" onchange="this.form.submit()">
+        {businessTypes.map((value) => <option value={value} selected={value === businessType}>{businessPresets[value].label}</option>)}
+      </select>
+      <label for="theme">Estilo</label><select id="theme" name="theme" onchange="this.form.submit()">
+        {customerThemes.map((value) => <option value={value} selected={value === theme}>{labels[value]}</option>)}
+      </select>
+    </form>
     <a href="/demo">Volver</a>
   </div>
   <CustomerCapture
     demo
+    demoVisitCount={demoVisitCount}
     slug="cafe-luna"
     tagCode="demo"
-    businessName="Café Luna"
-    primaryColor={accents[theme]}
+    businessName={demoNames[businessType]}
+    businessType={businessType}
+    primaryColor={accent}
     privacyUrl="/privacy"
     theme={theme}
-    tagline="Café de barrio, momentos que se quedan."
-    benefits={[...defaultCustomerBenefits]}
+    tagline={preset.tagline}
+    benefits={[...preset.benefits]}
+    heroImageUrl={preset.photos[0]}
     googleReviewUrl="https://g.page/r/example/review"
+    instagramUrl="https://www.instagram.com/instagram"
   />
 </Base>
 
@@ -38,5 +58,5 @@ const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", co
   .demo-bar form { display: flex; align-items: center; gap: 7px; margin: 0; }
   .demo-bar select { min-height: 36px; padding: 5px 30px 5px 9px; border: 1px solid #57534e; border-radius: 7px; background: #292524; color: #fff; }
   .demo-bar a { color: #fbbf24; font-weight: 750; }
-  @media (max-width: 620px) { .demo-bar { min-height: 48px; justify-content: space-between; gap: 8px; padding: 6px 10px; } .demo-bar span, .demo-bar form label { display: none; } }
+  @media (max-width: 620px) { .demo-bar { min-height: 48px; justify-content: space-between; gap: 6px; padding: 6px 10px; } .demo-bar span, .demo-bar strong, .demo-bar form label { display: none; } .demo-bar form { min-width: 0; flex: 1; } .demo-bar select { min-width: 0; flex: 1; max-width: 150px; } }
 </style>

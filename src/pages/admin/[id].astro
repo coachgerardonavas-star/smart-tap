@@ -5,6 +5,8 @@ import { siteUrl as configuredSiteUrl } from "../../lib/env";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 import { TERMS_VERSION } from "../../lib/terms";
+import { customerThemePaletteNames, customerThemePalettes, customerThemes, isCustomerTheme, isPaletteColor } from "../../lib/customer-theme";
+import { businessPresets, businessTypes, resolveBusinessType, stockPhotoLibrary } from "../../lib/business-presets";
 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
 const id = Astro.params.id ?? "";
@@ -33,6 +35,14 @@ const untaggedVisits = untaggedResult.count ?? 0;
 const currentTermDate = business.term_ends_at?.slice(0, 10) ?? "";
 const minimumExtensionDate = new Date(Math.max(Date.now(), business.term_ends_at ? new Date(business.term_ends_at).getTime() : 0) + 86_400_000).toISOString().slice(0, 10);
 const siteUrl = configuredSiteUrl();
+const businessType = resolveBusinessType(business.business_type);
+const currentTheme = isCustomerTheme(business.theme) ? business.theme : "calido";
+const themeLabels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
+const currentColor = business.primary_color.toUpperCase();
+const colorOffPalette = !isPaletteColor(currentTheme, currentColor);
+const heroIsStock = Boolean(business.hero_image_url && stockPhotoLibrary.includes(business.hero_image_url));
+const heroCustom = business.hero_image_url && !heroIsStock ? business.hero_image_url : "";
+const presetData = JSON.stringify(Object.fromEntries(businessTypes.map((type) => [type, businessPresets[type]])));
 const message = Astro.url.searchParams.get("message");
 const formError = Astro.url.searchParams.get("error");
 ---
@@ -53,25 +63,53 @@ const formError = Astro.url.searchParams.get("error");
         <div class="split"><div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" value={business.display_name} required /></div><div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" value={business.slug} required /></div></div>
         <div class="field"><label for="legalName">Razón social</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /></div>
         <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
-        <fieldset>
+        <fieldset class="customer-screen-settings">
           <legend>Pantalla del cliente</legend>
-          <div class="field"><label for="theme">Estilo</label><select id="theme" name="theme" required>
-            <option value="elegante" selected={business.theme === "elegante"}>Elegante</option>
-            <option value="calido" selected={business.theme === "calido"}>Cálido</option>
-            <option value="moderno" selected={business.theme === "moderno"}>Moderno</option>
-            <option value="colorido" selected={business.theme === "colorido"}>Colorido</option>
+          <div class="field"><label for="businessType">Tipo de negocio</label><select id="businessType" name="businessType" required>
+            {businessTypes.map((type) => <option value={type} selected={type === businessType}>{businessPresets[type].label}</option>)}
           </select></div>
+          <p class="muted compact-note">Al cambiar el tipo se rellenan el estilo, la frase, los beneficios, los días de inactividad, la foto y el color sugeridos. Puedes editarlos antes de guardar.</p>
+          <div class="field"><label for="theme">Estilo</label><select id="theme" name="theme" required>
+            {customerThemes.map((value) => <option value={value} selected={value === currentTheme}>{themeLabels[value]}</option>)}
+          </select></div>
+          <div class="field">
+            <span class="field-label">Color de acento</span>
+            {colorOffPalette && <p class="muted compact-note">El color actual {currentColor} no está en la paleta del estilo. Elige uno antes de guardar.</p>}
+            {customerThemes.map((value) => (
+              <div class="swatches" data-theme-palette={value} hidden={value !== currentTheme}>
+                {customerThemePalettes[value].map((color) => (
+                  <label class="swatch"><input type="radio" name="primaryColor" value={color} checked={value === currentTheme && color === currentColor} disabled={value !== currentTheme} required /><span class="chip" style={`background:${color}`}></span><span>{customerThemePaletteNames[color]}</span></label>
+                ))}
+              </div>
+            ))}
+          </div>
           <div class="field"><label for="tagline">Frase de marca (opcional)</label><input id="tagline" name="tagline" value={business.tagline ?? ""} maxlength="80" /></div>
-          <div class="field"><label for="heroImageUrl">URL HTTPS de la foto principal (opcional)</label><input id="heroImageUrl" name="heroImageUrl" type="url" value={business.hero_image_url ?? ""} maxlength="500" placeholder="https://..." /></div>
+          <div class="field">
+            <span class="field-label">Foto principal</span>
+            <div class="photo-grid">
+              {businessTypes.map((type) => businessPresets[type].photos.map((photo) => (
+                <label class="photo-option" data-photo-type={type} hidden={type !== businessType}>
+                  <input type="radio" name="heroSource" value={photo} checked={business.hero_image_url === photo} />
+                  <img src={photo} alt={`Foto de biblioteca: ${businessPresets[type].label}`} width="160" height="107" loading="lazy" decoding="async" />
+                </label>
+              )))}
+            </div>
+            <label class="toggle"><input type="radio" name="heroSource" value="custom" checked={Boolean(heroCustom)} /> Usar mi propia foto (URL HTTPS)</label>
+            <input id="heroImageCustom" name="heroImageCustom" type="url" value={heroCustom} maxlength="500" placeholder="https://..." aria-label="URL HTTPS de la foto propia" />
+            <label class="toggle"><input type="radio" name="heroSource" value="none" checked={!business.hero_image_url} /> Sin foto (bloque de color)</label>
+            <p class="muted compact-note">Fotos de Unsplash con licencia libre para uso comercial. Créditos en /stock/ATTRIBUTION.md.</p>
+          </div>
           <p class="muted compact-note">Escribe los tres beneficios o deja los tres vacíos para usar los textos estándar.</p>
           <div class="field"><label for="benefit1">Beneficio 1</label><input id="benefit1" name="benefit1" value={business.benefits?.[0] ?? ""} maxlength="40" placeholder="Ofertas para clientes" /></div>
           <div class="field"><label for="benefit2">Beneficio 2</label><input id="benefit2" name="benefit2" value={business.benefits?.[1] ?? ""} maxlength="40" placeholder="Sorpresas en tu cumpleaños" /></div>
           <div class="field"><label for="benefit3">Beneficio 3</label><input id="benefit3" name="benefit3" value={business.benefits?.[2] ?? ""} maxlength="40" placeholder="Te reconocemos al volver" /></div>
+          <div class="field"><label for="instagramUrl">Instagram (opcional)</label><input id="instagramUrl" name="instagramUrl" type="url" value={business.instagram_url ?? ""} maxlength="60" placeholder="https://www.instagram.com/usuario" pattern="https://www\.instagram\.com/[A-Za-z0-9._]{1,30}/?" /></div>
         </fieldset>
+        <script type="application/json" id="business-presets" set:html={presetData}></script>
         <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /></div>
         <div class="split"><div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" value={business.contact_phone ?? ""} placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div><div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
         <p class="muted compact-note">El aviso usa estos datos. Configura al menos uno antes de registrar la aprobación del dueño.</p>
-        <div class="triple"><div class="field"><label for="primaryColor">Principal</label><input id="primaryColor" name="primaryColor" type="color" value={business.primary_color} /></div><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
+        <div class="split"><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
         <div class="split"><div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value={business.timezone} /></div><div class="field"><label for="defaultCountry">País</label><input id="defaultCountry" name="defaultCountry" value={business.default_country} maxlength="2" /></div></div>
         <fieldset>
           <legend>Ofertas aprobadas por el dueño</legend>
@@ -154,6 +192,41 @@ const formError = Astro.url.searchParams.get("error");
   </div>
 </Base>
 
+<script>
+  type Preset = { theme: string; tagline: string; benefits: string[]; inactivityDays: number; photos: string[] };
+  const presets = JSON.parse(document.getElementById("business-presets")?.textContent || "{}") as Record<string, Preset>;
+  const form = document.querySelector<HTMLFormElement>(".customer-screen-settings")?.closest("form");
+  const typeSelect = document.querySelector<HTMLSelectElement>("#businessType");
+  const themeSelect = document.querySelector<HTMLSelectElement>("#theme");
+  const setValue = (id: string, value: string) => { const input = form?.querySelector<HTMLInputElement>(`#${id}`); if (input) input.value = value; };
+  function showPalette(theme: string, pickFirst: boolean) {
+    form?.querySelectorAll<HTMLElement>("[data-theme-palette]").forEach((group) => {
+      const active = group.dataset.themePalette === theme;
+      group.hidden = !active;
+      group.querySelectorAll<HTMLInputElement>("input").forEach((input, index) => {
+        input.disabled = !active;
+        if (active && pickFirst && index === 0) input.checked = true;
+      });
+    });
+  }
+  function showPhotos(type: string) {
+    form?.querySelectorAll<HTMLElement>("[data-photo-type]").forEach((option) => { option.hidden = option.dataset.photoType !== type; });
+  }
+  themeSelect?.addEventListener("change", () => showPalette(themeSelect.value, true));
+  typeSelect?.addEventListener("change", () => {
+    const preset = presets[typeSelect.value];
+    if (!preset || !themeSelect) return;
+    themeSelect.value = preset.theme;
+    showPalette(preset.theme, true);
+    showPhotos(typeSelect.value);
+    setValue("tagline", preset.tagline);
+    preset.benefits.forEach((benefit, index) => setValue(`benefit${index + 1}`, benefit));
+    setValue("inactivityDays", String(preset.inactivityDays));
+    const photo = form?.querySelector<HTMLInputElement>(`input[name="heroSource"][value="${preset.photos[0]}"]`);
+    if (photo) photo.checked = true;
+  });
+</script>
+
 <style>
   .back { display: inline-block; margin-bottom: 22px; color: #667085; text-decoration: none; font-weight: 650; }
   .page-head { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 24px; } .page-head h1 { font-size: 2.7rem; margin: 7px 0; }
@@ -161,7 +234,18 @@ const formError = Astro.url.searchParams.get("error");
   .side-stack { display: grid; gap: 20px; } .panel { padding: 24px; } .panel h2 { font-size: 1.1rem; margin-bottom: 22px; }
   .panel > form { display: grid; gap: 16px; } .split { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; } .triple { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 13px; }
   fieldset { display: grid; gap: 13px; margin: 0; padding: 16px; border: 1px solid #eaecf0; border-radius: 11px; } legend { padding: 0 7px; font-weight: 750; color: #344054; }
-  input[type="color"] { padding: 5px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
+  input[type="color"] { padding: 5px; }
+  .field-label { font-size: .86rem; font-weight: 700; color: #344054; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; } .swatches[hidden], .photo-option[hidden] { display: none; }
+  .swatch { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 4px 10px 4px 6px; border: 1px solid #d0d5dd; border-radius: 999px; font-size: .85rem; cursor: pointer; }
+  .swatch .chip { width: 24px; height: 24px; border-radius: 999px; border: 1px solid rgba(0,0,0,.25); }
+  .swatch:has(input:checked) { border-color: #101828; box-shadow: 0 0 0 2px #101828 inset; }
+  .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .photo-option { position: relative; display: block; border-radius: 9px; overflow: hidden; border: 2px solid transparent; cursor: pointer; }
+  .photo-option img { display: block; width: 100%; height: 86px; object-fit: cover; }
+  .photo-option input { position: absolute; top: 6px; left: 6px; width: 18px; height: 18px; }
+  .photo-option:has(input:checked) { border-color: #101828; }
+  .photo-option:has(input:focus-visible) { outline: 3px solid #155eef; outline-offset: 2px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
   .compact-note { margin: -8px 0 0; } .review-link { display: grid; gap: 8px; margin: -4px 0 20px; padding: 14px; border: 1px solid #eaecf0; border-radius: 11px; overflow-wrap: anywhere; }
   .metric-line { display: flex; justify-content: space-between; gap: 16px; padding: 12px 14px; border-radius: 11px; background: #f2f4f7; }
   .metric-line span { font-size: 1.2rem; font-weight: 800; }

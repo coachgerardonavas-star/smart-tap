@@ -5,6 +5,7 @@ import { recordSecurityAuditOnce } from "../../../lib/security-alert-audit";
 import { PRIVACY_NOTICE_VERSION } from "../../../lib/privacy";
 import { checkInInputSchema, normalizePhone } from "../../../lib/validation";
 import { verifyTurnstile } from "../../../lib/turnstile";
+import { publicCheckInResponse } from "../../../lib/check-in-result";
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -52,7 +53,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const ipHash = hashIdentifier(`ip:${ip}`);
     const phoneHash = hashIdentifier(`phone:${phone}`);
-    const { error } = await service.rpc("record_public_check_in", {
+    const { data: checkIn, error } = await service.rpc("record_public_check_in", {
       p_slug: parsed.data.slug,
       p_tag_code: parsed.data.tagCode || null,
       p_full_name: parsed.data.fullName,
@@ -82,7 +83,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });
     }
 
-    return json(201, { ok: true, businessName: business.display_name });
+    return json(201, publicCheckInResponse(checkIn, parsed.data.fullName, business.display_name));
   } catch (error) {
     console.error("check-in failed", error instanceof Error ? error.message : "unknown");
     return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });

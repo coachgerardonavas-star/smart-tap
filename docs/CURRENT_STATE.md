@@ -1,6 +1,6 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-05 after production cutover and PR #11.
+Canonical short status for agents. Updated 2026-10-06 after the D-057 Builder work (customer styles v2).
 
 ## Production
 
@@ -18,6 +18,14 @@ Canonical short status for agents. Updated 2026-10-05 after production cutover a
 
 The MVP is implemented and has live evidence for NFC check-in, multi-tenant isolation, owner/admin flows, MFA/AAL2, privacy, Terms v2, follow-up queue, customer branding and onboarding. PR #10 fixed the live Turnstile hydration defect and a subsequent real check-in was confirmed.
 
+## In progress — D-057 customer styles v2
+
+- Builder for this task: Claude Code, assigned by the CEO on 2026-10-06, branch `claude/customer-styles-v2` from `main` at `0492ec8` (PR #12 merged). A separate Claude Code session reviews.
+- Photo hero, icons, visit counter, Instagram button, business-type presets, 24-photo stock library and four accent colors per style, in `/b/[slug]` and `/demo/capture`.
+- New migration `20261006020000_customer_styles_v2.sql` (business_type, instagram_url, wider hero CHECK). **Not applied.** The Reviewer applies it before deploying; the code reads both columns with `select("*")` and treats missing values as `otro` / no Instagram.
+- Open decision: the visit counter is returned only when the submitted name matches the stored name (partial reopening of D-052 finding 2; residual risk MEDIUM). Needs CEO/Reviewer acceptance.
+- Local gate: clean `npm ci` (343 packages, 0 vulnerabilities), 0 diagnostics, 180/180 tests, complete build, strict production audit 0 vulnerabilities.
+
 ## Glasswing gate
 
 - GS-25 backups: daily backups are enabled on Supabase Pro, but a restore has not yet been tested. This remains the formal gate before approval for real customer data. The current Supabase connector can read/manage the production project but exposes no backup-list or backup-restore operation, so the restore test cannot be executed through this connector.
@@ -29,7 +37,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 
 - Builder: ChatGPT Codex.
 - Reviewer: Claude Code.
-- Reuse `codex/security-hardening` for the current Builder work. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule.
+- Reuse `codex/security-hardening` for Codex Builder work. The CEO opened `claude/customer-styles-v2` for the D-057 task. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule.
 - Changes reach `main` only through PR with `verify` green and Reviewer inspection.
 - Do not deploy, merge, migrate production, or add secrets merely to make a gate pass.
 
