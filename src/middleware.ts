@@ -1,8 +1,11 @@
 import { defineMiddleware } from "astro:middleware";
 import { AuthorizationError } from "./lib/auth";
 import { TermsAcceptanceRequiredError } from "./lib/terms-access";
+import { errorPageResponse, htmlContentType, jsonErrorResponse } from "./lib/error-page";
+import { clearSupabaseSessionCookies } from "./lib/session";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  const isApi = context.url.pathname.startsWith("/api/");
   let response: Response;
   try {
     response = await next();
@@ -19,10 +22,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
         accept.searchParams.set("next", `${context.url.pathname}${context.url.search}`);
         response = context.redirect(accept.toString(), 302);
       }
+    } else if (!(error instanceof AuthorizationError)) {
+      // D-058: an unexpected error never leaves as an empty, untyped 500.
+      console.error("request failed", context.url.pathname, error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 200) : "unknown");
+      response = isApi ? jsonErrorResponse(500, "No pudimos completar la solicitud.") : errorPageResponse(500);
     } else {
-      if (!(error instanceof AuthorizationError)) throw error;
       if (error.status === 401) {
-        if (context.url.pathname.startsWith("/api/")) {
+        // A missing, revoked or expired session: drop the stale Supabase
+        // cookies so the next sign-in starts clean.
+        clearSupabaseSessionCookies(context.request, context.cookies);
+        if (isApi) {
           response = new Response(JSON.stringify({ error: "Debes iniciar sesión." }), { status: 401, headers: { "content-type": "application/json" } });
         } else {
           const login = new URL("/login", context.url);
@@ -39,9 +48,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
           headers: { "content-type": "application/json" },
         });
       } else {
-        response = new Response("Acceso denegado", { status: 403 });
+        response = isApi ? jsonErrorResponse(403, "Acceso denegado.") : errorPageResponse(403);
       }
     }
+  }
+  // Safety net: a page error without a content type would be downloaded.
+  if (!isApi && response.status >= 400 && !response.headers.get("content-type")) {
+    const replacement = errorPageResponse(response.status === 404 || response.status === 403 ? response.status : 500);
+    response = new Response(replacement.body, { status: response.status, headers: response.headers });
+    response.headers.set("content-type", htmlContentType);
+    response.headers.set("cache-control", "no-store");
   }
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
@@ -52,7 +68,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     "Content-Security-Policy",
     "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   );
-  if (context.url.pathname.startsWith("/dashboard") || context.url.pathname.startsWith("/admin")) {
+  if (context.url.pathname.startsWith("/dashboard") || context.url.pathname.startsWith("/admin") || context.url.pathname.startsWith("/mfa")) {
     response.headers.set("Cache-Control", "private, no-store");
   }
   return response;

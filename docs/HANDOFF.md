@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-06 by Claude Code acting as Builder for D-057 (customer styles v2), without deployment, merge or database changes. Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
+Updated: 2026-10-06 by Claude Code acting as Builder for D-058 (stale sessions), without deployment, merge or database changes. Earlier the same day: D-057 (PR #13, merged). Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
 ## Project identity
 
@@ -10,7 +10,16 @@ Updated: 2026-10-06 by Claude Code acting as Builder for D-057 (customer styles 
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
 - **CEO/attorney-approved commercial and product decisions D-025 through D-056:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
 
-## Current Builder handoff — D-057 customer styles v2
+## Current Builder handoff — D-058 stale sessions
+
+- Branch `claude/stale-session-fix` from `main` at `67eb0a7`. No migration.
+- Root cause, confirmed end-to-end: `getClaims()` validates the JWT locally, so a revoked session passed; `/mfa` then failed on `listFactors()` (Auth 403 `session_not_found`); the middleware re-threw and Node sent an empty 500 with no content type, which the iPhone downloaded as `mfa.txt`. That response had no `nosniff` header. Also, with a revoked `aal2` token, `/admin` and `/dashboard` answered 200 until expiry.
+- Code: `src/lib/session.ts` (invalid-session classification, Supabase cookie cleanup), `src/lib/error-page.ts` (generic HTML and JSON errors), `src/lib/auth.ts` (`getUser` confirmation, `session_invalid` reason), `src/pages/mfa.astro`, `src/middleware.ts`.
+- Tests: `tests/stale-session.test.ts` (20). Run against the unfixed `main` code, 14 of them failed; all pass with the fix.
+- Local reproduction: `npm run build && scripts/stale-session/probe.sh revoked aal1` (also `revoked aal2`, `valid aal2`). It starts a local Supabase stand-in with a runtime-generated key; no real project or key is used.
+- Reviewer: run the production check in CURRENT_STATE after deploy.
+
+## Previous Builder handoff — D-057 customer styles v2
 
 - Branch: `claude/customer-styles-v2` from `main` at `0492ec8`. Builder: Claude Code (CEO assignment for this task). Spec: `docs/design/customer-styles-v2/BUILDER_BRIEF.md` on `claude/design-v2`.
 - Customer screens: `src/components/CheckInForm.tsx` (form, `ConfirmationView`, `BrandMark`, `customerScreenStyle`), `src/components/customer-icons.tsx`, `src/components/check-in.css`, `src/components/CustomerCapture.astro` (fonts). Turnstile effect copied verbatim.

@@ -255,3 +255,20 @@ Builder implementation choices:
 - Confirmation keeps the approved lines ("¡Listo!", "Tu visita quedó registrada", "Gracias por venir. La próxima vez solo toca la tarjeta otra vez.") and adds a short farewell per style.
 - Fonts stay local: Great Vibes (elegante), Fraunces and Caveat (cálido) were added through `@fontsource`; Bricolage Grotesque and DM Sans were removed. The CSP was not widened.
 - Migration `20261006020000_customer_styles_v2.sql` is not applied by the Builder.
+
+## D-058 — Revoked sessions end in a clean sign-in; page errors are always HTML (Builder, 2026-10-06)
+
+Incident (production, 2026-10-05 ~21:35–21:40 UTC): after a password change the CEO's iPhone kept the old session cookies. `/admin` sent him to `/mfa` and Chrome downloaded `mfa.txt`. Supabase logged repeated `GET /auth/v1/user` → 403 `session_not_found`.
+
+Confirmed root cause, reproduced with the built server against a local Supabase stand-in (`scripts/stale-session/`):
+- `getAuthIdentity` used only `getClaims()`. With asymmetric JWT signing that call verifies the token signature locally and never asks Auth whether the session still exists, so a revoked session kept passing until the access token expired.
+- On `/mfa`, `mfa.listFactors()` calls `GET /auth/v1/user`, which answered 403 `session_not_found`; the page threw `Unable to list MFA factors`. The middleware re-threw every non-authorization error, so Node sent an empty 500 **without any content type**, which the iPhone saved as a file.
+- Difference from the initial hypothesis: that 500 did not carry `X-Content-Type-Options: nosniff`, because the middleware threw before setting headers. The download came from the missing content type and empty body.
+- Wider finding: with a revoked session and an `aal2` token still within its lifetime, `/admin` and `/dashboard` rendered with data (HTTP 200) until the token expired.
+
+Decision:
+- `getAuthIdentity` keeps `getClaims()` for the verified claims and also calls `getUser()`, so Auth confirms that the session is alive and belongs to the same subject. Revoked, missing or expired sessions (`session_not_found`, `session_expired`, `refresh_token_not_found`, `refresh_token_already_used`, `bad_jwt`, `user_not_found`, a 401/403/404 from Auth, missing session or invalid JWT) give no identity. Other Auth failures (network, 5xx) raise `auth_unavailable` and show the error page instead of signing the user out. Cost: one Auth request per protected request.
+- On a 401 the middleware deletes every `sb-*-auth-token` cookie (chunks and PKCE verifier included), redirects pages to `/login?next=<path>` with 302 and answers `/api/*` with the same 401 JSON as before.
+- `/mfa` raises the session error before its generic factor error.
+- Unexpected errors become a generic Spanish HTML page (500) on pages and JSON on `/api/*`, without internal details; the 403 page is HTML; any page response of 400 or more without a content type is replaced by the HTML page. All carry `text/html; charset=utf-8` and the security headers. `/mfa` is now also `Cache-Control: private, no-store`.
+- Unchanged: AAL2 for platform admins and active owners, global logout, no new unauthenticated routes and no bypass.
