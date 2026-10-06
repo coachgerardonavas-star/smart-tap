@@ -59,6 +59,41 @@ describe("database migration and check-in transaction", () => {
     expect(updated.rows[0]).toEqual({ theme: "elegante", benefits: ["Uno", "Dos", "Tres"] });
   });
 
+  it("constrains business type, Instagram URL and stock hero paths (D-057)", async () => {
+    const id = "10000000-0000-4000-8000-000000000001";
+    const current = await database.query<{ business_type: string | null; instagram_url: string | null }>(`select business_type, instagram_url from public.businesses where id = '${id}'`);
+    expect(current.rows[0]).toEqual({ business_type: null, instagram_url: null });
+
+    for (const type of ["restaurante", "food_truck", "cafe", "panaderia", "heladeria", "barberia", "salon", "otro"]) {
+      await database.exec(`update public.businesses set business_type = '${type}' where id = '${id}'`);
+    }
+    for (const invalid of ["spa", "Cafe", ""]) {
+      await expect(database.exec(`update public.businesses set business_type = '${invalid}' where id = '${id}'`)).rejects.toThrow();
+    }
+
+    for (const valid of ["https://www.instagram.com/cafe.luna", "https://www.instagram.com/a", `https://www.instagram.com/${"b".repeat(30)}`]) {
+      await database.exec(`update public.businesses set instagram_url = '${valid}' where id = '${id}'`);
+    }
+    for (const invalid of [
+      "http://www.instagram.com/cafeluna", "https://instagram.com/cafeluna", "https://www.instagram.com/cafeluna/",
+      `https://www.instagram.com/${"b".repeat(31)}`, "https://www.instagram.com/cafe-luna", "https://www.instagram.com.evil.com/x",
+      "https://www.instagram.com/", "https://wwwXinstagram.com/x",
+    ]) {
+      await expect(database.exec(`update public.businesses set instagram_url = '${invalid}' where id = '${id}'`)).rejects.toThrow();
+    }
+
+    for (const valid of ["/stock/food_truck/food-truck-1.webp", "/stock/cafe/cafe-3.webp", "https://example.com/hero.jpg"]) {
+      await database.exec(`update public.businesses set hero_image_url = '${valid}' where id = '${id}'`);
+    }
+    for (const invalid of [
+      "/stock/cafe/cafe-1.jpg", "/stock/Cafe/cafe-1.webp", "/stock/cafe/../x.webp", "/stock/cafe/cafe_1.webp",
+      "/uploads/x.webp", "http://example.com/hero.jpg", "stock/cafe/cafe-1.webp", "/stock/cafe/cafe-1.webpx",
+    ]) {
+      await expect(database.exec(`update public.businesses set hero_image_url = '${invalid}' where id = '${id}'`)).rejects.toThrow();
+    }
+    await database.exec(`update public.businesses set business_type = null, instagram_url = null, hero_image_url = null where id = '${id}'`);
+  });
+
   it("records customer, consent and visit in one function call", async () => {
     const result = await database.query<{ result: { visitCount: number } }>(`
       select public.record_public_check_in(

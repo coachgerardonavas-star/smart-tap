@@ -14,7 +14,9 @@ await mkdir(outputDirectory, { recursive: true });
 
 const chrome = spawn(chromePath, [
   "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check",
-  `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank",
+  `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
+  // Containers run as root, where Chromium refuses to start with its sandbox.
+  ...(process.getuid?.() === 0 ? ["--no-sandbox"] : []), "about:blank",
 ], { stdio: "ignore" });
 
 const wait = (milliseconds) => new Promise((resolveWait) => setTimeout(resolveWait, milliseconds));
@@ -85,18 +87,24 @@ const measurements = {};
 try {
   await client.call("Page.enable");
   await client.call("Runtime.enable");
-  for (const theme of ["elegante", "calido", "moderno", "colorido"]) {
+  // D-057: each style with the business type it was designed for.
+  const pairs = [["elegante", "restaurante"], ["calido", "cafe"], ["moderno", "barberia"], ["colorido", "heladeria"]];
+  for (const [theme, type] of pairs) {
     await setViewport(client, 390, 844);
-    await navigate(client, `${baseUrl}/demo/capture?theme=${theme}`);
-    measurements[theme] = await waitFor(client, `(() => { const input = document.querySelector('#fullName'); const hero = document.querySelector('.brand-hero'); if (!input || !hero) return null; const box = input.getBoundingClientRect(); return { inputTop: Math.round(box.top), inputBottom: Math.round(box.bottom), heroHeight: Math.round(hero.getBoundingClientRect().height) }; })()`);
-    await screenshot(client, `customer-${theme}-form-390x844.png`);
+    await navigate(client, `${baseUrl}/demo/capture?theme=${theme}&type=${type}&visitas=3`);
+    await waitFor(client, "document.fonts.ready.then(() => true) && [...document.images].every((image) => image.complete)");
+    measurements[theme] = await waitFor(client, `(() => { const input = document.querySelector('#fullName'); const hero = document.querySelector('.brand-hero'); if (!input || !hero) return null; const box = input.getBoundingClientRect(); return { inputTop: Math.round(box.top), inputBottom: Math.round(box.bottom), heroHeight: Math.round(hero.getBoundingClientRect().height), scrollWidth: document.documentElement.scrollWidth }; })()`);
+    await screenshot(client, `customer-v2-${theme}-form-390x844.png`);
     await client.call("Runtime.evaluate", { expression: `(() => { const form = document.querySelector('form.checkin-form'); form.querySelector('#fullName').value = 'Cliente Demo'; form.querySelector('#phone').value = '3055550101'; form.querySelector('input[name=consent]').checked = true; form.requestSubmit(); })()` });
     await waitFor(client, "document.querySelector('.customer-screen')?.dataset.state === 'confirmation'");
-    await screenshot(client, `customer-${theme}-confirmation-390x844.png`);
+    await client.call("Runtime.evaluate", { expression: "window.scrollTo(0, 0)" });
+    await wait(500);
+    await screenshot(client, `customer-v2-${theme}-confirmation-390x844.png`);
   }
   await setViewport(client, 1440, 900);
-  await navigate(client, `${baseUrl}/demo/capture?theme=elegante`);
-  await screenshot(client, "customer-elegante-form-1440x900.png");
+  await navigate(client, `${baseUrl}/demo/capture?theme=elegante&type=restaurante`);
+  await wait(500);
+  await screenshot(client, "customer-v2-elegante-form-1440x900.png");
   process.stdout.write(`${JSON.stringify(measurements, null, 2)}\n`);
 } finally {
   client.close();

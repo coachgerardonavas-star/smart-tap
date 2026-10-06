@@ -88,7 +88,7 @@ describe("admin validation", () => {
   });
 
   it("trims onboarding offers and limits them to 200 characters", () => {
-    const base = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "https://example.com/logo.png", privacyUrl: "/privacy", primaryColor: "#155EEF", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "US", inactivityDays: "30", googleReviewUrl: "https://g.page/r/example/review", offerInactive: " Regresa por un café. ", offerBirthday: "Celebra con nosotros.", offerFrequent: "Gracias por volver.", offerNew: "Bienvenido." };
+    const base = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "https://example.com/logo.png", privacyUrl: "/privacy", primaryColor: "#C8412A", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "US", inactivityDays: "30", googleReviewUrl: "https://g.page/r/example/review", offerInactive: " Regresa por un café. ", offerBirthday: "Celebra con nosotros.", offerFrequent: "Gracias por volver.", offerNew: "Bienvenido." };
     const parsed = businessUpdateSchema.parse(base);
     expect(parsed.offerInactive).toBe("Regresa por un café.");
     expect(businessUpdateSchema.safeParse({ ...base, offerNew: "x".repeat(201) }).success).toBe(false);

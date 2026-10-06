@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-05 by ChatGPT Codex (Builder), after correcting GS-49 on PR #12 without deployment, merge or database changes. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
+Updated: 2026-10-06 by Claude Code acting as Builder for D-057 (customer styles v2), without deployment, merge or database changes. Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
 ## Project identity
 
@@ -10,7 +10,20 @@ Updated: 2026-10-05 by ChatGPT Codex (Builder), after correcting GS-49 on PR #12
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
 - **CEO/attorney-approved commercial and product decisions D-025 through D-056:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
 
-## Current Builder handoff — PR #12 GS-49 corrections
+## Current Builder handoff — D-057 customer styles v2
+
+- Branch: `claude/customer-styles-v2` from `main` at `0492ec8`. Builder: Claude Code (CEO assignment for this task). Spec: `docs/design/customer-styles-v2/BUILDER_BRIEF.md` on `claude/design-v2`.
+- Customer screens: `src/components/CheckInForm.tsx` (form, `ConfirmationView`, `BrandMark`, `customerScreenStyle`), `src/components/customer-icons.tsx`, `src/components/check-in.css`, `src/components/CustomerCapture.astro` (fonts). Turnstile effect copied verbatim.
+- Presets and library: `src/lib/business-presets.ts`, `public/stock/<type>/*.webp` (24 files, Unsplash License, credits in `public/stock/ATTRIBUTION.md`).
+- Palettes, style tokens and counter helpers: `src/lib/customer-theme.ts`.
+- Public API: `src/lib/check-in-result.ts` returns `visitCount` only on a name match; `alreadyCounted` and the stored name never leave the server. **Decision pending** (see D-057).
+- Admin: `/admin/[id]` business type select (pre-fills via a bundled script), palette radios per style, photo grid with own-URL and no-photo options, Instagram field. `update.ts` audits `business_type` and `instagram_url` as column names.
+- Validation: `businessType`, `instagramUrlSchema`, `heroImageUrlSchema`, palette check and `heroImageFromForm` in `src/lib/validation.ts`.
+- Migration `supabase/migrations/20261006020000_customer_styles_v2.sql`, not applied. Reviewer action: inspect, apply to production `fzrzrbzxjdezwylzkbkh`, then set Café Luna's `business_type = 'cafe'` if wanted. Existing businesses whose `primary_color` is outside their style palette must pick a palette color the next time the admin saves them.
+- Tests: `tests/customer-styles-v2.test.ts` (counter 1/3/5/9, no reward copy, Instagram on/off, logo fallback, contrast, presets, photo files, URL validation, name-gated response) and PGlite CHECKs in `tests/database-integration.test.ts`. `vitest.config.ts` enables the automatic JSX runtime for server rendering in tests.
+- Evidence: `docs/evidence/customer-v2-*-390x844.png` (8) and `customer-v2-elegante-form-1440x900.png`, from `npm run evidence:customer-styles` with `CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. The admin page was not captured: it needs an authenticated AAL2 session and Supabase.
+
+## Previous Builder handoff — PR #12 GS-49 corrections
 
 - Branch: `codex/security-hardening`; PR: `https://github.com/coachgerardonavas-star/smart-tap/pull/12`; base `main` includes PR #9, #10 and #11 at `836ea3b`.
 - `src/lib/security-alerts-core.mjs` now owns the allowlist, `business.updated` activation filter, aggregation, 20-minute fallback, cursor reading and 3,500-character cap.

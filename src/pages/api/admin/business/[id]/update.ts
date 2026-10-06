@@ -2,20 +2,21 @@ import type { APIRoute } from "astro";
 import { changedFieldNames } from "../../../../../lib/audit";
 import { requirePlatformAdmin } from "../../../../../lib/auth";
 import { createSupabaseServiceClient } from "../../../../../lib/supabase";
-import { businessUpdateSchema } from "../../../../../lib/validation";
+import { businessUpdateSchema, heroImageFromForm } from "../../../../../lib/validation";
 import { TERMS_VERSION } from "../../../../../lib/terms";
 
 export const POST: APIRoute = async ({ request, cookies, params, redirect }) => {
   const identity = await requirePlatformAdmin(request, cookies);
   const id = params.id ?? "";
   const form = await request.formData();
-  const parsed = businessUpdateSchema.safeParse(Object.fromEntries(form));
+  const raw: Record<string, unknown> = Object.fromEntries(form);
+  const parsed = businessUpdateSchema.safeParse({ ...raw, heroImageUrl: heroImageFromForm(raw) });
   if (!parsed.success) return redirect(`/admin/${id}?error=${encodeURIComponent("Revisa los datos del negocio.")}`, 303);
   const input = parsed.data;
   const service = createSupabaseServiceClient();
   const wantsActive = form.get("isActive") === "on";
   const { data: current, error: currentError } = await service.from("businesses")
-    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,is_active")
+    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,business_type,instagram_url,is_active")
     .eq("id", id).maybeSingle();
   if (currentError || !current) return redirect(`/admin/${id}?error=${encodeURIComponent("Negocio no encontrado.")}`, 303);
   if (wantsActive && !current.is_active && (!current.owner_approved_at || current.owner_approved_terms_version !== TERMS_VERSION)) {
@@ -38,6 +39,8 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     tagline: input.tagline,
     benefits: input.benefits,
     hero_image_url: input.heroImageUrl,
+    business_type: input.businessType,
+    instagram_url: input.instagramUrl,
     is_active: wantsActive,
   };
   const changedFields = changedFieldNames(current, updates);

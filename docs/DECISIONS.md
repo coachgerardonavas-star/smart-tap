@@ -239,3 +239,19 @@ Smart Tap sends GS-49 security summaries to the CEO's internal Telegram chat thr
 The alert runner reads from `audit_log`, aggregates only the approved security and administrative actions, and sends action names with counts. Audit details, names, phone numbers, email addresses, IP addresses and hashes stay out of the Telegram message. Messages stop at 3,500 characters.
 
 Successful delivery writes `alerts.digest_sent` with `{ until, count }`. The next run reads events with `created_at > until`; the first run falls back 20 minutes. A failed Telegram request writes no cursor, so the next run retries. The query orders by `created_at` and reads at most 1,000 rows; a full page is shown as `1000+`, and the cursor advances only through the events read. The cursor action uses the `alerts.` prefix so the event selector never consumes its own records.
+
+## D-057 — Customer styles v2: photo hero, icons, visit counter, Instagram and business-type presets (CEO, 2026-10-05; Builder implementation 2026-10-06)
+
+Approved design: `docs/design/customer-styles-v2/estilos-smart-tap.html` on branch `claude/design-v2`, brief `BUILDER_BRIEF.md` in the same folder. The four styles keep one registration screen (D-048) and now use the business photo as a full-width hero under a dark veil, the logo (fallback: initials plus the business-type icon), the type as subtitle, the tagline in each style's script face, three benefits with circled icons and a form card over the hero with field icons.
+
+The confirmation shows "Esta es tu visita número N" and five stars with min(N, 5) filled. Smart Tap only counts visits: no rewards, prizes or "collect X" copy. Google review button when `google_review_url` exists; "Seguir en Instagram" only when `instagram_url` exists.
+
+New `businesses.business_type` (restaurante, food_truck, cafe, panaderia, heladeria, barberia, salon, otro) pre-fills style, tagline, three benefits, inactivity days (barberia 35; food_truck, cafe, panaderia 14; restaurante, heladeria 21; others 30), photo and accent in the admin; all stay editable. Each type has three Unsplash-License photos in `public/stock/<type>/`, credited in `public/stock/ATTRIBUTION.md`. The accent is one of four tested colors per style.
+
+Builder implementation choices:
+- **Visit count vs. D-052 finding 2 (HIGH).** D-052 removed the count from the public response so a person who knows a phone number cannot learn that customer's history. To deliver D-057 without reopening that finding in full, the API returns `visitCount` only when the submitted name matches the stored name (case, accents and spaces ignored). A new customer always matches. Residual risk: someone who knows both the phone and the name can see the count, and the absence of a counter tells a stranger that the phone is already registered at that business. The CEO or Reviewer must accept this residual risk or choose another rule before release.
+- Hero text is 4.5:1 or better against a pure white photo under the lightest stop of each veil; the script tagline uses a light tint (colorido uses its yellow pill). Decorative icons use the accent only when it reaches 3:1 against the veil.
+- Benefits keep the existing data model (three texts of up to 40 characters). The design's second line under each benefit was not added because the brief did not include a schema change for it.
+- Confirmation keeps the approved lines ("¡Listo!", "Tu visita quedó registrada", "Gracias por venir. La próxima vez solo toca la tarjeta otra vez.") and adds a short farewell per style.
+- Fonts stay local: Great Vibes (elegante), Fraunces and Caveat (cálido) were added through `@fontsource`; Bricolage Grotesque and DM Sans were removed. The CSP was not widened.
+- Migration `20261006020000_customer_styles_v2.sql` is not applied by the Builder.
