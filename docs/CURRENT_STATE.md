@@ -1,6 +1,6 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-06 after the D-057 Builder work (customer styles v2).
+Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder work (stale sessions).
 
 ## Production
 
@@ -18,7 +18,14 @@ Canonical short status for agents. Updated 2026-10-06 after the D-057 Builder wo
 
 The MVP is implemented and has live evidence for NFC check-in, multi-tenant isolation, owner/admin flows, MFA/AAL2, privacy, Terms v2, follow-up queue, customer branding and onboarding. PR #10 fixed the live Turnstile hydration defect and a subsequent real check-in was confirmed.
 
-## In progress — D-057 customer styles v2
+## In progress — D-058 stale sessions
+
+- Builder: Claude Code (CEO assignment), branch `claude/stale-session-fix` from `main` at `67eb0a7` (PR #13 merged).
+- Fixes the 2026-10-05 `mfa.txt` download: revoked sessions now go to `/login` with their cookies cleared, page errors are HTML and API errors JSON. Also closes the gap where a revoked `aal2` session kept reading `/admin` and `/dashboard` until its token expired.
+- No migration. Each protected request now makes one extra Auth call (`getUser`).
+- Production check after deploy: change a password on one device, then open `/admin` on another. It must land on `/login` without a download.
+
+## Done — D-057 customer styles v2 (PR #13 merged; migration pending Reviewer)
 
 - Builder for this task: Claude Code, assigned by the CEO on 2026-10-06, branch `claude/customer-styles-v2` from `main` at `0492ec8` (PR #12 merged). A separate Claude Code session reviews.
 - Photo hero, icons, visit counter, Instagram button, business-type presets, 24-photo stock library and four accent colors per style, in `/b/[slug]` and `/demo/capture`.

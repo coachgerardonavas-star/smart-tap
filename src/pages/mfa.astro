@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
-import { requireAuth } from "../lib/auth";
+import { AuthorizationError, requireAuth } from "../lib/auth";
+import { isInvalidSessionError } from "../lib/session";
 import { createSupabaseServerClient } from "../lib/supabase";
 import { safeNextPath } from "../lib/validation";
 
@@ -17,6 +18,7 @@ let qrCode: string | null = null;
 let errorMessage: string | null = null;
 let successMessage: string | null = null;
 const factorResult = await supabase.auth.mfa.listFactors();
+if (factorResult.error && isInvalidSessionError(factorResult.error)) throw new AuthorizationError(401, "session_invalid");
 if (factorResult.error || !factorResult.data) throw new Error("Unable to list MFA factors");
 const verifiedFactor = factorResult.data.totp[0] ?? null;
 let pendingFactor = factorResult.data.all.find(

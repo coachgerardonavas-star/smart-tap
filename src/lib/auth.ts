@@ -2,6 +2,7 @@ import type { AstroCookies } from "astro";
 import { serverEnv } from "./env";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "./supabase";
 import { recordSecurityAuditOnce } from "./security-alert-audit";
+import { isInvalidSessionError } from "./session";
 
 export type AuthIdentity = {
   id: string;
@@ -10,7 +11,7 @@ export type AuthIdentity = {
   aal: "aal1" | "aal2";
 };
 
-export type AuthorizationReason = "authentication_required" | "forbidden" | "mfa_required";
+export type AuthorizationReason = "authentication_required" | "session_invalid" | "forbidden" | "mfa_required";
 
 export class AuthorizationError extends Error {
   constructor(
@@ -26,6 +27,17 @@ export async function getAuthIdentity(request: Request, cookies: AstroCookies): 
   const { data, error } = await supabase.auth.getClaims();
   const subject = data?.claims?.sub;
   if (error || typeof subject !== "string") return null;
+
+  // D-058: getClaims verifies the JWT signature locally, so a session revoked
+  // by a password change or a global logout still passes until the token
+  // expires. The Auth server confirms the session is alive before any page or
+  // API trusts it.
+  const { data: live, error: liveError } = await supabase.auth.getUser();
+  if (liveError) {
+    if (isInvalidSessionError(liveError)) return null;
+    throw new Error("auth_unavailable");
+  }
+  if (live.user?.id !== subject) return null;
 
   const service = createSupabaseServiceClient();
   let { data: profile } = await service

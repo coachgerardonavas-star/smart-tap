@@ -64,7 +64,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-40 Adversarial tests | Yes | VERIFICADO (H) partial + local | Hosted viewer had no actions and no-opt-in had no send button; local tests reject other tenant, foreign customer, stale opportunity and AAL1 admin | Expired/tampered JWT live |
 | GS-41 CSRF | Yes | VERIFICADO LOCALMENTE | Astro checkOrigin (403 cross-origin); HttpOnly cookies; no GET state changes | — |
 | GS-42 Account attacks | Yes | VERIFICADO LOCALMENTE | Generic responses; prefetch-safe callback; Turnstile before database/Auth; own IP/email limits for login and recovery | Hosted flow after deploy |
-| GS-43 Sessions | Yes | IMPLEMENTADO NO VERIFICADO | Policy: 1 h JWT, 7-day inactivity, 30-day time-box; logout revokes all sessions (OPERATIONS_POLICY.md) | Set timeouts in the production Supabase project (Pro) and verify |
+| GS-43 Sessions | Yes | IMPLEMENTADO NO VERIFICADO | Policy: 1 h JWT, 7-day inactivity, 30-day time-box; logout revokes all sessions (OPERATIONS_POLICY.md). D-058: every protected request confirms the session with Auth (`getUser`), so a revoked session stops immediately; stale cookies are cleared and the user is sent to login (L unit tests + local end-to-end probe) | Set timeouts in the production Supabase project (Pro) and verify |
 | GS-44 Recent auth | Yes | VERIFICADO (H admin + L owner) | Every platform-admin path and active owner customer-data path requires AAL2; managers/viewers remain optional by D-052 | Hosted owner smoke |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
@@ -175,3 +175,9 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 - GS-22: `business_type` and `instagram_url` join the `business.updated` audit as column names only.
 - Threat model, customer identity: the visit counter reopens part of D-052 finding 2. Mitigation: name match before returning `visitCount`; `alreadyCounted` and the stored name are never returned. Residual risk recorded as MEDIUM pending acceptance.
 - GS-26: added `@fontsource/great-vibes`, `@fontsource-variable/fraunces` and `@fontsource-variable/caveat`; removed the unused Bricolage Grotesque and DM Sans packages.
+
+## Update 2026-10-06 (Builder, D-058 stale sessions)
+
+- GS-43: a session revoked by a password change or global logout no longer works until its access token expires. `getAuthIdentity` confirms each session with Auth. A revoked, missing or expired session clears the `sb-*-auth-token` cookies and redirects to `/login?next=` (pages) or returns 401 JSON (`/api/*`). Verified locally with unit tests and `scripts/stale-session/probe.sh` against a local Supabase stand-in; not yet verified in production.
+- GS-03 / GS-44: AAL2 enforcement for platform admins and owners is unchanged; an `aal1` session still goes to `/mfa` without losing its cookies.
+- GS-12 / GS-19: page errors are generic Spanish HTML with `text/html; charset=utf-8` and the security headers; API errors are JSON. No stack traces or internal messages reach the browser; the server log keeps the path and a 200-character error summary.
