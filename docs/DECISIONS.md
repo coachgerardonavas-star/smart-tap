@@ -239,3 +239,11 @@ Smart Tap sends GS-49 security summaries to the CEO's internal Telegram chat thr
 The alert runner reads from `audit_log`, aggregates only the approved security and administrative actions, and sends action names with counts. Audit details, names, phone numbers, email addresses, IP addresses and hashes stay out of the Telegram message. Messages stop at 3,500 characters.
 
 Successful delivery writes `alerts.digest_sent` with `{ until, count }`. The next run reads events with `created_at > until`; the first run falls back 20 minutes. A failed Telegram request writes no cursor, so the next run retries. The query orders by `created_at` and reads at most 1,000 rows; a full page is shown as `1000+`, and the cursor advances only through the events read. The cursor action uses the `alerts.` prefix so the event selector never consumes its own records.
+
+## Open ideas (not decided, not built)
+
+### Returning-customer experience (CEO, 2026-10-05)
+
+Raised while rehearsing a client presentation: a customer who taps for the second or third time sees the same form and the same confirmation, which a prospect may find repetitive. Facts that frame any change: the NFC tag carries only a URL and cannot identify the person; a shared "quick visit" tag would still need the phone number to know who tapped; the form already sets `autoComplete` for name, phone and birthday; the database already returns `visitCount` and `alreadyCounted` on every check-in, unused by the UI.
+
+Idea to evaluate with the Builder: after submit, if the phone already existed for that business, show a short welcome-back confirmation (for example using `visitCount`) instead of the first-visit text. This needs a CEO decision, wording that avoids promising recognition before the phone is typed, and a Glasswing check that the response does not let a stranger confirm that a phone number is registered at a business. Until decided, sales material must not promise that Smart Tap recognizes the customer on tap (`docs/CUSTOMER_SCREENS.md`, Returning customers).

@@ -19,6 +19,16 @@ On `public.businesses`:
 
 Admin: style selector plus the three new fields in `/admin/[id]`; changes go through the existing `business.updated` audit with `changedFields`. Owner approval (D-040) keeps its current required fields; the new ones are optional.
 
+## Returning customers (current behavior)
+
+- The NFC tag only carries a URL. It cannot identify the person, so every tap opens the same form, first visit or fifth.
+- The system recognizes a returning customer only after submit, by phone number: `customers` is unique on `(business_id, phone_e164)`, so a repeated phone adds a visit to the existing customer instead of creating a duplicate, and the stored name is kept.
+- At most one visit counts per customer per day in the business time zone; a second tap the same day is accepted but not counted.
+- The confirmation screen is identical for first and later visits. The database returns `visitCount` and `alreadyCounted`, but the UI does not use them.
+- The form already sets `autoComplete` on name, phone and birthday, so a phone that has the data saved can fill the fields. Autofill is the browser's choice; Smart Tap does not store anything on the device.
+- Sales wording: do not promise that Smart Tap "remembers" or "recognizes" the customer when they tap. The default benefit "Te reconocemos al volver" and the confirmation line "La próxima vez solo toca la tarjeta otra vez" describe the owner's side and the simplicity of the tap, not recognition on screen.
+- A "welcome back" message after submit is an open idea, not built (see `docs/DECISIONS.md`, Open ideas).
+
 ## Rules every style must keep
 
 - Approved copy verbatim (privacy/consent with "Tengo 13 años o más.", WhatsApp text, birthday hint). WhatsApp box unchecked and optional (D-042). No SMS, no visit-reward counter, no social links.

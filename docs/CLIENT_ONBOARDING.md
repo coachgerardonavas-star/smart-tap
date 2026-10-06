@@ -160,7 +160,7 @@ A customer is considered configured when:
 - NFC placement is approved by the owner after Automate IT's recommendation;
 - customer form requires name and phone and leaves birthday optional with benefit-oriented copy;
 - email is absent by default or explicitly enabled with approved purpose/consent copy;
-- customer cannot complete Smart Tap registration without explicit WhatsApp consent naming the business;
+- the WhatsApp box is separate, optional and unchecked, names the business, and registration succeeds without it (D-042, which replaced D-035);
 - opt-out instructions are clear and the system can honor a later opt-out;
 - one test capture succeeds;
 - dashboard receives the customer/visit;

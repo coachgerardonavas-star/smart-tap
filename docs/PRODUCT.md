@@ -44,9 +44,19 @@ Smart Tap prepares opportunities for inactive customers, birthdays, frequent/VIP
 - A cross-tenant query returns zero rows.
 - Automate IT can add another business and invite its owner.
 
+## Screens and who sees each one
+
+| Route | Who | What it shows |
+|---|---|---|
+| `/admin` | Automate IT platform admin only (AAL2) | All businesses: status, configuration, NFC links, invitations. No business owner ever sees it. |
+| `/dashboard` | Members of one business (owner, manager, viewer) | Only that business's customers, visits, "Para contactar hoy" queue and birthdays. A user with access to several businesses gets a selector. |
+| `/b/<slug>?t=<tag code>` | The business's end customer, after tapping the NFC | The branded check-in form and confirmation. Not a dashboard. |
+
 ## Demo
 
-`/demo` shows the sample Café Luna dashboard. `/demo/capture` runs the capture and confirmation flow with fictitious data and no database write. After applying the seed, `/b/cafe-luna?t=demo-cafe-luna-main-2026` exercises the real database path.
+`/demo` shows the sample Café Luna dashboard with static fictitious data: metric cards, a three-customer table and upcoming birthdays. **It does not include the "Para contactar hoy" queue or any WhatsApp button.** `/demo/capture` runs the capture and confirmation flow with fictitious data and no database write. After applying the seed, `/b/cafe-luna?t=demo-cafe-luna-main-2026` exercises the real database path; it is the customer's check-in page, not a dashboard.
+
+The follow-up queue and the **Enviar WhatsApp** button exist only in `/dashboard`, which requires login. To show them in a sales meeting, sign in with an account that can open the Café Luna production tenant (D-055) and confirm beforehand that the queue lists at least one customer: the queue is empty when nobody meets a rule, and a button only appears for customers with WhatsApp opt-in.
 
 ## Product limits
 

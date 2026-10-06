@@ -41,6 +41,14 @@ Every message ends with: `Si prefieres no recibir mensajes, responde BAJA.`
 - If false: no WhatsApp button, label "Sin permiso para WhatsApp", and **Descartar**.
 - Viewers see the queue without buttons. Owners, managers and platform admins (aal2) act.
 
+### What the owner can expect (for sales and onboarding)
+
+- The queue is pull-based. Smart Tap sends the business no notification, email or message about it; the owner sees it when he opens `/dashboard`.
+- Nothing is lost or duplicated between visits to the dashboard: every open recomputes against today's date in the business time zone. The owner may check daily, several times a day, or less often.
+- The inactivity threshold is the business's own `inactivity_days`, chosen by the owner at onboarding (D-036). 30 is only the pre-filled default.
+- A customer without WhatsApp opt-in appears with "Sin permiso para WhatsApp" and no send button.
+- After **Enviar WhatsApp** or **Descartar**, the customer leaves that kind of queue for the current cycle (`period_key`); a new visit starts a new inactivity cycle.
+
 ## 4. Actions
 
 New table `follow_ups`: `id`, `business_id`, `customer_id`, `kind`, `period_key`, `status` (`contacted` | `dismissed`), `actor_user_id`, `created_at`; unique `(business_id, customer_id, kind, period_key)`; composite FK `(business_id, customer_id)` to customers; RLS select for members, same pattern as `visits`; writes only through the server.
