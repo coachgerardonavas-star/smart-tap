@@ -21,12 +21,12 @@ export type Business = {
   offer_frequent: string | null;
   offer_new: string | null;
   google_review_url: string | null;
-  instagram_url: string | null;
-  business_type: BusinessType | null;
   theme: CustomerTheme;
   tagline: string | null;
   benefits: string[] | null;
   hero_image_url: string | null;
+  business_type: BusinessType | null;
+  instagram_url: string | null;
   owner_approved_at: string | null;
   owner_approved_name: string | null;
   owner_approved_terms_version: string | null;

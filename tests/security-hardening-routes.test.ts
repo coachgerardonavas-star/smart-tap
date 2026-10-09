@@ -20,13 +20,14 @@ describe("public form hardening", () => {
     }
   });
 
-  it("returns the minimal confirmation plus the non-sensitive visit count", () => {
+  it("returns only ok, business name and a name-gated visit count from check-in (D-057)", () => {
     const route = source("src/pages/api/public/check-in.ts");
-    expect(route).toContain("businessName: business.display_name, visitCount:");
+    expect(route).toContain("publicCheckInResponse(checkIn, parsed.data.fullName, business.display_name)");
     expect(route).not.toContain("return json(201, { data })");
+    expect(route).not.toContain("alreadyCounted");
     const form = source("src/components/CheckInForm.tsx");
-    expect(form).toContain("visitCount");
     expect(form).not.toContain("alreadyCounted");
+    expect(form).not.toContain("customerName");
   });
 
   it("places Turnstile widgets on check-in, login and password reset", () => {

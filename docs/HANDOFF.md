@@ -1,18 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-05 by ChatGPT Codex (Builder), for D-057 customer styles v2. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
-
-## Current Builder handoff — D-057 customer styles v2
-
-- Branch: `codex/customer-styles-v2`, based on `main` at `0492ec8`.
-- Four styles follow the approved photo-led design in the shared live/demo component. Registration stays on one page; confirmation uses the real `visitCount`, caps filled stars at five and contains no reward claim.
-- Added eight business presets with editable style, tagline, three benefits, business icon, three stock photos and four tested accent colors per style.
-- Added 24 local WebP photos under `public/stock/`, each at most 1200 px wide and below 200 KB. Attribution and Unsplash License links are in `public/stock/ATTRIBUTION.md`.
-- Added exact Instagram validation and conditional display. Hero images accept HTTPS or constrained local stock paths.
-- New migration: `supabase/migrations/20261005190000_customer_styles_v2.sql`. It is intentionally unapplied.
-- Evidence: `docs/evidence/customer-{elegante,calido,moderno,colorido}-{form,confirmation}-390x844.png`.
-- Final clean gate: `npm ci` installed 334 packages with zero vulnerabilities; `npm run check` passed with zero diagnostics; 16 files and 158 tests passed; the standalone Node build completed; strict production audit found zero vulnerabilities.
-- No deployment, merge, database migration or secret handling occurred.
+Updated: 2026-10-06 by Claude Code acting as Builder for D-058 (stale sessions), without deployment, merge or database changes. Earlier the same day: D-057 (PR #13, merged). Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
 ## Project identity
 
@@ -22,7 +10,29 @@ Updated: 2026-10-05 by ChatGPT Codex (Builder), for D-057 customer styles v2. `d
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
 - **CEO/attorney-approved commercial and product decisions D-025 through D-056:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
 
-## Current Builder handoff — PR #12 GS-49 corrections
+## Current Builder handoff — D-058 stale sessions
+
+- Branch `claude/stale-session-fix` from `main` at `67eb0a7`. No migration.
+- Root cause, confirmed end-to-end: `getClaims()` validates the JWT locally, so a revoked session passed; `/mfa` then failed on `listFactors()` (Auth 403 `session_not_found`); the middleware re-threw and Node sent an empty 500 with no content type, which the iPhone downloaded as `mfa.txt`. That response had no `nosniff` header. Also, with a revoked `aal2` token, `/admin` and `/dashboard` answered 200 until expiry.
+- Code: `src/lib/session.ts` (invalid-session classification, Supabase cookie cleanup), `src/lib/error-page.ts` (generic HTML and JSON errors), `src/lib/auth.ts` (`getUser` confirmation, `session_invalid` reason), `src/pages/mfa.astro`, `src/middleware.ts`.
+- Tests: `tests/stale-session.test.ts` (20). Run against the unfixed `main` code, 14 of them failed; all pass with the fix.
+- Local reproduction: `npm run build && scripts/stale-session/probe.sh revoked aal1` (also `revoked aal2`, `valid aal2`). It starts a local Supabase stand-in with a runtime-generated key; no real project or key is used.
+- Reviewer: run the production check in CURRENT_STATE after deploy.
+
+## Previous Builder handoff — D-057 customer styles v2
+
+- Branch: `claude/customer-styles-v2` from `main` at `0492ec8`. Builder: Claude Code (CEO assignment for this task). Spec: `docs/design/customer-styles-v2/BUILDER_BRIEF.md` on `claude/design-v2`.
+- Customer screens: `src/components/CheckInForm.tsx` (form, `ConfirmationView`, `BrandMark`, `customerScreenStyle`), `src/components/customer-icons.tsx`, `src/components/check-in.css`, `src/components/CustomerCapture.astro` (fonts). Turnstile effect copied verbatim.
+- Presets and library: `src/lib/business-presets.ts`, `public/stock/<type>/*.webp` (24 files, Unsplash License, credits in `public/stock/ATTRIBUTION.md`).
+- Palettes, style tokens and counter helpers: `src/lib/customer-theme.ts`.
+- Public API: `src/lib/check-in-result.ts` returns `visitCount` only on a name match; `alreadyCounted` and the stored name never leave the server. **Decision pending** (see D-057).
+- Admin: `/admin/[id]` business type select (pre-fills via a bundled script), palette radios per style, photo grid with own-URL and no-photo options, Instagram field. `update.ts` audits `business_type` and `instagram_url` as column names.
+- Validation: `businessType`, `instagramUrlSchema`, `heroImageUrlSchema`, palette check and `heroImageFromForm` in `src/lib/validation.ts`.
+- Migration `supabase/migrations/20261006020000_customer_styles_v2.sql`, not applied. Reviewer action: inspect, apply to production `fzrzrbzxjdezwylzkbkh`, then set Café Luna's `business_type = 'cafe'` if wanted. Existing businesses whose `primary_color` is outside their style palette must pick a palette color the next time the admin saves them.
+- Tests: `tests/customer-styles-v2.test.ts` (counter 1/3/5/9, no reward copy, Instagram on/off, logo fallback, contrast, presets, photo files, URL validation, name-gated response) and PGlite CHECKs in `tests/database-integration.test.ts`. `vitest.config.ts` enables the automatic JSX runtime for server rendering in tests.
+- Evidence: `docs/evidence/customer-v2-*-390x844.png` (8) and `customer-v2-elegante-form-1440x900.png`, from `npm run evidence:customer-styles` with `CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. The admin page was not captured: it needs an authenticated AAL2 session and Supabase.
+
+## Previous Builder handoff — PR #12 GS-49 corrections
 
 - Branch: `codex/security-hardening`; PR: `https://github.com/coachgerardonavas-star/smart-tap/pull/12`; base `main` includes PR #9, #10 and #11 at `836ea3b`.
 - `src/lib/security-alerts-core.mjs` now owns the allowlist, `business.updated` activation filter, aggregation, 20-minute fallback, cursor reading and 3,500-character cap.

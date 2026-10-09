@@ -1,6 +1,6 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-05 during D-057 customer styles v2 work.
+Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder work (stale sessions).
 
 ## Production
 
@@ -10,7 +10,7 @@ Canonical short status for agents. Updated 2026-10-05 during D-057 customer styl
 - The Supabase connector can access that production project directly by ID; `list_projects` does not enumerate it because it belongs to a different organization.
 - Production organization `Smart Tap Produccion` is confirmed on the Pro tier.
 - Test database: `vrouyhxzxrfkuuqfslrc`; it is not the app production database.
-- `main` at Builder branch start: `0492ec8` (includes PR #12).
+- `main` after PR #11: `836ea3b`.
 - Production has all 14 repository migrations applied; a fresh production security-advisor check on 2026-10-05 returned zero lints.
 - Café Luna is a synthetic demo tenant. Do not treat demo records as real customer evidence.
 
@@ -18,7 +18,20 @@ Canonical short status for agents. Updated 2026-10-05 during D-057 customer styl
 
 The MVP is implemented and has live evidence for NFC check-in, multi-tenant isolation, owner/admin flows, MFA/AAL2, privacy, Terms v2, follow-up queue, customer branding and onboarding. PR #10 fixed the live Turnstile hydration defect and a subsequent real check-in was confirmed.
 
-D-057 is implemented on `codex/customer-styles-v2`: photo-led versions of all four customer styles, eight editable business presets, 24 local licensed stock photos, a real visit counter, conditional Instagram, and matching app/database validation. Migration `20261005190000_customer_styles_v2.sql` remains unapplied. No deploy or production data change has occurred.
+## In progress — D-058 stale sessions
+
+- Builder: Claude Code (CEO assignment), branch `claude/stale-session-fix` from `main` at `67eb0a7` (PR #13 merged).
+- Fixes the 2026-10-05 `mfa.txt` download: revoked sessions now go to `/login` with their cookies cleared, page errors are HTML and API errors JSON. Also closes the gap where a revoked `aal2` session kept reading `/admin` and `/dashboard` until its token expired.
+- No migration. Each protected request now makes one extra Auth call (`getUser`).
+- Production check after deploy: change a password on one device, then open `/admin` on another. It must land on `/login` without a download.
+
+## Done — D-057 customer styles v2 (PR #13 merged; migration pending Reviewer)
+
+- Builder for this task: Claude Code, assigned by the CEO on 2026-10-06, branch `claude/customer-styles-v2` from `main` at `0492ec8` (PR #12 merged). A separate Claude Code session reviews.
+- Photo hero, icons, visit counter, Instagram button, business-type presets, 24-photo stock library and four accent colors per style, in `/b/[slug]` and `/demo/capture`.
+- New migration `20261006020000_customer_styles_v2.sql` (business_type, instagram_url, wider hero CHECK). **Not applied.** The Reviewer applies it before deploying; the code reads both columns with `select("*")` and uses the café presentation for legacy rows without a type.
+- Open decision: the visit counter is returned only when the submitted name matches the stored name (partial reopening of D-052 finding 2; residual risk MEDIUM). Needs CEO/Reviewer acceptance.
+- Local gate: clean `npm ci` (343 packages, 0 vulnerabilities), 0 diagnostics, 180/180 tests, complete build, strict production audit 0 vulnerabilities.
 
 ## Glasswing gate
 
@@ -31,7 +44,7 @@ D-057 is implemented on `codex/customer-styles-v2`: photo-led versions of all fo
 
 - Builder: ChatGPT Codex.
 - Reviewer: Claude Code.
-- Current Builder branch: `codex/customer-styles-v2`, explicitly authorized for D-057.
+- Reuse `codex/security-hardening` for Codex Builder work. The CEO opened `claude/customer-styles-v2` for the D-057 task. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule.
 - Changes reach `main` only through PR with `verify` green and Reviewer inspection.
 - Do not deploy, merge, migrate production, or add secrets merely to make a gate pass.
 

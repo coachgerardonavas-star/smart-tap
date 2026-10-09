@@ -1,4 +1,4 @@
-# Customer screens — branded styles (D-046, D-048)
+# Customer screens — branded styles (D-046, D-048, D-057)
 
 ## D-057 visual system (v2)
 
@@ -41,3 +41,20 @@ Admin: style selector plus the three new fields in `/admin/[id]`; changes go thr
 - Real `<label>`/`<input>`/`<button>`, touch targets ≥ 44 px, no emoji, icons as inline stroke SVG.
 - Desktop: hero and form side by side (existing two-column layout), same styles.
 - `/demo/capture` uses the same component with Café Luna data and a selectable style for sales demos.
+
+## Styles v2 (D-057, 2026-10-06)
+
+Supersedes the visual details above where they differ; the rules above still apply unless changed here. Design: `docs/design/customer-styles-v2/` on `claude/design-v2`.
+
+- **Registration (one screen).** Full-width business photo with the style's veil; logo or initials plus the business-type icon; business name; type label as subtitle; tagline in the style's script face; title; three benefits with circled icons; form card over the hero with icons in Nombre, Teléfono and cumpleaños; bottom illustration in elegante and cálido. Consent, birthday and WhatsApp copy unchanged; WhatsApp unchecked and optional. Turnstile logic unchanged (explicit render, PR #10).
+- **Mobile layout.** The 360 px hero limit is replaced by the D-057 full photo hero. At 390×844 the Nombre input still ends inside the first viewport: 641 px (elegante), 604 px (cálido), 667 px (moderno), 601 px (colorido), measured under the 48 px demo bar. No horizontal scroll.
+- **Confirmation.** "¡Listo!", "Tu visita quedó registrada", "Esta es tu visita número N" with five stars (min(N, 5) filled), "Gracias por venir. La próxima vez solo toca la tarjeta otra vez.", Google review button when configured, "Seguir en Instagram" only with `instagram_url`, and a per-style farewell. No rewards, prizes or accumulation copy. The counter appears only when the server returns `visitCount` (see D-057 on the name check).
+- **Fonts per style.** elegante: Cormorant Garamond, Jost, Great Vibes. cálido: Fraunces, Nunito, Caveat. moderno: Archivo, IBM Plex Sans. colorido: Baloo 2, Nunito. Only the selected style's faces are declared on a page.
+- **Accent colors.** Four per style; the admin chooses one. elegante `#C9A45C #1E2A3A #B28B42 #9C7B3E`; cálido `#C8412A #E59A55 #3B2316 #8A6A55`; moderno `#FF6A2B #FFD23F #2EC4B6 #FF6F9E`; colorido `#3A1240 #FF6F9E #2EC4B6 #FFD23F`. Button text is black or white by relative luminance (≥ 4.5:1). When an accent is too light for its background, the button keeps a dark 1.5 px edge.
+- **Data.** `business_type` has 8 values: restaurante, cafe, panaderia, barberia, salon, heladeria, tienda and gimnasio. A null legacy value uses the café presentation. `instagram_url` accepts `https://www.instagram.com/<usuario>` with usuario `[A-Za-z0-9._]{1,30}`. `hero_image_url` also accepts `/stock/<type>/<name>.webp`. Admin edits all three; changes go through `business.updated` with `changedFields`.
+- **Presets by type.** Style, tagline, three benefits, inactivity days, first library photo and first palette color are filled when the admin changes the type. Values remain editable.
+- **Photo library.** `public/stock/<type>/<type>-{1,2,3}.webp`, ≤ 1200 px wide and < 200 KB; credits and license in `public/stock/ATTRIBUTION.md`. The admin can pick a library photo, an own HTTPS URL or no photo.
+- **Performance.** The hero `<img>` has explicit size and `fetchpriority="high"`; React also emits a matching image preload.
+- **Accessibility.** Text ≥ 4.5:1 against a white photo under the lightest veil stop; field borders ≥ 3:1; visible focus; animations only under `prefers-reduced-motion: no-preference`.
+- **Evidence.** `docs/evidence/customer-v2-<style>-form-390x844.png`, `customer-v2-<style>-confirmation-390x844.png` and `customer-v2-elegante-form-1440x900.png`, produced by `npm run evidence:customer-styles` against `/demo/capture?theme=<style>&type=<type>&visitas=3`.
+- `/demo/capture` accepts `type`, `theme` and `visitas` (1–999) and uses fictional business names; nothing is stored.

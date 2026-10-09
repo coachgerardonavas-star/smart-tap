@@ -240,10 +240,35 @@ The alert runner reads from `audit_log`, aggregates only the approved security a
 
 Successful delivery writes `alerts.digest_sent` with `{ until, count }`. The next run reads events with `created_at > until`; the first run falls back 20 minutes. A failed Telegram request writes no cursor, so the next run retries. The query orders by `created_at` and reads at most 1,000 rows; a full page is shown as `1000+`, and the cursor advances only through the events read. The cursor action uses the `alerts.` prefix so the event selector never consumes its own records.
 
-## D-057 — Customer styles v2, business presets and visit count (CEO, 2026-10-05)
+## D-057 — Customer styles v2: photo hero, icons, visit counter, Instagram and business-type presets (CEO, 2026-10-05; Builder implementation 2026-10-06)
 
-The four approved customer styles use a full-photo hero, a style-specific veil, icon-led benefits, an overlapping form card and a matching confirmation. A business can select one of eight types: restaurant, café, bakery, barbershop, salon, ice cream shop, store or gym. Each type provides an editable suggested style, tagline, three benefits, a brand icon and three local Unsplash photos.
+Approved design: `docs/design/customer-styles-v2/estilos-smart-tap.html` on branch `claude/design-v2`, brief `BUILDER_BRIEF.md` in the same folder. The four styles keep one registration screen (D-048) and now use the business photo as a full-width hero under a dark veil, the logo (fallback: initials plus the business-type icon), the type as subtitle, the tagline in each style's script face, three benefits with circled icons and a form card over the hero with field icons.
 
-The confirmation displays only the non-sensitive visit count returned by `record_public_check_in`, with five stars and at most five filled. It promises no reward. Google Review and Instagram buttons render only when their validated URLs exist. Instagram accepts exactly `https://www.instagram.com/<username>`, with a 1–30 character username limited to letters, numbers, dots and underscores.
+The confirmation shows "Esta es tu visita número N" and five stars with min(N, 5) filled. Smart Tap only counts visits: no rewards, prizes or "collect X" copy. Google review button when `google_review_url` exists; "Seguir en Instagram" only when `instagram_url` exists.
 
-Local stock paths use `/stock/<type>/<file>.webp`; remote hero photos continue to require HTTPS. Button label color remains computed from the selected accent with a WCAG contrast ratio of at least 4.5:1. The new migration is prepared for review and stays unapplied.
+New `businesses.business_type` (restaurante, cafe, panaderia, barberia, salon, heladeria, tienda, gimnasio) pre-fills style, tagline, three benefits, inactivity days (barberia 35; cafe, panaderia and gimnasio 14; restaurante and heladeria 21; salon and tienda 30), photo and accent in the admin; all stay editable. Each type has three Unsplash-License photos in `public/stock/<type>/`, credited in `public/stock/ATTRIBUTION.md`. The accent is one of four tested colors per style. Legacy rows without a type use the café presentation until an administrator saves an explicit choice.
+
+Builder implementation choices:
+- **Visit count vs. D-052 finding 2 (HIGH).** D-052 removed the count from the public response so a person who knows a phone number cannot learn that customer's history. To deliver D-057 without reopening that finding in full, the API returns `visitCount` only when the submitted name matches the stored name (case, accents and spaces ignored). A new customer always matches. Residual risk: someone who knows both the phone and the name can see the count, and the absence of a counter tells a stranger that the phone is already registered at that business. The CEO or Reviewer must accept this residual risk or choose another rule before release.
+- Hero text is 4.5:1 or better against a pure white photo under the lightest stop of each veil; the script tagline uses a light tint (colorido uses its yellow pill). Decorative icons use the accent only when it reaches 3:1 against the veil.
+- Benefits keep the existing data model (three texts of up to 40 characters). The design's second line under each benefit was not added because the brief did not include a schema change for it.
+- Confirmation keeps the approved lines ("¡Listo!", "Tu visita quedó registrada", "Gracias por venir. La próxima vez solo toca la tarjeta otra vez.") and adds a short farewell per style.
+- Fonts stay local: Great Vibes (elegante), Fraunces and Caveat (cálido) were added through `@fontsource`; Bricolage Grotesque and DM Sans were removed. The CSP was not widened.
+- Migration `20261006020000_customer_styles_v2.sql` is not applied by the Builder.
+
+## D-058 — Revoked sessions end in a clean sign-in; page errors are always HTML (Builder, 2026-10-06)
+
+Incident (production, 2026-10-05 ~21:35–21:40 UTC): after a password change the CEO's iPhone kept the old session cookies. `/admin` sent him to `/mfa` and Chrome downloaded `mfa.txt`. Supabase logged repeated `GET /auth/v1/user` → 403 `session_not_found`.
+
+Confirmed root cause, reproduced with the built server against a local Supabase stand-in (`scripts/stale-session/`):
+- `getAuthIdentity` used only `getClaims()`. With asymmetric JWT signing that call verifies the token signature locally and never asks Auth whether the session still exists, so a revoked session kept passing until the access token expired.
+- On `/mfa`, `mfa.listFactors()` calls `GET /auth/v1/user`, which answered 403 `session_not_found`; the page threw `Unable to list MFA factors`. The middleware re-threw every non-authorization error, so Node sent an empty 500 **without any content type**, which the iPhone saved as a file.
+- Difference from the initial hypothesis: that 500 did not carry `X-Content-Type-Options: nosniff`, because the middleware threw before setting headers. The download came from the missing content type and empty body.
+- Wider finding: with a revoked session and an `aal2` token still within its lifetime, `/admin` and `/dashboard` rendered with data (HTTP 200) until the token expired.
+
+Decision:
+- `getAuthIdentity` keeps `getClaims()` for the verified claims and also calls `getUser()`, so Auth confirms that the session is alive and belongs to the same subject. Revoked, missing or expired sessions (`session_not_found`, `session_expired`, `refresh_token_not_found`, `refresh_token_already_used`, `bad_jwt`, `user_not_found`, a 401/403/404 from Auth, missing session or invalid JWT) give no identity. Other Auth failures (network, 5xx) raise `auth_unavailable` and show the error page instead of signing the user out. Cost: one Auth request per protected request.
+- On a 401 the middleware deletes every `sb-*-auth-token` cookie (chunks and PKCE verifier included), redirects pages to `/login?next=<path>` with 302 and answers `/api/*` with the same 401 JSON as before.
+- `/mfa` raises the session error before its generic factor error.
+- Unexpected errors become a generic Spanish HTML page (500) on pages and JSON on `/api/*`, without internal details; the 403 page is HTML; any page response of 400 or more without a content type is replaced by the HTML page. All carry `text/html; charset=utf-8` and the security headers. `/mfa` is now also `Cache-Control: private, no-store`.
+- Unchanged: AAL2 for platform admins and active owners, global logout, no new unauthenticated routes and no bypass.

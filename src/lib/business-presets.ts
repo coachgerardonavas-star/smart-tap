@@ -1,38 +1,109 @@
 import type { CustomerTheme } from "./customer-theme";
 
+// D-057: business types and the values the admin pre-fills when one is chosen.
+// Every value stays editable; the presets are suggestions, never enforced.
 export const businessTypes = ["restaurante", "cafe", "panaderia", "barberia", "salon", "heladeria", "tienda", "gimnasio"] as const;
+
 export type BusinessType = (typeof businessTypes)[number];
+
+export type BusinessIcon = "utensils" | "cup" | "bread" | "cone" | "blade" | "comb" | "store" | "dumbbell";
 
 export type BusinessPreset = {
   label: string;
-  icon: BusinessType;
+  icon: BusinessIcon;
   theme: CustomerTheme;
   tagline: string;
   benefits: [string, string, string];
+  inactivityDays: number;
   photos: [string, string, string];
 };
 
-const photos = (type: BusinessType) => [1, 2, 3].map((number) => `/stock/${type}/${type}-${number}.webp`) as [string, string, string];
+const stockPhotos = (type: BusinessType, prefix: string): [string, string, string] =>
+  [1, 2, 3].map((index) => `/stock/${type}/${prefix}-${index}.webp`) as [string, string, string];
 
 export const businessPresets: Record<BusinessType, BusinessPreset> = {
-  restaurante: { label: "Restaurante", icon: "restaurante", theme: "elegante", tagline: "Buena comida, mejores momentos", benefits: ["Promociones especiales", "Te reconocemos al volver", "Sorpresas en tu cumpleaños"], photos: photos("restaurante") },
-  cafe: { label: "Café", icon: "cafe", theme: "calido", tagline: "Momentos que se quedan", benefits: ["Ofertas para clientes", "Te reconocemos al volver", "Sorpresas en tu cumpleaños"], photos: photos("cafe") },
-  panaderia: { label: "Panadería", icon: "panaderia", theme: "calido", tagline: "Recién hecho para ti", benefits: ["Especiales de la casa", "Te reconocemos al volver", "Sorpresas en tu cumpleaños"], photos: photos("panaderia") },
-  barberia: { label: "Barbería", icon: "barberia", theme: "moderno", tagline: "Corte, barba y estilo", benefits: ["Ofertas para clientes", "Tus visitas quedan guardadas", "Un detalle en tu cumpleaños"], photos: photos("barberia") },
-  salon: { label: "Salón de belleza", icon: "salon", theme: "elegante", tagline: "Tu momento para brillar", benefits: ["Beneficios para clientes", "Te reconocemos al volver", "Un detalle en tu cumpleaños"], photos: photos("salon") },
-  heladeria: { label: "Heladería", icon: "heladeria", theme: "colorido", tagline: "¡Hecho con amor!", benefits: ["Sabores nuevos primero", "Te reconocemos al volver", "Sorpresas en tu cumple"], photos: photos("heladeria") },
-  tienda: { label: "Tienda", icon: "tienda", theme: "moderno", tagline: "Siempre algo nuevo", benefits: ["Ofertas para clientes", "Novedades de la tienda", "Un detalle en tu cumpleaños"], photos: photos("tienda") },
-  gimnasio: { label: "Gimnasio", icon: "gimnasio", theme: "moderno", tagline: "Cada visita cuenta", benefits: ["Beneficios para miembros", "Tu constancia queda registrada", "Un detalle en tu cumpleaños"], photos: photos("gimnasio") },
+  restaurante: {
+    label: "Restaurante",
+    icon: "utensils",
+    theme: "elegante",
+    tagline: "Buena comida, mejores momentos",
+    benefits: ["Promociones especiales", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
+    inactivityDays: 21,
+    photos: stockPhotos("restaurante", "restaurante"),
+  },
+  cafe: {
+    label: "Café",
+    icon: "cup",
+    theme: "calido",
+    tagline: "Momentos que se quedan",
+    benefits: ["Ofertas para clientes", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
+    inactivityDays: 14,
+    photos: stockPhotos("cafe", "cafe"),
+  },
+  panaderia: {
+    label: "Panadería",
+    icon: "bread",
+    theme: "calido",
+    tagline: "Recién horneado, como en casa",
+    benefits: ["Ofertas para clientes", "Te reconocemos al volver", "Un detalle en tu cumpleaños"],
+    inactivityDays: 14,
+    photos: stockPhotos("panaderia", "panaderia"),
+  },
+  heladeria: {
+    label: "Heladería",
+    icon: "cone",
+    theme: "colorido",
+    tagline: "¡Hecho con amor!",
+    benefits: ["Ofertas para clientes", "Te recordamos al volver", "Sorpresa en tu cumple"],
+    inactivityDays: 21,
+    photos: stockPhotos("heladeria", "heladeria"),
+  },
+  barberia: {
+    label: "Barbería",
+    icon: "blade",
+    theme: "moderno",
+    tagline: "Corte · Barba · Estilo",
+    benefits: ["Ofertas para clientes", "Sin tarjetas de papel", "Un detalle en tu cumpleaños"],
+    inactivityDays: 35,
+    photos: stockPhotos("barberia", "barberia"),
+  },
+  salon: {
+    label: "Salón de belleza",
+    icon: "comb",
+    theme: "elegante",
+    tagline: "Tu momento para ti",
+    benefits: ["Promociones especiales", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
+    inactivityDays: 30,
+    photos: stockPhotos("salon", "salon"),
+  },
+  tienda: {
+    label: "Tienda",
+    icon: "store",
+    theme: "moderno",
+    tagline: "Siempre algo nuevo",
+    benefits: ["Ofertas para clientes", "Novedades de la tienda", "Un detalle en tu cumpleaños"],
+    inactivityDays: 30,
+    photos: stockPhotos("tienda", "tienda"),
+  },
+  gimnasio: {
+    label: "Gimnasio",
+    icon: "dumbbell",
+    theme: "moderno",
+    tagline: "Cada visita cuenta",
+    benefits: ["Beneficios para miembros", "Tu constancia queda registrada", "Un detalle en tu cumpleaños"],
+    inactivityDays: 14,
+    photos: stockPhotos("gimnasio", "gimnasio"),
+  },
 };
 
-export const customerThemeColors: Record<CustomerTheme, readonly [string, string, string, string]> = {
-  elegante: ["#C9A45C", "#9C7B3E", "#7D5A2B", "#B28B42"],
-  calido: ["#C8412A", "#9E3A24", "#6B4226", "#D97745"],
-  moderno: ["#FF6A2B", "#19C37D", "#3B82F6", "#EAB308"],
-  colorido: ["#3A1240", "#FF6F9E", "#2EC4B6", "#7C3AED"],
-};
+export const stockPhotoPattern = /^\/stock\/[a-z_]+\/[a-z0-9-]+\.webp$/;
+
+export const stockPhotoLibrary: string[] = businessTypes.flatMap((type) => businessPresets[type].photos);
 
 export function isBusinessType(value: unknown): value is BusinessType {
   return typeof value === "string" && businessTypes.includes(value as BusinessType);
 }
 
+export function resolveBusinessType(value: unknown): BusinessType {
+  return isBusinessType(value) ? value : "cafe";
+}

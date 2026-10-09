@@ -3,6 +3,8 @@ import Base from "../../layouts/Base.astro";
 import CustomerCapture from "../../components/CustomerCapture.astro";
 import { isCustomerTheme, resolveCustomerBenefits } from "../../lib/customer-theme";
 import { businessPrivacyUrl } from "../../lib/privacy";
+import { resolveBusinessType } from "../../lib/business-presets";
+import { instagramUrlPattern } from "../../lib/validation";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 import { turnstileSiteKey } from "../../lib/turnstile";
@@ -21,6 +23,7 @@ try {
 
 if (!business) Astro.response.status = 404;
 const theme = business && isCustomerTheme(business.theme) ? business.theme : "calido";
+const instagramUrl = business?.instagram_url && instagramUrlPattern.test(business.instagram_url) ? business.instagram_url : null;
 ---
 
 <Base title={business ? `${business.display_name} | Registra tu visita` : "Enlace no disponible"} themeColor={business?.primary_color}>
@@ -29,6 +32,7 @@ const theme = business && isCustomerTheme(business.theme) ? business.theme : "ca
       slug={business.slug}
       tagCode={tagCode}
       businessName={business.display_name}
+      businessType={resolveBusinessType(business.business_type)}
       primaryColor={business.primary_color}
       privacyUrl={businessPrivacyUrl(business.slug, business.privacy_url)}
       theme={theme}
@@ -37,8 +41,7 @@ const theme = business && isCustomerTheme(business.theme) ? business.theme : "ca
       heroImageUrl={business.hero_image_url}
       logoUrl={business.logo_url}
       googleReviewUrl={business.google_review_url}
-      instagramUrl={business.instagram_url}
-      businessType={business.business_type}
+      instagramUrl={instagramUrl}
       turnstileSiteKey={turnstileSiteKey()}
     />
   ) : (
