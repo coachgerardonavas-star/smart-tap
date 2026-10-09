@@ -1,6 +1,6 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder work (stale sessions).
+Canonical short status for agents. Updated 2026-10-09 after the D-057 business-type alignment on `codex/customer-styles-v2`.
 
 ## Production
 
@@ -10,7 +10,7 @@ Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder wo
 - The Supabase connector can access that production project directly by ID; `list_projects` does not enumerate it because it belongs to a different organization.
 - Production organization `Smart Tap Produccion` is confirmed on the Pro tier.
 - Test database: `vrouyhxzxrfkuuqfslrc`; it is not the app production database.
-- `main` after PR #11: `836ea3b`.
+- Repository `main`: `bfec079`, including D-057 through PR #13 and D-058 through PR #14.
 - Production has all 14 repository migrations applied; a fresh production security-advisor check on 2026-10-05 returned zero lints.
 - Café Luna is a synthetic demo tenant. Do not treat demo records as real customer evidence.
 
@@ -18,9 +18,9 @@ Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder wo
 
 The MVP is implemented and has live evidence for NFC check-in, multi-tenant isolation, owner/admin flows, MFA/AAL2, privacy, Terms v2, follow-up queue, customer branding and onboarding. PR #10 fixed the live Turnstile hydration defect and a subsequent real check-in was confirmed.
 
-## In progress — D-058 stale sessions
+## Done — D-058 stale sessions (PR #14 merged)
 
-- Builder: Claude Code (CEO assignment), branch `claude/stale-session-fix` from `main` at `67eb0a7` (PR #13 merged).
+- Builder: Claude Code, branch `claude/stale-session-fix`, merged through PR #14.
 - Fixes the 2026-10-05 `mfa.txt` download: revoked sessions now go to `/login` with their cookies cleared, page errors are HTML and API errors JSON. Also closes the gap where a revoked `aal2` session kept reading `/admin` and `/dashboard` until its token expired.
 - No migration. Each protected request now makes one extra Auth call (`getUser`).
 - Production check after deploy: change a password on one device, then open `/admin` on another. It must land on `/login` without a download.
@@ -33,6 +33,13 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 - Open decision: the visit counter is returned only when the submitted name matches the stored name (partial reopening of D-052 finding 2; residual risk MEDIUM). Needs CEO/Reviewer acceptance.
 - Local gate: clean `npm ci` (343 packages, 0 vulnerabilities), 0 diagnostics, 180/180 tests, complete build, strict production audit 0 vulnerabilities.
 
+## In review — D-057 exact business types
+
+- Branch `codex/customer-styles-v2` merges current `main` and aligns the preset and database list to the approved values: restaurante, cafe, panaderia, barberia, salon, heladeria, tienda and gimnasio.
+- The branch bundles the approved design source and preview, keeps 24 local Unsplash photos, and records every source in `public/stock/ATTRIBUTION.md`.
+- Migration remains `20261006020000_customer_styles_v2.sql` and remains unapplied. The branch does not deploy or change hosted data.
+- Local gate on commit `9340895`: clean `npm ci` (335 packages), 0 diagnostics, 200/200 tests, complete build and 0 production audit vulnerabilities.
+
 ## Glasswing gate
 
 - GS-25 backups: daily backups are enabled on Supabase Pro, but a restore has not yet been tested. This remains the formal gate before approval for real customer data. The current Supabase connector can read/manage the production project but exposes no backup-list or backup-restore operation, so the restore test cannot be executed through this connector.
@@ -44,7 +51,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 
 - Builder: ChatGPT Codex.
 - Reviewer: Claude Code.
-- Reuse `codex/security-hardening` for Codex Builder work. The CEO opened `claude/customer-styles-v2` for the D-057 task. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule.
+- Current Builder branch: `codex/customer-styles-v2`. Start later tasks from updated `main` after this branch completes review.
 - Changes reach `main` only through PR with `verify` green and Reviewer inspection.
 - Do not deploy, merge, migrate production, or add secrets merely to make a gate pass.
 

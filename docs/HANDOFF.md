@@ -1,6 +1,6 @@
 # Smart Tap handoff
 
-Updated: 2026-10-06 by Claude Code acting as Builder for D-058 (stale sessions), without deployment, merge or database changes. Earlier the same day: D-057 (PR #13, merged). Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
+Updated: 2026-10-09 by ChatGPT Codex for the D-057 exact business-type alignment, without deployment, migration or hosted-data changes. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
 ## Project identity
 
@@ -9,6 +9,16 @@ Updated: 2026-10-06 by Claude Code acting as Builder for D-058 (stale sessions),
 - Stack: Astro 7, React 19, Supabase JS/SSR, PostgreSQL, Supabase Auth, Vitest
 - Security standard: Glasswing Shield v1.0 — matrix `docs/security/CONTROL_MATRIX.md`
 - **CEO/attorney-approved commercial and product decisions D-025 through D-056:** `docs/DECISIONS.md`, `docs/CHATGPT_COORDINATION_NOTE.md`, `docs/PRIVACY_NOTICE.md`, `docs/TERMS_OF_SERVICE.md` and `docs/CUSTOMER_SCREENS.md`.
+
+## Current Builder handoff — D-057 exact business types
+
+- Branch `codex/customer-styles-v2` at `9340895`, created from `0492ec8` and merged with current `main` at `bfec079` so D-058 remains present.
+- D-057 was already merged through PR #13. This follow-up matches the approved exact list: restaurante, cafe, panaderia, barberia, salon, heladeria, tienda and gimnasio. Legacy null or unknown values use the café presentation until an administrator saves a type.
+- `food_truck` and `otro` presets and photos were replaced by three tienda photos and three gimnasio photos. All 24 files are local WebP, at most 1200 px wide and below 200 KB; credits and Unsplash License links are in `public/stock/ATTRIBUTION.md`.
+- The approved HTML source and preview are now local under `docs/design/customer-styles-v2/`. D-057 evidence remains under `docs/evidence/customer-v2-*`.
+- Migration `supabase/migrations/20261006020000_customer_styles_v2.sql` contains the exact type CHECK, the strict Instagram CHECK and the local hero path CHECK. It remains unapplied.
+- Local gate: clean `npm ci` (335 packages, 0 vulnerabilities), `npm run check` (0 diagnostics), `npm test` (18 files, 200/200), complete build and strict production audit with 0 vulnerabilities.
+- Reviewer action: inspect the branch and migration, confirm the visit-count name-match privacy choice in D-057, then apply the migration only through the approved production change process. No deploy, merge to `main`, database migration or secret handling occurred in this Builder pass.
 
 ## Current Builder handoff — D-058 stale sessions
 
