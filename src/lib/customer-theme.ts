@@ -79,3 +79,8 @@ export function buttonTextColor(background: string): "#000000" | "#FFFFFF" {
   const light = contrastRatio(background, "#FFFFFF");
   return dark >= light ? "#000000" : "#FFFFFF";
 }
+
+export function visitStars(visitCount: number): boolean[] {
+  const filled = Math.min(5, Math.max(0, Math.floor(visitCount)));
+  return Array.from({ length: 5 }, (_, index) => index < filled);
+}

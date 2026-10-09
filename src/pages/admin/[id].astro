@@ -5,6 +5,7 @@ import { siteUrl as configuredSiteUrl } from "../../lib/env";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 import { TERMS_VERSION } from "../../lib/terms";
+import { businessPresets, businessTypes, customerThemeColors } from "../../lib/business-presets";
 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
 const id = Astro.params.id ?? "";
@@ -55,6 +56,10 @@ const formError = Astro.url.searchParams.get("error");
         <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
         <fieldset>
           <legend>Pantalla del cliente</legend>
+          <div class="field"><label for="businessType">Tipo de negocio</label><select id="businessType" name="businessType">
+            <option value="">Selecciona un tipo</option>
+            {businessTypes.map((type) => <option value={type} selected={business.business_type === type}>{businessPresets[type].label}</option>)}
+          </select></div>
           <div class="field"><label for="theme">Estilo</label><select id="theme" name="theme" required>
             <option value="elegante" selected={business.theme === "elegante"}>Elegante</option>
             <option value="calido" selected={business.theme === "calido"}>Cálido</option>
@@ -62,7 +67,12 @@ const formError = Astro.url.searchParams.get("error");
             <option value="colorido" selected={business.theme === "colorido"}>Colorido</option>
           </select></div>
           <div class="field"><label for="tagline">Frase de marca (opcional)</label><input id="tagline" name="tagline" value={business.tagline ?? ""} maxlength="80" /></div>
-          <div class="field"><label for="heroImageUrl">URL HTTPS de la foto principal (opcional)</label><input id="heroImageUrl" name="heroImageUrl" type="url" value={business.hero_image_url ?? ""} maxlength="500" placeholder="https://..." /></div>
+          <input id="heroImageUrl" name="heroImageUrl" type="hidden" value={business.hero_image_url ?? ""} />
+          <div class="photo-library">
+            <strong>Foto de biblioteca</strong>
+            {businessTypes.map((type) => <div class="photo-options" data-photo-type={type} hidden={business.business_type !== type}>{businessPresets[type].photos.map((photo, index) => <label class:list={["photo-option", { selected: business.hero_image_url === photo }]}><input type="radio" name="stockHero" value={photo} checked={business.hero_image_url === photo} /><img src={photo} alt={`Opción ${index + 1} para ${businessPresets[type].label}`} width="180" height="120" loading="lazy" /></label>)}</div>)}
+          </div>
+          <div class="field"><label for="customHeroImageUrl">URL HTTPS propia (opcional)</label><input id="customHeroImageUrl" type="url" value={business.hero_image_url?.startsWith("https://") ? business.hero_image_url : ""} maxlength="500" placeholder="https://..." /></div>
           <p class="muted compact-note">Escribe los tres beneficios o deja los tres vacíos para usar los textos estándar.</p>
           <div class="field"><label for="benefit1">Beneficio 1</label><input id="benefit1" name="benefit1" value={business.benefits?.[0] ?? ""} maxlength="40" placeholder="Ofertas para clientes" /></div>
           <div class="field"><label for="benefit2">Beneficio 2</label><input id="benefit2" name="benefit2" value={business.benefits?.[1] ?? ""} maxlength="40" placeholder="Sorpresas en tu cumpleaños" /></div>
@@ -71,6 +81,7 @@ const formError = Astro.url.searchParams.get("error");
         <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /></div>
         <div class="split"><div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" value={business.contact_phone ?? ""} placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div><div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
         <p class="muted compact-note">El aviso usa estos datos. Configura al menos uno antes de registrar la aprobación del dueño.</p>
+        <div class="color-presets"><strong>Colores probados</strong>{Object.entries(customerThemeColors).map(([theme, colors]) => <div class="color-options" data-color-theme={theme} hidden={business.theme !== theme}>{colors.map((color) => <button type="button" class="color-swatch" data-color={color} style={`--swatch:${color}`} aria-label={`Usar color ${color}`} title={color}></button>)}</div>)}</div>
         <div class="triple"><div class="field"><label for="primaryColor">Principal</label><input id="primaryColor" name="primaryColor" type="color" value={business.primary_color} /></div><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
         <div class="split"><div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value={business.timezone} /></div><div class="field"><label for="defaultCountry">País</label><input id="defaultCountry" name="defaultCountry" value={business.default_country} maxlength="2" /></div></div>
         <fieldset>
@@ -83,6 +94,7 @@ const formError = Astro.url.searchParams.get("error");
         <fieldset>
           <legend>NFC de Google Review — grabar esta URL directamente en el chip</legend>
           <div class="field"><label for="googleReviewUrl">URL directa de Google Review</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /></div>
+          <div class="field"><label for="instagramUrl">Instagram del negocio</label><input id="instagramUrl" name="instagramUrl" type="url" value={business.instagram_url ?? ""} placeholder="https://www.instagram.com/usuario" /></div>
         </fieldset>
         <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={activationLocked} /> Negocio activo</label>
         {!business.is_active && !currentSignature && <p class="muted compact-note">Un dueño activo debe firmar los Términos vigentes para habilitar la aprobación.</p>}
@@ -154,6 +166,37 @@ const formError = Astro.url.searchParams.get("error");
   </div>
 </Base>
 
+<script>
+  import { businessPresets, customerThemeColors, isBusinessType } from "../../lib/business-presets";
+  import { isCustomerTheme } from "../../lib/customer-theme";
+  const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+  const typeSelect = byId<HTMLSelectElement>("businessType");
+  const themeSelect = byId<HTMLSelectElement>("theme");
+  const heroValue = byId<HTMLInputElement>("heroImageUrl");
+  const customHero = byId<HTMLInputElement>("customHeroImageUrl");
+  const primaryColor = byId<HTMLInputElement>("primaryColor");
+  const refreshChoices = () => {
+    document.querySelectorAll<HTMLElement>("[data-photo-type]").forEach((group) => { group.hidden = group.dataset.photoType !== typeSelect?.value; });
+    document.querySelectorAll<HTMLElement>("[data-color-theme]").forEach((group) => { group.hidden = group.dataset.colorTheme !== themeSelect?.value; });
+  };
+  typeSelect?.addEventListener("change", () => {
+    if (!isBusinessType(typeSelect.value)) { refreshChoices(); return; }
+    const preset = businessPresets[typeSelect.value];
+    if (themeSelect) themeSelect.value = preset.theme;
+    const tagline = byId<HTMLInputElement>("tagline"); if (tagline) tagline.value = preset.tagline;
+    preset.benefits.forEach((benefit, index) => { const field = byId<HTMLInputElement>(`benefit${index + 1}`); if (field) field.value = benefit; });
+    const photo = preset.photos[0]; if (heroValue) heroValue.value = photo; if (customHero) customHero.value = "";
+    const radio = document.querySelector<HTMLInputElement>(`input[name="stockHero"][value="${photo}"]`); if (radio) radio.checked = true;
+    if (primaryColor) primaryColor.value = customerThemeColors[preset.theme][0];
+    refreshChoices();
+  });
+  themeSelect?.addEventListener("change", () => { if (isCustomerTheme(themeSelect.value) && primaryColor) primaryColor.value = customerThemeColors[themeSelect.value][0]; refreshChoices(); });
+  document.querySelectorAll<HTMLInputElement>('input[name="stockHero"]').forEach((radio) => radio.addEventListener("change", () => { if (radio.checked && heroValue) heroValue.value = radio.value; if (customHero) customHero.value = ""; }));
+  customHero?.addEventListener("input", () => { if (customHero.value && heroValue) { heroValue.value = customHero.value; document.querySelectorAll<HTMLInputElement>('input[name="stockHero"]').forEach((radio) => { radio.checked = false; }); } });
+  document.querySelectorAll<HTMLButtonElement>("[data-color]").forEach((swatch) => swatch.addEventListener("click", () => { if (primaryColor && swatch.dataset.color) primaryColor.value = swatch.dataset.color; }));
+  refreshChoices();
+</script>
+
 <style>
   .back { display: inline-block; margin-bottom: 22px; color: #667085; text-decoration: none; font-weight: 650; }
   .page-head { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 24px; } .page-head h1 { font-size: 2.7rem; margin: 7px 0; }
@@ -162,6 +205,17 @@ const formError = Astro.url.searchParams.get("error");
   .panel > form { display: grid; gap: 16px; } .split { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; } .triple { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 13px; }
   fieldset { display: grid; gap: 13px; margin: 0; padding: 16px; border: 1px solid #eaecf0; border-radius: 11px; } legend { padding: 0 7px; font-weight: 750; color: #344054; }
   input[type="color"] { padding: 5px; } .toggle { display: flex; align-items: center; gap: 9px; font-weight: 650; color: #475467; }
+  .photo-library, .color-presets { display: grid; gap: 10px; }
+  .photo-options { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .photo-options:not([hidden]) { display: grid; }
+  .photo-option { position: relative; display: block; cursor: pointer; }
+  .photo-option input { position: absolute; inset: 8px auto auto 8px; width: 20px; height: 20px; accent-color: #155eef; }
+  .photo-option img { width: 100%; height: 110px; display: block; border: 2px solid transparent; border-radius: 10px; object-fit: cover; }
+  .photo-option:has(input:checked) img { border-color: #155eef; box-shadow: 0 0 0 3px #dbe7ff; }
+  .color-options { gap: 10px; }
+  .color-options:not([hidden]) { display: flex; }
+  .color-swatch { width: 44px; height: 44px; border: 2px solid #fff; border-radius: 50%; background: var(--swatch); box-shadow: 0 0 0 1px #98a2b3; cursor: pointer; }
+  .color-swatch:focus-visible { outline: 3px solid #155eef; outline-offset: 3px; }
   .compact-note { margin: -8px 0 0; } .review-link { display: grid; gap: 8px; margin: -4px 0 20px; padding: 14px; border: 1px solid #eaecf0; border-radius: 11px; overflow-wrap: anywhere; }
   .metric-line { display: flex; justify-content: space-between; gap: 16px; padding: 12px 14px; border-radius: 11px; background: #f2f4f7; }
   .metric-line span { font-size: 1.2rem; font-weight: 800; }

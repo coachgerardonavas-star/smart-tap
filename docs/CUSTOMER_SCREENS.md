@@ -1,5 +1,17 @@
 # Customer screens — branded styles (D-046, D-048)
 
+## D-057 visual system (v2)
+
+The approved visual source is `docs/design/customer-styles-v2/estilos-smart-tap.html`. Both `/b/[slug]` and `/demo/capture` render the same `CustomerCapture` component.
+
+- Registration remains one page. A full-width business photo sits behind a style-specific veil. The logo or initials plus the business-type icon, name, type, tagline, title and three icon benefits appear above an overlapping form card.
+- Name, phone, birthday, consent and optional unchecked WhatsApp fields keep their approved copy. The form includes local SVG field icons and a business-type illustration.
+- Confirmation shows `Esta es tu visita número N` from the database result. Five stars render with `min(N, 5)` filled. It contains no reward or prize claim.
+- The Google button appears only for a configured Google Review URL. `Seguir en Instagram` appears only for a configured validated Instagram URL.
+- Business presets live in `src/lib/business-presets.ts`. Admin users can accept or edit the suggested style, tagline, benefits, photo and accent color.
+- Stock photos live under `public/stock/<tipo>/`; their authors, sources and Unsplash License are recorded in `public/stock/ATTRIBUTION.md`.
+- The hero uses explicit dimensions, responsive `sizes` and high fetch priority. The photo veil maintains text contrast, controls expose visible focus, and reduced-motion preferences disable motion.
+
 Approved by the CEO on 2026-10-04. Visual reference: `docs/design/customer-styles/*.dc.html` (one file per style, three 390×844 screens each: welcome, form, confirmation). Open them in a browser or read the inline styles; colors, fonts, radii and copy are exact. The canvas lives at https://claude.ai/artifact/QrgcmaDNQzYy7MU3RCPpH8 (private to the CEO).
 
 ## Decision

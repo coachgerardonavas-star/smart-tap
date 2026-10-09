@@ -52,7 +52,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     const ipHash = hashIdentifier(`ip:${ip}`);
     const phoneHash = hashIdentifier(`phone:${phone}`);
-    const { error } = await service.rpc("record_public_check_in", {
+    const { data, error } = await service.rpc("record_public_check_in", {
       p_slug: parsed.data.slug,
       p_tag_code: parsed.data.tagCode || null,
       p_full_name: parsed.data.fullName,
@@ -82,7 +82,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });
     }
 
-    return json(201, { ok: true, businessName: business.display_name });
+    const visitCount = Number((data as { visitCount?: unknown } | null)?.visitCount);
+    return json(201, { ok: true, businessName: business.display_name, visitCount: Number.isInteger(visitCount) && visitCount > 0 ? visitCount : 1 });
   } catch (error) {
     console.error("check-in failed", error instanceof Error ? error.message : "unknown");
     return json(500, { error: "No pudimos registrar la visita. Intenta de nuevo." });

@@ -15,7 +15,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const service = createSupabaseServiceClient();
   const wantsActive = form.get("isActive") === "on";
   const { data: current, error: currentError } = await service.from("businesses")
-    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,is_active")
+    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,instagram_url,business_type,theme,tagline,benefits,hero_image_url,is_active")
     .eq("id", id).maybeSingle();
   if (currentError || !current) return redirect(`/admin/${id}?error=${encodeURIComponent("Negocio no encontrado.")}`, 303);
   if (wantsActive && !current.is_active && (!current.owner_approved_at || current.owner_approved_terms_version !== TERMS_VERSION)) {
@@ -34,6 +34,8 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     offer_inactive: input.offerInactive, offer_birthday: input.offerBirthday,
     offer_frequent: input.offerFrequent, offer_new: input.offerNew,
     google_review_url: input.googleReviewUrl,
+    instagram_url: input.instagramUrl,
+    business_type: input.businessType,
     theme: input.theme,
     tagline: input.tagline,
     benefits: input.benefits,

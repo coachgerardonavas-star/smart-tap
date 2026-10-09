@@ -20,12 +20,12 @@ describe("public form hardening", () => {
     }
   });
 
-  it("returns the same minimal check-in confirmation for every customer", () => {
+  it("returns the minimal confirmation plus the non-sensitive visit count", () => {
     const route = source("src/pages/api/public/check-in.ts");
-    expect(route).toContain("{ ok: true, businessName: business.display_name }");
+    expect(route).toContain("businessName: business.display_name, visitCount:");
     expect(route).not.toContain("return json(201, { data })");
     const form = source("src/components/CheckInForm.tsx");
-    expect(form).not.toContain("visitCount");
+    expect(form).toContain("visitCount");
     expect(form).not.toContain("alreadyCounted");
   });
 

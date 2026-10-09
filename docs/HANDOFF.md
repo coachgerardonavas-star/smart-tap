@@ -1,6 +1,18 @@
 # Smart Tap handoff
 
-Updated: 2026-10-05 by ChatGPT Codex (Builder), after correcting GS-49 on PR #12 without deployment, merge or database changes. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
+Updated: 2026-10-05 by ChatGPT Codex (Builder), for D-057 customer styles v2. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
+
+## Current Builder handoff — D-057 customer styles v2
+
+- Branch: `codex/customer-styles-v2`, based on `main` at `0492ec8`.
+- Four styles follow the approved photo-led design in the shared live/demo component. Registration stays on one page; confirmation uses the real `visitCount`, caps filled stars at five and contains no reward claim.
+- Added eight business presets with editable style, tagline, three benefits, business icon, three stock photos and four tested accent colors per style.
+- Added 24 local WebP photos under `public/stock/`, each at most 1200 px wide and below 200 KB. Attribution and Unsplash License links are in `public/stock/ATTRIBUTION.md`.
+- Added exact Instagram validation and conditional display. Hero images accept HTTPS or constrained local stock paths.
+- New migration: `supabase/migrations/20261005190000_customer_styles_v2.sql`. It is intentionally unapplied.
+- Evidence: `docs/evidence/customer-{elegante,calido,moderno,colorido}-{form,confirmation}-390x844.png`.
+- Final clean gate: `npm ci` installed 334 packages with zero vulnerabilities; `npm run check` passed with zero diagnostics; 16 files and 158 tests passed; the standalone Node build completed; strict production audit found zero vulnerabilities.
+- No deployment, merge, database migration or secret handling occurred.
 
 ## Project identity
 

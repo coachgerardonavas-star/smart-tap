@@ -239,3 +239,11 @@ Smart Tap sends GS-49 security summaries to the CEO's internal Telegram chat thr
 The alert runner reads from `audit_log`, aggregates only the approved security and administrative actions, and sends action names with counts. Audit details, names, phone numbers, email addresses, IP addresses and hashes stay out of the Telegram message. Messages stop at 3,500 characters.
 
 Successful delivery writes `alerts.digest_sent` with `{ until, count }`. The next run reads events with `created_at > until`; the first run falls back 20 minutes. A failed Telegram request writes no cursor, so the next run retries. The query orders by `created_at` and reads at most 1,000 rows; a full page is shown as `1000+`, and the cursor advances only through the events read. The cursor action uses the `alerts.` prefix so the event selector never consumes its own records.
+
+## D-057 — Customer styles v2, business presets and visit count (CEO, 2026-10-05)
+
+The four approved customer styles use a full-photo hero, a style-specific veil, icon-led benefits, an overlapping form card and a matching confirmation. A business can select one of eight types: restaurant, café, bakery, barbershop, salon, ice cream shop, store or gym. Each type provides an editable suggested style, tagline, three benefits, a brand icon and three local Unsplash photos.
+
+The confirmation displays only the non-sensitive visit count returned by `record_public_check_in`, with five stars and at most five filled. It promises no reward. Google Review and Instagram buttons render only when their validated URLs exist. Instagram accepts exactly `https://www.instagram.com/<username>`, with a 1–30 character username limited to letters, numbers, dots and underscores.
+
+Local stock paths use `/stock/<type>/<file>.webp`; remote hero photos continue to require HTTPS. Button label color remains computed from the selected accent with a WCAG contrast ratio of at least 4.5:1. The new migration is prepared for review and stays unapplied.

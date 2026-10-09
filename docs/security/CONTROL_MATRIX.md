@@ -29,7 +29,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-05 Least privilege | Yes | VERIFICADO (H + L D-052) | Check-in and auth-limit RPCs are service-only; auth counter table denies direct service-role writes; private trigger functions deny app roles | Reviewer applies migration |
 | GS-06 Secrets | Yes | VERIFICADO | Runtime env, canary build clean, .env ignored, history scan clean; Gitleaks passed in PR run 37174554236 | — |
 | GS-07 Private storage | No | NO APLICA JUSTIFICADO | No file storage | — |
-| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; Google Review accepts only HTTPS on four approved exact hosts; theme enum, 80-char tagline, exactly three 40-char benefits and HTTPS hero URL have app and DB checks | — |
+| GS-08 Input validation | Yes | VERIFICADO LOCALMENTE | Zod schemas, E.164 business contact, email, slug, colors, URLs, minimum age 13, next path; exact Google Review and Instagram hosts/patterns; business type enum; theme, tagline, three benefits and HTTPS or constrained local stock hero path have matching app/DB checks | — |
 | GS-09 Uploads | No | NO APLICA JUSTIFICADO | No uploads; logo is an external URL | — |
 | GS-10 Anti-abuse | Yes | VERIFICADO (H check-in + L auth) | Multi-instance PostgreSQL counters enforce login and recovery limits by keyed IP/email hashes; Turnstile runs before database access | Hosted smoke after deploy |
 | GS-11 CORS | Yes | VERIFICADO LOCALMENTE | No CORS headers; same-origin only | — |
@@ -68,7 +68,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 | GS-44 Recent auth | Yes | VERIFICADO (H admin + L owner) | Every platform-admin path and active owner customer-data path requires AAL2; managers/viewers remain optional by D-052 | Hosted owner smoke |
 | GS-45 BOLA/IDOR | Yes | VERIFICADO EN EL ENTORNO OBJETIVO (H) plus local routes | Hosted scoped owner actions and read-only viewer passed; signature function rejects managers and owners of another tenant; admin mutations stay behind AAL2 | Hosted Terms v2 smoke |
 | GS-46 Mass assignment | Yes | VERIFICADO (H) plus local tests | Browser consent version is stripped and server version is fixed; hosted WhatsApp path uses database phone/message/offer | — |
-| GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style/signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
+| GS-47 DB constraints | Yes | PENDIENTE — LOW | PGlite rejects invalid style, business type, Instagram URL, hero path and signature values, missing current signature activation and invalid term extensions; `untagged` is non-null; visits.tag_id and consent_records lack composite tenant FKs | Composite FKs |
 | GS-48 Edge protection | Yes | VERIFICADO EN EL ENTORNO OBJETIVO | Turnstile live on check-in, login and recovery (CEO phone test: login and a check-in succeeded after the PR #10 fix); Cloudflare rate-limiting rule `smart-tap-auth-checkin` (POST, 20 per 10 s per IP) | — |
 | GS-49 Security alerts | Yes | IMPLEMENTADO NO VERIFICADO | Cursor after successful Telegram delivery, explicit event allowlist, count-only 3,500-character messages, 1,000-row cap and behavior tests (D-056) | Create the Render Cron Job from the Blueprint, paste secrets and run the production Telegram smoke |
 | GS-50 Data classification | Yes | IMPLEMENTADO | Customer and signer names, phone, birthday, title and consent are confidential PII; keyed IP hash is pseudonymous security evidence; follow-up and term status are internal data | Add handling rules to production privacy notice |
@@ -133,7 +133,7 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 
 ## Update 2026-10-04 (Builder, D-046/D-048 customer styles)
 
-- GS-08 / GS-47: app and database checks constrain theme, tagline, benefits and HTTPS hero URL; invalid values were rejected in unit and PGlite tests.
+- GS-08 / GS-47: app and database checks constrain theme, type, tagline, benefits, exact Instagram URL and HTTPS/local stock hero paths; invalid values were rejected in unit and PGlite tests. D-057 remains unapplied pending review.
 - GS-12: local fonts stay on the existing same-origin policy; hero images use the existing HTTPS image allowance. The CSP was not widened.
 - GS-26: eight `@fontsource-variable` packages provide local latin WOFF2 assets; clean install and strict production audit found 0 vulnerabilities.
 - GS-56: final local gate passed 121/121 with zero diagnostics and a complete build. Eight 390×844 captures prove Nombre remains in the first viewport; one 1440×900 capture proves the desktop two-column layout.

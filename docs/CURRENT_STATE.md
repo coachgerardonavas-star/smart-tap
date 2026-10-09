@@ -1,6 +1,6 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-05 after production cutover and PR #11.
+Canonical short status for agents. Updated 2026-10-05 during D-057 customer styles v2 work.
 
 ## Production
 
@@ -10,13 +10,15 @@ Canonical short status for agents. Updated 2026-10-05 after production cutover a
 - The Supabase connector can access that production project directly by ID; `list_projects` does not enumerate it because it belongs to a different organization.
 - Production organization `Smart Tap Produccion` is confirmed on the Pro tier.
 - Test database: `vrouyhxzxrfkuuqfslrc`; it is not the app production database.
-- `main` after PR #11: `836ea3b`.
+- `main` at Builder branch start: `0492ec8` (includes PR #12).
 - Production has all 14 repository migrations applied; a fresh production security-advisor check on 2026-10-05 returned zero lints.
 - Café Luna is a synthetic demo tenant. Do not treat demo records as real customer evidence.
 
 ## Product state
 
 The MVP is implemented and has live evidence for NFC check-in, multi-tenant isolation, owner/admin flows, MFA/AAL2, privacy, Terms v2, follow-up queue, customer branding and onboarding. PR #10 fixed the live Turnstile hydration defect and a subsequent real check-in was confirmed.
+
+D-057 is implemented on `codex/customer-styles-v2`: photo-led versions of all four customer styles, eight editable business presets, 24 local licensed stock photos, a real visit counter, conditional Instagram, and matching app/database validation. Migration `20261005190000_customer_styles_v2.sql` remains unapplied. No deploy or production data change has occurred.
 
 ## Glasswing gate
 
@@ -29,7 +31,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 
 - Builder: ChatGPT Codex.
 - Reviewer: Claude Code.
-- Reuse `codex/security-hardening` for the current Builder work. Do not create another Builder branch unless the CEO or Reviewer explicitly changes this rule.
+- Current Builder branch: `codex/customer-styles-v2`, explicitly authorized for D-057.
 - Changes reach `main` only through PR with `verify` green and Reviewer inspection.
 - Do not deploy, merge, migrate production, or add secrets merely to make a gate pass.
 

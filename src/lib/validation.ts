@@ -2,6 +2,7 @@ import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from
 import { z } from "zod";
 import { isAtLeastMinimumAge } from "./privacy";
 import { customerThemes } from "./customer-theme";
+import { businessTypes } from "./business-presets";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const hexColorPattern = /^#[0-9a-fA-F]{6}$/;
@@ -40,16 +41,22 @@ const optionalBenefitItemSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
   z.union([z.literal(""), z.string().min(1).max(40)]),
 );
-const optionalHttpsUrlSchema = z.preprocess(
+const heroImageUrlSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
-  z.union([z.literal(""), z.url().max(500).refine((value) => {
-    try {
-      const url = new URL(value);
-      return url.protocol === "https:" && !url.username && !url.password;
-    } catch {
-      return false;
-    }
-  }, "La URL debe usar HTTPS.")]),
+  z.union([
+    z.literal(""),
+    z.string().max(500).refine((value) => {
+      if (/^\/stock\/[a-z]+\/[a-z0-9-]+\.webp$/.test(value)) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" && !url.username && !url.password;
+      } catch { return false; }
+    }, "Usa una foto de la biblioteca o una URL HTTPS."),
+  ]),
+).transform((value) => value || null);
+export const instagramUrlSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim() : "",
+  z.union([z.literal(""), z.string().max(70).regex(/^https:\/\/www\.instagram\.com\/[A-Za-z0-9._]{1,30}$/, "La URL de Instagram no es válida.")]),
 ).transform((value) => value || null);
 const googleReviewHosts = new Set(["g.page", "search.google.com", "www.google.com", "maps.app.goo.gl"]);
 export const googleReviewUrlSchema = z.preprocess(
@@ -114,12 +121,14 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
   offerFrequent: optionalOfferSchema,
   offerNew: optionalOfferSchema,
   googleReviewUrl: googleReviewUrlSchema,
+  instagramUrl: instagramUrlSchema,
+  businessType: z.preprocess((value) => typeof value === "string" ? value : "", z.union([z.literal(""), z.enum(businessTypes)])).transform((value) => value || null),
   theme: z.preprocess((value) => typeof value === "string" ? value : "calido", z.enum(customerThemes)),
   tagline: optionalTaglineSchema,
   benefit1: optionalBenefitItemSchema,
   benefit2: optionalBenefitItemSchema,
   benefit3: optionalBenefitItemSchema,
-  heroImageUrl: optionalHttpsUrlSchema,
+  heroImageUrl: heroImageUrlSchema,
 }).superRefine((value, context) => {
   const benefits = [value.benefit1, value.benefit2, value.benefit3];
   if (benefits.some(Boolean) && !benefits.every(Boolean)) {

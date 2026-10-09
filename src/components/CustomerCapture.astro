@@ -10,6 +10,7 @@ import baloo from "@fontsource-variable/baloo-2/files/baloo-2-latin-wght-normal.
 import nunito from "@fontsource-variable/nunito/files/nunito-latin-wght-normal.woff2?url";
 import CheckInForm from "./CheckInForm";
 import type { CustomerTheme } from "../lib/customer-theme";
+import type { BusinessType } from "../lib/business-presets";
 
 type Props = {
   slug: string;
@@ -23,7 +24,10 @@ type Props = {
   heroImageUrl?: string | null;
   logoUrl?: string | null;
   googleReviewUrl?: string | null;
+  instagramUrl?: string | null;
+  businessType?: BusinessType | null;
   demo?: boolean;
+  demoVisitCount?: number;
   turnstileSiteKey?: string | null;
 };
 

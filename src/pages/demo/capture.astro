@@ -1,12 +1,17 @@
 ---
 import Base from "../../layouts/Base.astro";
 import CustomerCapture from "../../components/CustomerCapture.astro";
-import { customerThemes, defaultCustomerBenefits, isCustomerTheme } from "../../lib/customer-theme";
+import { customerThemes, isCustomerTheme } from "../../lib/customer-theme";
+import { businessPresets } from "../../lib/business-presets";
 
 const requestedTheme = Astro.url.searchParams.get("theme");
 const theme = isCustomerTheme(requestedTheme) ? requestedTheme : "calido";
 const accents = { elegante: "#C9A45C", calido: "#C8412A", moderno: "#FF6A2B", colorido: "#FF6F9E" } as const;
 const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
+const demoByTheme = { elegante: "restaurante", calido: "cafe", moderno: "barberia", colorido: "heladeria" } as const;
+const businessType = demoByTheme[theme];
+const preset = businessPresets[businessType];
+const visitCount = Math.max(1, Number(Astro.url.searchParams.get("visits")) || 3);
 ---
 
 <Base title={`Café Luna | Demo ${labels[theme]}`} themeColor={accents[theme]}>
@@ -26,9 +31,13 @@ const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", co
     primaryColor={accents[theme]}
     privacyUrl="/privacy"
     theme={theme}
-    tagline="Café de barrio, momentos que se quedan."
-    benefits={[...defaultCustomerBenefits]}
+    tagline={preset.tagline}
+    benefits={[...preset.benefits]}
+    heroImageUrl={preset.photos[0]}
+    businessType={businessType}
+    demoVisitCount={visitCount}
     googleReviewUrl="https://g.page/r/example/review"
+    instagramUrl="https://www.instagram.com/cafeluna"
   />
 </Base>
 
