@@ -39,6 +39,7 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 - The branch bundles the approved design source and preview, keeps 24 local Unsplash photos, and records every source in `public/stock/ATTRIBUTION.md`.
 - Migration remains `20261006020000_customer_styles_v2.sql` and remains unapplied. The branch does not deploy or change hosted data.
 - Local gate on commit `9340895`: clean `npm ci` (335 packages), 0 diagnostics, 200/200 tests, complete build and 0 production audit vulnerabilities.
+- PR #15: `https://github.com/coachgerardonavas-star/smart-tap/pull/15`; GitHub Actions `verify` passed in run `38001552770` before this final documentation sync.
 
 ## Glasswing gate
 

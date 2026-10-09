@@ -18,6 +18,7 @@ Updated: 2026-10-09 by ChatGPT Codex for the D-057 exact business-type alignment
 - The approved HTML source and preview are now local under `docs/design/customer-styles-v2/`. D-057 evidence remains under `docs/evidence/customer-v2-*`.
 - Migration `supabase/migrations/20261006020000_customer_styles_v2.sql` contains the exact type CHECK, the strict Instagram CHECK and the local hero path CHECK. It remains unapplied.
 - Local gate: clean `npm ci` (335 packages, 0 vulnerabilities), `npm run check` (0 diagnostics), `npm test` (18 files, 200/200), complete build and strict production audit with 0 vulnerabilities.
+- PR #15: `https://github.com/coachgerardonavas-star/smart-tap/pull/15`. GitHub Actions `verify` passed in run `38001552770` on commit `0ef3446`; the final documentation sync must also remain green.
 - Reviewer action: inspect the branch and migration, confirm the visit-count name-match privacy choice in D-057, then apply the migration only through the approved production change process. No deploy, merge to `main`, database migration or secret handling occurred in this Builder pass.
 
 ## Current Builder handoff — D-058 stale sessions
