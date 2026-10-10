@@ -93,7 +93,7 @@ const formError = Astro.url.searchParams.get("error");
           <button type="button" role="tab" id="customer-tab" aria-controls="customer-view" aria-selected="false" data-ceo-view="customer">Cliente final</button>
         </div>
         <div id="ceo-view" class="preview-pane" role="tabpanel" aria-labelledby="ceo-tab" hidden>
-          <p>Estás viendo tu panel de CEO. A la izquierda tienes la configuración real del negocio, los controles de edición y las herramientas administrativas.</p>
+          <p>Tus controles están separados: Diseño para la página NFC, Administración para contrato y servicio, y Accesos para personas y firmas.</p>
           <a class="button secondary" href="#administracion" data-jump-tab="administracion">Abrir controles CEO</a>
         </div>
         <div id="owner-view" class="preview-pane" role="tabpanel" aria-labelledby="owner-tab">
@@ -129,11 +129,11 @@ const formError = Astro.url.searchParams.get("error");
 <div class="field"><label for="logoUrl">Enlace del logo (necesario para activar)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega la dirección web directa de la imagen (empieza con https:// y suele terminar en .png o .jpg). No se puede subir el archivo aquí. Sin este enlace no se puede registrar la aprobación del dueño.</small></div>
 <fieldset class="customer-screen-settings">
           <legend>Pantalla del cliente</legend>
-          <p class="muted compact-note">Esto es lo que ve el cliente del negocio cuando toca la tarjeta NFC. Míralo con el botón «Ver pantalla del cliente» de arriba.</p>
+          <p class="muted compact-note">Esta sección controla cómo se verá la página al tocar una tarjeta NFC.</p>
           <div class="field"><label for="businessType">Tipo de negocio</label><select id="businessType" name="businessType" required>
             {businessTypes.map((type) => <option value={type} selected={type === businessType}>{businessPresets[type].label}</option>)}
           </select></div>
-          <p class="muted compact-note">Al elegir el tipo se sugieren el estilo, la frase, los beneficios, los días de inactividad, la foto y el color. Puedes cambiarlos antes de guardar.</p>
+          <p class="muted compact-note">Elige un estilo y personalízalo mientras lo ves en Live Preview. El plazo de inactividad se configura en Administración.</p>
           <div class="field"><label for="theme">Estilo de la pantalla</label><select id="theme" name="theme" required>
             {customerThemes.map((value) => <option value={value} selected={value === currentTheme}>{themeLabels[value]}</option>)}
           </select><small class="hint">Cambia las letras, el fondo y el tono de la pantalla.</small></div>
@@ -170,7 +170,7 @@ const formError = Astro.url.searchParams.get("error");
           <div class="field"><label for="instagramUrl">Instagram del negocio (opcional)</label><input id="instagramUrl" name="instagramUrl" type="url" value={business.instagram_url ?? ""} maxlength="60" placeholder="https://www.instagram.com/usuario" pattern="https://www\.instagram\.com/[A-Za-z0-9._]{1,30}/?" title="Un enlace como https://www.instagram.com/usuario" /><small class="hint">Pega el enlace al perfil. En la pantalla aparece un botón «Seguir en Instagram».</small></div>
         </fieldset>
 <script type="application/json" id="business-presets" set:html={presetData}></script>
-<fieldset><legend>Mensajes de oferta por situación</legend><legend>Mensajes de oferta por situación</legend>
+<fieldset><legend>Mensajes de oferta por situación</legend>
           <p class="muted compact-note">El dueño aprueba estos textos. Se incluyen en el WhatsApp que él mismo envía a sus clientes.</p>
           <div class="field"><label for="offerInactive">Cliente que no ha vuelto</label><input id="offerInactive" name="offerInactive" value={business.offer_inactive ?? ""} minlength="1" maxlength="200" /></div>
           <div class="field"><label for="offerBirthday">Cumpleaños</label><input id="offerBirthday" name="offerBirthday" value={business.offer_birthday ?? ""} minlength="1" maxlength="200" /></div>
@@ -212,7 +212,7 @@ const formError = Astro.url.searchParams.get("error");
   <div class="field"><label for="timezone">Zona horaria</label><select id="timezone" name="timezone" required>{timezones.map((option) => <option value={option.value} selected={option.value === business.timezone}>{option.label}</option>)}</select></div>
   <div class="field"><label for="defaultCountry">País de los teléfonos</label><select id="defaultCountry" name="defaultCountry" required>{countries.map((option) => <option value={option.value} selected={option.value === business.default_country}>{option.label}</option>)}</select></div>
 </div>
-<fieldset><legend>Reseñas de Google</legend><legend>Enlace de reseñas de Google</legend>
+<fieldset><legend>Reseñas de Google</legend>
           <div class="field"><label for="googleReviewUrl">Enlace directo para dejar una reseña</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /><small class="hint">Se graba en una tarjeta NFC aparte para pedir reseñas. También aparece como botón al terminar el registro.</small></div>
         </fieldset>
 {!business.is_active && (
@@ -417,7 +417,7 @@ const formError = Astro.url.searchParams.get("error");
     showPhotos(typeSelect.value);
     setValue("tagline", preset.tagline);
     preset.benefits.forEach((benefit, index) => setValue(`benefit${index + 1}`, benefit));
-    setValue("inactivityDays", String(preset.inactivityDays));
+    // The inactivity setting belongs to the administrative form; do not change it from Design.
     const photo = form?.querySelector<HTMLInputElement>(`input[name="heroSource"][value="${preset.photos[0]}"]`);
     if (photo) photo.checked = true;
     refreshPreview();
