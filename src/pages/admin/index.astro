@@ -41,7 +41,7 @@ const formError = Astro.url.searchParams.get("error");
     </section>
   )}
   <div class="admin-grid">
-    <section class="card form-card">
+    <section class="card form-card" id="nuevo-negocio">
       <h2>Nuevo negocio</h2>
       <p class="muted">Registra el negocio de tu cliente. Lo que escribas en «Nombre» y «Dirección web» lo verán sus clientes.</p>
       <form action="/api/admin/businesses" method="post">
@@ -67,7 +67,7 @@ const formError = Astro.url.searchParams.get("error");
         <button class="button" type="submit">Crear negocio</button>
       </form>
     </section>
-    <section class="card list-card">
+    <section class="card list-card" id="negocios">
       <div class="list-head"><h2>Negocios registrados</h2><span>{businesses.length}</span></div>
       {businessesWithCounts.length ? <ul>{businessesWithCounts.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug} · Visitas sin tarjeta NFC: {business.untaggedVisits}</small>{business.term_ends_at && <small>Vence: {new Intl.DateTimeFormat("es-US", { dateStyle: "medium" }).format(new Date(business.term_ends_at))}</small>}</div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
     </section>
@@ -98,6 +98,7 @@ const formError = Astro.url.searchParams.get("error");
   .expiry-card h2 { margin: 4px 0 0; font-size: 1.15rem; }
   .expiry-card ul { min-width: min(100%, 420px); }
   .expiry-card li a { grid-template-columns: 1fr auto; border: 0; padding: 8px 0; gap: 18px; }
+  #nuevo-negocio, #negocios { scroll-margin-top: 20px; }
   .form-card { padding: 26px; } .form-card form { display: grid; gap: 17px; margin-top: 22px; }
   .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .split.compact { grid-template-columns: 1fr 1fr 1.2fr; }
   input[type="color"] { padding: 5px; }

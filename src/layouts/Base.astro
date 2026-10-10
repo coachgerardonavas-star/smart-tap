@@ -32,7 +32,8 @@ const {
         <a class="brand" href="/dashboard"><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
         <nav aria-label="Navegación principal">
           <a href="/dashboard">Panel</a>
-          {isAdmin && <a href="/admin">Negocios</a>}
+          {isAdmin && <a href="/admin#negocios">Negocios</a>}
+          {isAdmin && <a class="nav-new" href="/admin#nuevo-negocio"><span aria-hidden="true">+</span> Nuevo negocio</a>}
           <form action="/api/auth/logout" method="post">
             <button class="link-button" type="submit">Salir</button>
           </form>
@@ -116,6 +117,8 @@ const {
   .admin-theme .button.danger { background: #b42318; }
   .admin-theme .eyebrow { color: var(--ait-blue); }
   .admin-theme .field input:focus, .admin-theme .field select:focus { border-color: var(--ait-blue); box-shadow: 0 0 0 3px #0052CC26; }
+  .admin-theme .app-header nav a.nav-new { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border-radius: 999px; background: var(--ait-blue); color: #fff; }
+  .admin-theme .app-header nav a.nav-new:hover { background: var(--ait-blue-dark); color: #fff; }
   .brand-dot { display: none; } .admin-theme .brand-dot { display: inline-block; }
   @media (max-width: 700px) {
     .app-header { padding: 0 20px; }
