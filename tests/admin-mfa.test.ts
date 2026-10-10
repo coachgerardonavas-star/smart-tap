@@ -107,6 +107,17 @@ describe("MFA-required responses", () => {
     expect(csp).toContain("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
     expect(csp).toContain("frame-src https://challenges.cloudflare.com");
   });
+
+  it("allows only authenticated preview pages to be framed by the same origin", async () => {
+    const preview = await onRequest(middlewareContext("/preview/business-id") as never, async () => new Response("ok"));
+    const dashboard = await onRequest(middlewareContext("/dashboard") as never, async () => new Response("ok"));
+    if (!(preview instanceof Response) || !(dashboard instanceof Response)) throw new Error("Expected responses");
+    expect(preview.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(preview.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
+    expect(preview.headers.get("cache-control")).toBe("private, no-store");
+    expect(dashboard.headers.get("x-frame-options")).toBe("DENY");
+    expect(dashboard.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+  });
 });
 
 function walkTypeScript(directory: string): string[] {

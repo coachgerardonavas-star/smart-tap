@@ -69,6 +69,16 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
         )}
       </header>
 
+      <section class="card customer-preview-card" aria-labelledby="customer-preview-title">
+        <div>
+          <p class="eyebrow">Tu página NFC</p>
+          <h2 id="customer-preview-title">Mírala como la ven tus clientes</h2>
+          <p>Esta vista es solo de prueba: puedes recorrerla sin registrar clientes ni visitas.</p>
+          <p class="preview-help">¿Quieres cambiar el diseño, los colores, el logo o las ofertas? Comunícate con <strong>Gerardo Navas de Automate IT</strong> y te ayudaremos a actualizar tu página.</p>
+        </div>
+        <a class="button" href={`/preview/${business.id}`} target="_blank" rel="noopener">Ver página como cliente</a>
+      </section>
+
       <section class="metrics" aria-label="Indicadores principales">
         <MetricCard label="Clientes" value={metrics.totalCustomers} note="Registrados" />
         <MetricCard label="Visitas" value={metrics.totalVisits} note="Acumuladas" />
@@ -180,6 +190,11 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
   .page-head h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 8px 0; }
   .page-head select { min-height: 44px; padding: 0 36px 0 12px; border: 1px solid #d0d5dd; border-radius: 10px; background: #fff; }
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+  .customer-preview-card { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-bottom: 20px; padding: 24px; border-color: #b2ccff; background: linear-gradient(135deg, #f5f8ff, #fff); }
+  .customer-preview-card h2 { margin: 4px 0 7px; font-size: 1.2rem; }
+  .customer-preview-card p { margin: 0; color: #475467; }
+  .customer-preview-card .preview-help { margin-top: 10px; max-width: 760px; }
+  .customer-preview-card .button { flex: 0 0 auto; }
   .follow-up-card { margin-bottom: 20px; overflow: hidden; }
   .follow-up-groups { display: grid; gap: 0; }
   .follow-up-group { border-top: 1px solid #eaecf0; padding: 18px 22px; }
@@ -217,6 +232,6 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
   .opt-out-button { display: inline-flex; align-items: center; min-height: 44px; }
   .legal-footer { margin-top: 34px; text-align: center; font-size: .82rem; color: #667085; }
   @media (max-width: 960px) { .metrics { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 700px) { .follow-up-row { align-items: start; flex-direction: column; } .follow-up-actions { justify-content: flex-start; } }
+  @media (max-width: 700px) { .follow-up-row, .customer-preview-card { align-items: start; flex-direction: column; } .follow-up-actions { justify-content: flex-start; } }
   @media (max-width: 560px) { .page-head { align-items: start; flex-direction: column; } .metrics { grid-template-columns: 1fr 1fr; } }
 </style>
