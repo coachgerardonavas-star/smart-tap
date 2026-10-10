@@ -70,17 +70,17 @@ const formError = Astro.url.searchParams.get("error");
 <Base title={`${business.display_name} | Smart Tap`} privateArea isAdmin>
   <a class="back" href="/admin#negocios">← Inicio · negocios</a>
   <header class="page-head">
-    <div><p class="eyebrow">Centro de control CEO</p><h1>{business.display_name}</h1><p class="muted">/b/{business.slug} · Las tres vistas están disponibles sin cambiar de sesión.</p></div>
+    <div><p class="eyebrow">Centro de control CEO</p><h1>{business.display_name}</h1><p class="muted">Gestiona este negocio desde aquí.</p></div>
     <a class="button secondary" href="/admin#negocios">Ver todos los negocios</a>
   </header>
   {message && <div class="alert success">{message}</div>}
   {formError && <div class="alert">{formError}</div>}
 
 <nav class="workspace-tabs" aria-label="Secciones de la cuenta">
-  <a href="#vista" class="workspace-tab" data-ceo-tab="vista" aria-current="page"><span aria-hidden="true">◎</span><span>Vista</span></a>
-  <a href="#diseno" class="workspace-tab" data-ceo-tab="diseno"><span aria-hidden="true">◈</span><span>Diseño</span></a>
-  <a href="#administracion" class="workspace-tab" data-ceo-tab="administracion"><span aria-hidden="true">▦</span><span>Administración</span></a>
-  <a href="#accesos" class="workspace-tab" data-ceo-tab="accesos"><span aria-hidden="true">♙</span><span>Accesos</span></a>
+  <a href="#vista" class="workspace-tab" data-ceo-tab="vista" aria-current="page">Vista</a>
+  <a href="#diseno" class="workspace-tab" data-ceo-tab="diseno">Diseño</a>
+  <a href="#administracion" class="workspace-tab" data-ceo-tab="administracion" aria-label="Administración">Admin</a>
+  <a href="#accesos" class="workspace-tab" data-ceo-tab="accesos">Accesos</a>
 </nav><section class="ceo-panel" id="ceo-vista" data-ceo-panel="vista">
 <section class="card panel live-preview-panel" aria-labelledby="live-preview-title">
         <div class="live-preview-head">
@@ -264,11 +264,12 @@ const formError = Astro.url.searchParams.get("error");
         )}
       </section></div></details>
 </div></section><section class="ceo-panel" id="ceo-accesos" data-ceo-panel="accesos" hidden>
-<div class="section-heading"><p class="eyebrow">Accesos</p><h2>Personas y aprobaciones</h2><p class="muted">Invita usuarios y consulta las autorizaciones.</p></div>
+<div class="section-heading"><p class="eyebrow">Accesos</p><h2>Personas y permisos</h2><p class="muted">Usuarios, roles y autorizaciones.</p></div>
 <div class="modules-grid">
 <details class="admin-module card" id="personal" open><summary><span class="module-icon" aria-hidden="true">♙</span><span class="module-name"><strong>Personas con acceso</strong><small>Roles y permisos</small></span><span aria-hidden="true">⌄</span></summary><div class="module-body"><section class="card panel" id="acceso">
         <h2>Personas con acceso: {activeMemberCount} de 2</h2>
-        <p class="muted compact-note">Cada negocio puede tener hasta 2 personas. Dueño y Gerente pueden escribir a los clientes y eliminarlos; Consulta solo mira. Quien firma los Términos debe ser Dueño.</p>
+        <p class="access-role-hint">Dueño y Gerente gestionan clientes. Consulta solo visualiza.</p>
+        <p class="access-terms-note"><strong>Solo el Dueño puede firmar los Términos.</strong></p>
         {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{roleLabels[member.role] ?? member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
         <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo de la persona</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Qué puede hacer</label><select id="role" name="role"><option value="owner">Dueño (administra y firma)</option><option value="manager">Gerente (escribe a clientes)</option><option value="viewer">Consulta (solo mira)</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
       </section></div></details>
@@ -504,7 +505,7 @@ const formError = Astro.url.searchParams.get("error");
 <style>
   .ceo-panel[hidden], .admin-module[hidden] {display:none!important;}
   .workspace-tabs { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 22px;position:sticky;top:0;z-index:8;background:#F4F6FA;padding:10px 0; }
-  .workspace-tab {display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid #D0D5DD;border-radius:12px;background:#fff;color:#344054;text-decoration:none;font-weight:750;}
+  .workspace-tab {display:flex;align-items:center;justify-content:center;min-width:0;min-height:52px;padding:10px 8px;border:1px solid #D0D5DD;border-radius:12px;background:#fff;color:#344054;text-decoration:none;text-align:center;font-size:.95rem;font-weight:750;overflow-wrap:anywhere;}
   .workspace-tab[data-ceo-tab="vista"] {border-top:4px solid #0052CC;}
   .workspace-tab[data-ceo-tab="diseno"] {border-top:4px solid #0099BB;}
   .workspace-tab[data-ceo-tab="administracion"] {border-top:4px solid #0A0E1A;}
@@ -525,13 +526,18 @@ const formError = Astro.url.searchParams.get("error");
   .module-name small {font-size:.8rem;color:#667085;font-weight:400;}
   .module-body {padding:0 16px 18px;}
   .module-body > .panel {box-shadow:none;border-color:#E4E7EC;padding:16px;}
+  .access-role-hint {color:#475467;line-height:1.5;margin:0 0 12px;}
+  .access-terms-note {display:block;margin:0 0 22px;padding:14px 16px;line-height:1.5;background:#EFF5FF;color:#003DA5;border-left:3px solid #0052CC;border-radius:10px;}
+  #acceso .records {margin:0 0 22px;}
+  #acceso .records li > div:first-child {min-width:0;overflow-wrap:anywhere;word-break:break-word;}
+  #acceso .records li strong, #acceso .records li small {white-space:normal;overflow-wrap:anywhere;}
   .owner-preview-nav {display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:15px 0;}
   .owner-preview-nav button {min-height:44px;border-radius:9px;border:1px solid #D0D5DD;background:#fff;font-weight:700;cursor:pointer;}
   .owner-preview-nav button[aria-pressed="true"] {background:#0052CC;color:white;}
   .owner-preview iframe {width:100%;display:block;}
 
   @media(max-width:900px){.modules-grid{grid-template-columns:1fr;}}
-  @media(max-width:600px){.workspace-tabs{gap:5px;}.workspace-tab{flex-direction:column;gap:2px;font-size:.75rem;padding:7px 3px;min-height:60px;}
+  @media(max-width:600px){.workspace-tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;position:relative;top:auto;}.workspace-tab{font-size:1rem;padding:12px 9px;min-height:54px;}
    .owner-preview-nav button{font-size:.73rem;padding:5px 2px;} .phone-preview{height:560px;}
    .owner-preview{height:auto;overflow:visible;} }
   .back { display: inline-block; margin-bottom: 22px; color: #667085; text-decoration: none; font-weight: 650; }
@@ -589,5 +595,5 @@ const formError = Astro.url.searchParams.get("error");
   .inline-form { display: grid !important; grid-template-columns: 1fr auto; align-items: end; } .inline-form.member { grid-template-columns: 1fr 120px auto; }
   @media (min-width: 951px) { .live-preview-panel { position: sticky; top: 18px; } }
   @media (max-width: 950px) { .settings-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 620px) { .page-head { align-items: start; flex-direction: column; } .split, .triple, .inline-form, .inline-form.member { grid-template-columns: 1fr !important; } }
+  @media (max-width: 620px) { .page-head { align-items: start; flex-direction: column; } .page-head h1 {font-size:clamp(1.85rem,8vw,2.7rem);overflow-wrap:anywhere;} .split, .triple, .inline-form, .inline-form.member { grid-template-columns: 1fr !important; } #acceso .records li {align-items:flex-start;} #acceso .records li .status {flex-direction:column;align-items:flex-end;gap:7px;} }
 </style>
