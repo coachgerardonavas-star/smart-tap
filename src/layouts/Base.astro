@@ -6,6 +6,7 @@ interface Props {
   privateArea?: boolean;
   isAdmin?: boolean;
   dashboardHref?: string;
+  previewReadOnly?: boolean;
 }
 
 const {
@@ -15,6 +16,7 @@ const {
   privateArea = false,
   isAdmin = false,
   dashboardHref = "/dashboard",
+  previewReadOnly = false,
 } = Astro.props;
 ---
 
@@ -30,7 +32,7 @@ const {
   </head>
   <body class:list={{ "admin-theme": isAdmin }}>
     {privateArea && (
-      <header class="app-header">
+      <header class="app-header" inert={previewReadOnly}>
         <a class="brand" href={dashboardHref}><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
         <nav aria-label="Navegación principal">
           <a href={dashboardHref}>Panel</a>
@@ -42,7 +44,7 @@ const {
         </nav>
       </header>
     )}
-    <main class:list={{ "app-main": privateArea }}>
+    <main class:list={{ "app-main": privateArea }} inert={previewReadOnly}>
       <slot />
     </main>
   </body>

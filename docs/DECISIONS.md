@@ -314,3 +314,9 @@ Decision:
 - `/admin/[id]` muestra, justo encima de la casilla, cuatro requisitos con ✓/○ y enlace a la sección que lo resuelve: dueño asignado, Términos firmados, datos completos (con lo que falta nombrado) y aprobación registrada. La lista lateral de pasos se sustituye por esa.
 - El enlace del logo pasa de «opcional» a «necesario para activar»: la función `record_business_owner_approval` exige `logo_url` no vacío, así que la etiqueta anterior era incorrecta. No se cambió la base de datos.
 - Supabase solo envía correo de invitación a cuentas nuevas. Si el correo ya existe, el mensaje de `/admin` dice que no se envió invitación y que la persona entra por `/login`.
+
+## D-065 — Vista 360° del CEO con Live Preview y edición explícita (CEO, 2026-10-10)
+
+El administrador de plataforma con MFA puede cambiar entre negocios desde `/admin/[id]` y consultar tres perspectivas sin iniciar sesión en cuentas ajenas: configuración del CEO en la propia página, panel real del dueño mediante `/dashboard?business=<slug>&preview=owner` en modo solo lectura, y página NFC real mediante `/preview/[id]` en modo demostración. Las dos vistas incrustadas solo admiten origen propio. El panel del dueño mantiene sus datos reales, pero su contenido y navegación quedan inertes y el iframe no permite formularios ni scripts; no hay suplantación de identidad.
+
+La configuración del CEO carga bloqueada (`inert`) y solo se habilita con «Activar edición». Los cambios locales actualizan el Live Preview NFC sin escribir en la base. «Descartar cambios» restaura los datos guardados y bloquea el editor; navegar con cambios pendientes exige confirmación. El guardado de los cambios sigue pasando por el endpoint y validaciones existentes. No se modifica el aislamiento multiempresa, permisos ni las políticas de consentimiento. No hay migración.
