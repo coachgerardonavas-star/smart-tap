@@ -6,6 +6,7 @@ import { createSupabaseServiceClient } from "../../../lib/supabase";
 import { assertCurrentTermsAccepted } from "../../../lib/terms-access";
 import type { Visit } from "../../../lib/types";
 import { followUpActionSchema } from "../../../lib/validation";
+import { whatsappLaunchResponse } from "../../../lib/whatsapp-launch";
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   const identity = await requireDataAccess(request, cookies);
@@ -75,7 +76,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         },
       },
     });
-    return redirect(result.redirectUrl, 303);
+    return parsed.data.action === "contact"
+      ? whatsappLaunchResponse(result.redirectUrl)
+      : redirect(result.redirectUrl, 303);
   } catch (error) {
     if (error instanceof AuthorizationError) throw error;
     if (error instanceof FollowUpActionError) return new Response(error.message, { status: error.status });
