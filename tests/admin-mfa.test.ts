@@ -99,24 +99,28 @@ describe("MFA-required responses", () => {
     );
   });
 
-  it("sets HSTS and allows only the Turnstile origin added by this change", async () => {
+  it("sets HSTS and allows only same-origin frames plus Turnstile", async () => {
     const response = await onRequest(middlewareContext("/demo") as never, async () => new Response("ok"));
     if (!(response instanceof Response)) throw new Error("Expected a response");
     expect(response.headers.get("strict-transport-security")).toBe("max-age=31536000");
     const csp = response.headers.get("content-security-policy") ?? "";
     expect(csp).toContain("script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com");
-    expect(csp).toContain("frame-src https://challenges.cloudflare.com");
+    expect(csp).toContain("frame-src 'self' https://challenges.cloudflare.com");
   });
 
-  it("allows only authenticated preview pages to be framed by the same origin", async () => {
+  it("permits only preview pages and explicit owner dashboard view to be framed by same origin", async () => {
     const preview = await onRequest(middlewareContext("/preview/business-id") as never, async () => new Response("ok"));
     const dashboard = await onRequest(middlewareContext("/dashboard") as never, async () => new Response("ok"));
-    if (!(preview instanceof Response) || !(dashboard instanceof Response)) throw new Error("Expected responses");
+    const ownerDashboard = await onRequest(middlewareContext("/dashboard?preview=owner") as never, async () => new Response("ok"));
+    if (!(preview instanceof Response) || !(dashboard instanceof Response) || !(ownerDashboard instanceof Response)) throw new Error("Expected responses");
     expect(preview.headers.get("x-frame-options")).toBe("SAMEORIGIN");
     expect(preview.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
     expect(preview.headers.get("cache-control")).toBe("private, no-store");
     expect(dashboard.headers.get("x-frame-options")).toBe("DENY");
     expect(dashboard.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    expect(ownerDashboard.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+    expect(ownerDashboard.headers.get("content-security-policy")).toContain("frame-ancestors 'self'");
+    expect(ownerDashboard.headers.get("cache-control")).toBe("private, no-store");
   });
 });
 
