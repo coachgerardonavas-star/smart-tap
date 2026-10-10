@@ -296,3 +296,12 @@ Decision:
 
 Decision: según el Manual de Marca v3.3 (Drive, carpeta ADN), el área `/admin` usa Deep Navy `#0A0E1A` en el encabezado, Corporate Blue `#0052CC` (hover Navy `#003DA5`) en botones, enlaces y foco, y Cyan `#00D9FF` solo como línea decorativa. Lime `#AADD00` se limita a un punto de 8 px sobre fondo oscuro (máx. 10 %, nunca en cuerpo de texto). El fondo de página pasa a un gris frío `#F4F6FA` para mantener la lectura de formularios largos. Solo aplica con `isAdmin`; el panel del dueño y la pantalla del cliente no cambian.
 Fuera de alcance: tipografías de marca (Anton, Montserrat, Open Sans): la CSP actual (`default-src 'self'`) bloquea fuentes externas, y el logo oficial no está en el repositorio.
+
+## D-062 — Pasos de activación explicados y botón para copiar enlaces NFC
+
+Context: el administrador no podía marcar «Negocio activo» y no entendía por qué; tampoco podía copiar el enlace de cada tarjeta NFC (el texto se cortaba).
+
+Decision:
+- Sin cambiar ningún control: la casilla sigue bloqueada hasta que un dueño activo firme los Términos vigentes y se registre su aprobación. `/terms/sign` sigue redirigiendo al administrador; la firma es del dueño.
+- `/admin/[id]` muestra los cinco pasos en orden, dice quién hace cada uno y explica junto a la casilla exactamente qué falta («Por qué no se puede marcar»).
+- Cada enlace NFC y el enlace de reseñas de Google tienen botón «Copiar enlace» (Clipboard API; si falla, se selecciona el texto) y el enlace se muestra completo.

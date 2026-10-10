@@ -48,10 +48,11 @@ const countries = countryOptions();
 const timezones = timezoneOptions(business.timezone);
 const roleLabels: Record<string, string> = { owner: "Dueño", manager: "Gerente", viewer: "Consulta" };
 const stepsToActivate = [
-  { label: "Invitar al dueño", done: activeOwnerIds.size > 0 },
-  { label: "El dueño firma los Términos de servicio", done: Boolean(currentSignature) },
-  { label: "Registrar la aprobación del dueño", done: currentTermsApproved },
-  { label: "Activar el negocio", done: business.is_active },
+  { label: "Invitar al dueño con el rol «Dueño» (panel «Personas con acceso»).", done: activeOwnerIds.size > 0 },
+  { label: `El dueño entra con su propio correo en ${siteUrl}/login y firma los Términos. Tú no puedes firmar por él: es su firma electrónica.`, done: Boolean(currentSignature) },
+  { label: "Completa y guarda los datos del negocio: marca, contacto, las cuatro ofertas, días de inactividad y el enlace de reseñas de Google.", done: null },
+  { label: "Cuando el dueño te confirme que todo está bien, escribe su nombre abajo y registra la aprobación.", done: currentTermsApproved },
+  { label: "Marca «Negocio activo» y guarda los cambios.", done: business.is_active },
 ];
 const heroIsStock = Boolean(business.hero_image_url && stockPhotoLibrary.includes(business.hero_image_url));
 const heroCustom = business.hero_image_url && !heroIsStock ? business.hero_image_url : "";
@@ -137,8 +138,8 @@ const formError = Astro.url.searchParams.get("error");
           <div class="field"><label for="googleReviewUrl">Enlace directo para dejar una reseña</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /><small class="hint">Se graba en una tarjeta NFC aparte para pedir reseñas. También aparece como botón al terminar el registro.</small></div>
         </fieldset>
         <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={activationLocked} /> Negocio activo</label>
-        {!business.is_active && !currentSignature && <p class="muted compact-note">Un dueño activo debe firmar los Términos vigentes para habilitar la aprobación.</p>}
-        {!business.is_active && currentSignature && !currentTermsApproved && <p class="muted compact-note">Registra la aprobación final del dueño para habilitar la activación.</p>}
+        {!business.is_active && !currentSignature && <p class="muted compact-note"><strong>Por qué no se puede marcar:</strong> el dueño todavía no ha firmado los Términos. Invítalo en «Personas con acceso» y pídele que entre a {siteUrl}/login con su correo; la firma le aparece al entrar. Tú no puedes firmar por él.</p>}
+        {!business.is_active && currentSignature && !currentTermsApproved && <p class="muted compact-note"><strong>Por qué no se puede marcar:</strong> falta registrar la aprobación del dueño (panel «Aprobación para activar», más abajo).</p>}
         {business.cancelled_at && <p class="alert">El servicio fue cancelado y ya no puede activarse.</p>}
         <button class="button" type="submit">Guardar cambios</button>
       </form>
@@ -152,10 +153,11 @@ const formError = Astro.url.searchParams.get("error");
         <div class="review-link">
           <strong>Enlace de reseñas de Google (para grabar en una tarjeta NFC)</strong>
           {business.google_review_url
-            ? <a href={business.google_review_url} target="_blank" rel="noreferrer">{business.google_review_url}</a>
+            ? <span data-copy-source><a href={business.google_review_url} target="_blank" rel="noreferrer">{business.google_review_url}</a></span>
             : <span class="muted">Pendiente de configurar.</span>}
+          {business.google_review_url && <button type="button" class="button secondary copy-link" data-copy>Copiar enlace</button>}
         </div>
-        <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small>{siteUrl}/b/{business.slug}?t={tag.code}</small></div><div class="status"><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/tag-status`} method="post"><input type="hidden" name="targetId" value={tag.id} /><input type="hidden" name="active" value={tag.is_active ? "false" : "true"} /><button class="link-button" type="submit">{tag.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul>
+        <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small class="tag-link" data-copy-source>{siteUrl}/b/{business.slug}?t={tag.code}</small><button type="button" class="button secondary copy-link" data-copy>Copiar enlace</button></div><div class="status"><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/tag-status`} method="post"><input type="hidden" name="targetId" value={tag.id} /><input type="hidden" name="active" value={tag.is_active ? "false" : "true"} /><button class="link-button" type="submit">{tag.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul>
         <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre de la nueva tarjeta NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Crear tarjeta</button></form>
       </section>
 
@@ -168,7 +170,8 @@ const formError = Astro.url.searchParams.get("error");
 
       <section class="card panel">
         <h2>Aprobación para activar</h2>
-        <ol class="steps">{stepsToActivate.map((step) => <li class:list={{ done: step.done }}><span aria-hidden="true">{step.done ? "✓" : "○"}</span> {step.label}{step.done ? " (listo)" : ""}</li>)}</ol>
+        <p class="muted compact-note">Para activar un negocio nuevo se hace en este orden:</p>
+        <ol class="steps">{stepsToActivate.map((step) => <li class:list={{ done: step.done }}><span aria-hidden="true">{step.done === null ? "•" : step.done ? "✓" : "○"}</span> {step.label}{step.done ? " (listo)" : ""}</li>)}</ol>
         {currentSignature
           ? <p class="approval-state"><strong>Términos firmados</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(currentSignature.signed_at))}</span></p>
           : <p class="alert">Falta que un dueño firme los Términos de servicio (versión {TERMS_VERSION}).</p>}
@@ -176,7 +179,7 @@ const formError = Astro.url.searchParams.get("error");
           ? <p class="approval-state"><strong>Aprobado por {business.owner_approved_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.owner_approved_at))}</span></p>
           : <p class="muted">El dueño debe aprobar la configuración final antes de activar el negocio.</p>}
         <form class="inline-form" action={`/api/admin/business/${business.id}/approve`} method="post">
-          <div class="field"><label for="ownerName">Nombre del dueño que aprobó la configuración</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
+          <div class="field"><label for="ownerName">Nombre del dueño que te confirmó que todo está bien</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
           <button class="button secondary" type="submit" disabled={!currentSignature}>Registrar aprobación del dueño</button>
         </form>
       </section>
@@ -222,6 +225,26 @@ const formError = Astro.url.searchParams.get("error");
 <script>
   import { initBrandColorField } from "../../lib/brand-color-field";
   initBrandColorField();
+  document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const source = button.parentElement?.querySelector<HTMLElement>("[data-copy-source]");
+      const text = source?.textContent?.trim() ?? "";
+      if (!text) return;
+      const original = button.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "¡Copiado!";
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(source!);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        button.textContent = "Selecciónalo y copia";
+      }
+      setTimeout(() => { button.textContent = original; }, 2500);
+    });
+  });
   type Preset = { theme: string; tagline: string; benefits: string[]; inactivityDays: number; photos: string[] };
   const presets = JSON.parse(document.getElementById("business-presets")?.textContent || "{}") as Record<string, Preset>;
   const form = document.querySelector<HTMLFormElement>(".customer-screen-settings")?.closest("form");
@@ -275,6 +298,8 @@ const formError = Astro.url.searchParams.get("error");
   .swatch { background: #fff; font: inherit; color: inherit; }
   .swatch:hover, .swatch:focus-visible { border-color: #101828; }
   .hint { color: #667085; font-size: .82rem; }
+  .records small.tag-link { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; user-select: all; }
+  .copy-link { min-height: 36px; padding: 0 12px; font-size: .82rem; justify-self: start; margin-top: 6px; }
   .steps { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 6px; color: #475467; } .steps .done { color: #027a48; font-weight: 650; }
   .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .photo-option { position: relative; display: block; border-radius: 9px; overflow: hidden; border: 2px solid transparent; cursor: pointer; }
