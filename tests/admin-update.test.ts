@@ -27,3 +27,22 @@ describe("business update audit details", () => {
     expect(route).toContain("changedFieldNames(current, updates)");
   });
 });
+
+describe("D-060 delete business route", () => {
+  const route = readFileSync(join(process.cwd(), "src/pages/api/admin/business/[id]/delete.ts"), "utf8");
+  it("requires a platform admin, the typed slug and an empty business", () => {
+    expect(route).toContain("requirePlatformAdmin");
+    expect(route).toContain("typed !== business.slug");
+    expect(route).toContain('from("customers")');
+    expect(route).toContain('from("visits")');
+  });
+  it("audits before deleting and keeps only slug and name in the audit details", () => {
+    expect(route.indexOf('"business.deleted"')).toBeLessThan(route.indexOf('.delete().eq("id", id)'));
+    expect(route).toContain("details: { slug: business.slug, displayName: business.display_name }");
+  });
+  it("is offered on the admin page only when the business is empty", () => {
+    const page = readFileSync(join(process.cwd(), "src/pages/admin/[id].astro"), "utf8");
+    expect(page).toContain("canDelete ?");
+    expect(page).toContain("/delete`");
+  });
+});
