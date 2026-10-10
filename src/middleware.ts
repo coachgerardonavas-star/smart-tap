@@ -60,15 +60,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     response.headers.set("cache-control", "no-store");
   }
   response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
+  const isPreview = context.url.pathname.startsWith("/preview/");
+  response.headers.set("X-Frame-Options", isPreview ? "SAMEORIGIN" : "DENY");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.headers.set("Strict-Transport-Security", "max-age=31536000");
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+    `default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; frame-src https://challenges.cloudflare.com; base-uri 'self'; form-action 'self'; frame-ancestors ${isPreview ? "'self'" : "'none'"}`,
   );
-  if (context.url.pathname.startsWith("/dashboard") || context.url.pathname.startsWith("/admin") || context.url.pathname.startsWith("/mfa")) {
+  if (context.url.pathname.startsWith("/dashboard") || context.url.pathname.startsWith("/admin") || context.url.pathname.startsWith("/mfa") || isPreview) {
     response.headers.set("Cache-Control", "private, no-store");
   }
   return response;

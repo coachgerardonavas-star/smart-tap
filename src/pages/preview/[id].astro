@@ -1,0 +1,39 @@
+---
+import Base from "../../layouts/Base.astro";
+import CustomerCapture from "../../components/CustomerCapture.astro";
+import { assertBusinessAccess, requireDataAccess } from "../../lib/auth";
+import { businessPreview } from "../../lib/business-preview";
+import { businessPrivacyUrl } from "../../lib/privacy";
+import { createSupabaseServiceClient } from "../../lib/supabase";
+import type { Business } from "../../lib/types";
+
+const identity = await requireDataAccess(Astro.request, Astro.cookies);
+const id = Astro.params.id ?? "";
+await assertBusinessAccess(identity, id);
+const result = await createSupabaseServiceClient().from("businesses").select("*").eq("id", id).maybeSingle();
+if (result.error) throw result.error;
+const business = result.data as Business | null;
+if (!business) {
+  Astro.response.status = 404;
+  return Astro.redirect("/dashboard", 302);
+}
+const preview = businessPreview(business, Astro.url.searchParams, identity.isPlatformAdmin);
+---
+
+<Base title={`Vista previa | ${preview.businessName}`} themeColor={preview.primaryColor}>
+  <CustomerCapture
+    slug={business.slug}
+    businessName={preview.businessName}
+    businessType={preview.businessType}
+    primaryColor={preview.primaryColor}
+    privacyUrl={businessPrivacyUrl(business.slug, business.privacy_url)}
+    theme={preview.theme}
+    tagline={preview.tagline}
+    benefits={preview.benefits}
+    heroImageUrl={preview.heroImageUrl}
+    logoUrl={preview.logoUrl}
+    googleReviewUrl={business.google_review_url}
+    instagramUrl={preview.instagramUrl}
+    demo
+  />
+</Base>
