@@ -272,3 +272,13 @@ Decision:
 - `/mfa` raises the session error before its generic factor error.
 - Unexpected errors become a generic Spanish HTML page (500) on pages and JSON on `/api/*`, without internal details; the 403 page is HTML; any page response of 400 or more without a content type is replaced by the HTML page. All carry `text/html; charset=utf-8` and the security headers. `/mfa` is now also `Cache-Control: private, no-store`.
 - Unchanged: AAL2 for platform admins and active owners, global logout, no new unauthenticated routes and no bypass.
+
+## D-059 — Textos claros en el panel y color de marca libre
+
+Context: el administrador no entendía casillas como «Nombre» o «URL corta», y la paleta fija de colores impedía que la pantalla del cliente se viera como la página del propio negocio.
+
+Decision:
+- Se reescriben etiquetas y ayudas del panel de administración en español natural (qué es cada dato, quién lo ve, ejemplo). Zona horaria y país pasan a listas desplegables.
+- `primaryColor` acepta cualquier color hexadecimal (`1a73e8`, `#abc`, `#1A73E8`), normalizado a `#RRGGBB` mayúsculas por `normalizeHexColor`. La restricción a paleta por estilo (D-057) se elimina; la validación hex estricta y el `check` de la base de datos siguen impidiendo inyección de CSS. La legibilidad se mantiene con `buttonTextColor`, `visibleAccent` y `heroOrnament`.
+- Se elimina la casilla de color secundario (no se usaba al renderizar). La columna `secondary_color` permanece en la base; la API ya no la escribe. Sin migración.
+- Fuera de alcance (etapa 2): fondo y letras de marca.

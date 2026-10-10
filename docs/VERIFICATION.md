@@ -675,3 +675,7 @@ Verdict: **PR #8 approved by the Reviewer.** After merge: Turnstile keys in Rend
 Final local gate: `npm ci` added 334 packages and found 0 vulnerabilities; `npm run check` returned 0 errors/warnings/hints; Vitest passed 16 files and 155/155 tests; `npm run build` completed the standalone Node build with 0 diagnostics; strict `npm run audit:prod` found 0 vulnerabilities.
 
 PR #12 implementation commit `c678ae5` passed GitHub Actions `verify` in run `37352201602` (41 seconds). No deploy, merge, migration or production secret change followed.
+
+## D-059 — textos claros y color de marca libre
+
+`npm run verify` en verde (astro check sin errores, Vitest, build). Pruebas nuevas: `tests/color-regions.test.ts` (normalización hex, listas de país/zona) y casos de color libre en `tests/customer-styles-v2.test.ts` (acepta `1a73e8`, `#abc`; rechaza `red`, `#12345`, `#fff;background:url(x)`). Sin migración, deploy ni cambio de secretos.

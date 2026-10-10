@@ -21,7 +21,7 @@ const adminPage = readFileSync(join(root, "src/pages/admin/[id].astro"), "utf8")
 
 const validUpdate = {
   displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "", privacyUrl: "/privacy",
-  contactPhone: "", contactEmail: "", primaryColor: "#C8412A", secondaryColor: "#0B1220",
+  contactPhone: "", contactEmail: "", primaryColor: "#C8412A",
   timezone: "America/New_York", defaultCountry: "US", inactivityDays: "45",
   offerInactive: "", offerBirthday: "", offerFrequent: "", offerNew: "", googleReviewUrl: "",
   theme: "calido", tagline: "Café de barrio", benefit1: "Ofertas para clientes",
@@ -116,6 +116,8 @@ describe("customer-facing brand styles", () => {
   });
 
   it("exposes every new business field in the admin form", () => {
-    for (const name of ["businessType", "theme", "primaryColor", "tagline", "heroSource", "heroImageCustom", "benefit1", "benefit2", "benefit3", "instagramUrl"]) expect(adminPage).toContain(`name="${name}"`);
+    for (const name of ["businessType", "theme", "tagline", "heroSource", "heroImageCustom", "benefit1", "benefit2", "benefit3", "instagramUrl"]) expect(adminPage).toContain(`name="${name}"`);
+    expect(adminPage).toContain("<BrandColorField");
+    expect(readFileSync("src/components/BrandColorField.astro", "utf8")).toContain('name="primaryColor"');
   });
 });

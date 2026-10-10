@@ -1,0 +1,25 @@
+---
+type Props = { value: string };
+const { value } = Astro.props;
+---
+
+<div class="field brand-color-field" data-brand-color-field>
+  <label for="primaryColor">Color de la marca</label>
+  <small class="hint">Es el color de los botones y detalles de la pantalla de tus clientes. Usa el color oficial del negocio (míralo en su logo o en su página).</small>
+  <div class="color-row">
+    <input type="color" value={value.toLowerCase()} aria-label="Elegir el color con el selector" data-color-picker />
+    <input
+      id="primaryColor" name="primaryColor" value={value.toUpperCase()} required maxlength="7"
+      pattern="#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})" title="Un color como #1A73E8"
+      placeholder="#1A73E8" autocapitalize="characters" autocomplete="off" spellcheck="false" data-color-text
+    />
+  </div>
+  <slot />
+</div>
+
+<style>
+  .hint { color: #667085; font-size: .82rem; }
+  .color-row { display: flex; align-items: center; gap: 10px; }
+  .color-row input[type="color"] { flex: none; width: 56px; min-height: 44px; padding: 5px; }
+  .color-row input[type="text"], .color-row input:not([type]) { flex: 1; min-width: 0; }
+</style>

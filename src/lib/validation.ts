@@ -1,7 +1,8 @@
 import { isSupportedCountry, parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { z } from "zod";
 import { isAtLeastMinimumAge } from "./privacy";
-import { customerThemes, isPaletteColor } from "./customer-theme";
+import { customerThemes } from "./customer-theme";
+import { normalizeHexColor } from "./color";
 import { businessTypes, stockPhotoLibrary, stockPhotoPattern } from "./business-presets";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -127,8 +128,12 @@ const businessFields = z.object({
   privacyUrl: privacyUrlSchema.optional().or(z.literal("")),
   contactPhone: optionalContactPhoneSchema,
   contactEmail: optionalContactEmailSchema,
-  primaryColor: z.string().regex(hexColorPattern),
-  secondaryColor: z.string().regex(hexColorPattern),
+  // Any brand color: "1a73e8", "#abc" or "#1A73E8" all become "#1A73E8". The
+  // strict hex check (and the database check) keeps CSS injection out.
+  primaryColor: z.preprocess(
+    (value) => typeof value === "string" ? (normalizeHexColor(value) ?? value) : value,
+    z.string().regex(hexColorPattern),
+  ),
   timezone: z.string().trim().min(3).max(80).refine((value) => {
     try { new Intl.DateTimeFormat("en-US", { timeZone: value }); return true; } catch { return false; }
   }, "La zona horaria no es válida."),
@@ -157,9 +162,6 @@ export const businessUpdateSchema = businessFields.omit({ ownerEmail: true }).ex
   instagramUrl: instagramUrlSchema,
 }).superRefine((value, context) => {
   checkContactPhone(value, context);
-  if (!isPaletteColor(value.theme, value.primaryColor)) {
-    context.addIssue({ code: "custom", path: ["primaryColor"], message: "Elige uno de los cuatro colores del estilo." });
-  }
   const benefits = [value.benefit1, value.benefit2, value.benefit3];
   if (benefits.some(Boolean) && !benefits.every(Boolean)) {
     context.addIssue({ code: "custom", path: ["benefit1"], message: "Completa los tres beneficios o deja los tres vacíos." });
