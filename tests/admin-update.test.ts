@@ -46,3 +46,14 @@ describe("D-060 delete business route", () => {
     expect(page).toContain("/delete`");
   });
 });
+
+describe("D-061 Automate IT brand in the admin area", () => {
+  const layout = readFileSync(join(process.cwd(), "src/layouts/Base.astro"), "utf8");
+  it("applies the brand palette only when isAdmin is set", () => {
+    expect(layout).toContain('class:list={{ "admin-theme": isAdmin }}');
+    for (const color of ["#0A0E1A", "#0052CC", "#003DA5", "#00D9FF", "#AADD00"]) expect(layout).toContain(color);
+  });
+  it("keeps cyan and lime decorative (never as text color)", () => {
+    expect(layout).not.toMatch(/color:\s*var\(--ait-(cyan|lime)\)/);
+  });
+});
