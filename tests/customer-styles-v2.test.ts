@@ -153,9 +153,9 @@ describe("D-057 contrast", () => {
 
 describe("D-057 business type presets", () => {
   it("defines every type with valid suggested values", () => {
-    expect(businessTypes).toEqual(["restaurante", "food_truck", "cafe", "panaderia", "heladeria", "barberia", "salon", "otro"]);
+    expect(businessTypes).toEqual(["restaurante", "cafe", "panaderia", "barberia", "salon", "heladeria", "tienda", "gimnasio"]);
     const days = Object.fromEntries(businessTypes.map((type) => [type, businessPresets[type].inactivityDays]));
-    expect(days).toEqual({ restaurante: 21, food_truck: 14, cafe: 14, panaderia: 14, heladeria: 21, barberia: 35, salon: 30, otro: 30 });
+    expect(days).toEqual({ restaurante: 21, cafe: 14, panaderia: 14, barberia: 35, salon: 30, heladeria: 21, tienda: 30, gimnasio: 14 });
     for (const type of businessTypes) {
       const preset = businessPresets[type];
       expect(customerThemes).toContain(preset.theme);
@@ -196,9 +196,9 @@ describe("D-057 business type presets", () => {
     expect(attribution).toContain("Unsplash License");
   });
 
-  it("treats unknown or empty types as otro", () => {
-    expect(resolveBusinessType(null)).toBe("otro");
-    expect(resolveBusinessType("spa")).toBe("otro");
+  it("uses cafe as the safe display fallback for legacy or empty types", () => {
+    expect(resolveBusinessType(null)).toBe("cafe");
+    expect(resolveBusinessType("spa")).toBe("cafe");
     expect(resolveBusinessType("barberia")).toBe("barberia");
   });
 

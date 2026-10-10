@@ -45,26 +45,31 @@ describe("database migration and check-in transaction", () => {
   });
 
   it("applies customer style defaults and database constraints", async () => {
-    const current = await database.query<{ theme: string; tagline: string | null; benefits: string[] | null; hero_image_url: string | null }>(`
-      select theme, tagline, benefits, hero_image_url from public.businesses
+    const current = await database.query<{ theme: string; tagline: string | null; benefits: string[] | null; hero_image_url: string | null; business_type: string | null; instagram_url: string | null }>(`
+      select theme, tagline, benefits, hero_image_url, business_type, instagram_url from public.businesses
       where id = '10000000-0000-4000-8000-000000000001'
     `);
-    expect(current.rows[0]).toEqual({ theme: "calido", tagline: null, benefits: null, hero_image_url: null });
+    expect(current.rows[0]).toEqual({ theme: "calido", tagline: null, benefits: null, hero_image_url: null, business_type: null, instagram_url: null });
 
     await expect(database.exec("update public.businesses set theme = 'otro' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
     await expect(database.exec("update public.businesses set benefits = array['uno','dos'] where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
     await expect(database.exec("update public.businesses set hero_image_url = 'http://example.com/hero.jpg' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
-    await database.exec(`update public.businesses set theme = 'elegante', tagline = 'Buena comida, mejores momentos', benefits = array['Uno','Dos','Tres'], hero_image_url = 'https://example.com/hero.jpg' where id = '10000000-0000-4000-8000-000000000001'`);
+    await expect(database.exec("update public.businesses set business_type = 'hotel' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
+    await expect(database.exec("update public.businesses set instagram_url = 'https://instagram.com/cafe' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
+    await expect(database.exec("update public.businesses set instagram_url = 'https://www.instagram.com/cafe-luna' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
+    await expect(database.exec("update public.businesses set hero_image_url = '/stock/cafe/../secret.webp' where id = '10000000-0000-4000-8000-000000000001'")).rejects.toThrow();
+    await database.exec(`update public.businesses set theme = 'elegante', tagline = 'Buena comida, mejores momentos', benefits = array['Uno','Dos','Tres'], hero_image_url = '/stock/restaurante/restaurante-1.webp', business_type = 'restaurante', instagram_url = 'https://www.instagram.com/la.campina' where id = '10000000-0000-4000-8000-000000000001'`);
     const updated = await database.query<{ theme: string; benefits: string[] }>("select theme, benefits from public.businesses where id = '10000000-0000-4000-8000-000000000001'");
     expect(updated.rows[0]).toEqual({ theme: "elegante", benefits: ["Uno", "Dos", "Tres"] });
   });
 
   it("constrains business type, Instagram URL and stock hero paths (D-057)", async () => {
     const id = "10000000-0000-4000-8000-000000000001";
+    await database.exec(`update public.businesses set business_type = null, instagram_url = null, hero_image_url = null where id = '${id}'`);
     const current = await database.query<{ business_type: string | null; instagram_url: string | null }>(`select business_type, instagram_url from public.businesses where id = '${id}'`);
     expect(current.rows[0]).toEqual({ business_type: null, instagram_url: null });
 
-    for (const type of ["restaurante", "food_truck", "cafe", "panaderia", "heladeria", "barberia", "salon", "otro"]) {
+    for (const type of ["restaurante", "cafe", "panaderia", "barberia", "salon", "heladeria", "tienda", "gimnasio"]) {
       await database.exec(`update public.businesses set business_type = '${type}' where id = '${id}'`);
     }
     for (const invalid of ["spa", "Cafe", ""]) {
@@ -82,7 +87,7 @@ describe("database migration and check-in transaction", () => {
       await expect(database.exec(`update public.businesses set instagram_url = '${invalid}' where id = '${id}'`)).rejects.toThrow();
     }
 
-    for (const valid of ["/stock/food_truck/food-truck-1.webp", "/stock/cafe/cafe-3.webp", "https://example.com/hero.jpg"]) {
+    for (const valid of ["/stock/gimnasio/gimnasio-1.webp", "/stock/cafe/cafe-3.webp", "https://example.com/hero.jpg"]) {
       await database.exec(`update public.businesses set hero_image_url = '${valid}' where id = '${id}'`);
     }
     for (const invalid of [

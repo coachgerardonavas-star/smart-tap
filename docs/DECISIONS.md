@@ -246,7 +246,7 @@ Approved design: `docs/design/customer-styles-v2/estilos-smart-tap.html` on bran
 
 The confirmation shows "Esta es tu visita número N" and five stars with min(N, 5) filled. Smart Tap only counts visits: no rewards, prizes or "collect X" copy. Google review button when `google_review_url` exists; "Seguir en Instagram" only when `instagram_url` exists.
 
-New `businesses.business_type` (restaurante, food_truck, cafe, panaderia, heladeria, barberia, salon, otro) pre-fills style, tagline, three benefits, inactivity days (barberia 35; food_truck, cafe, panaderia 14; restaurante, heladeria 21; others 30), photo and accent in the admin; all stay editable. Each type has three Unsplash-License photos in `public/stock/<type>/`, credited in `public/stock/ATTRIBUTION.md`. The accent is one of four tested colors per style.
+New `businesses.business_type` (restaurante, cafe, panaderia, barberia, salon, heladeria, tienda, gimnasio) pre-fills style, tagline, three benefits, inactivity days (barberia 35; cafe, panaderia and gimnasio 14; restaurante and heladeria 21; salon and tienda 30), photo and accent in the admin; all stay editable. Each type has three Unsplash-License photos in `public/stock/<type>/`, credited in `public/stock/ATTRIBUTION.md`. The accent is one of four tested colors per style. Legacy rows without a type use the café presentation until an administrator saves an explicit choice.
 
 Builder implementation choices:
 - **Visit count vs. D-052 finding 2 (HIGH).** D-052 removed the count from the public response so a person who knows a phone number cannot learn that customer's history. To deliver D-057 without reopening that finding in full, the API returns `visitCount` only when the submitted name matches the stored name (case, accents and spaces ignored). A new customer always matches. Residual risk: someone who knows both the phone and the name can see the count, and the absence of a counter tells a stranger that the phone is already registered at that business. The CEO or Reviewer must accept this residual risk or choose another rule before release.
@@ -314,3 +314,9 @@ Decision:
 - `/admin/[id]` muestra, justo encima de la casilla, cuatro requisitos con ✓/○ y enlace a la sección que lo resuelve: dueño asignado, Términos firmados, datos completos (con lo que falta nombrado) y aprobación registrada. La lista lateral de pasos se sustituye por esa.
 - El enlace del logo pasa de «opcional» a «necesario para activar»: la función `record_business_owner_approval` exige `logo_url` no vacío, así que la etiqueta anterior era incorrecta. No se cambió la base de datos.
 - Supabase solo envía correo de invitación a cuentas nuevas. Si el correo ya existe, el mensaje de `/admin` dice que no se envió invitación y que la persona entra por `/login`.
+
+## D-064 — Lista de tipos de negocio vía migración nueva
+
+Context: el PR #15 (Codex) cambió la lista de `business_type` editando `20261006020000_customer_styles_v2.sql`, pero esa migración ya está aplicada en producción (versión `20261006030344`) con la lista anterior (`food_truck`, `otro`). Editar el archivo no cambia la base: guardar «tienda» o «gimnasio» habría fallado.
+
+Decision: la migración original se deja como estaba y la nueva lista se aplica con `20261010150000_business_types_v3.sql`. Comprobación previa: ningún negocio usa `food_truck` ni `otro`. La migración nueva la aplica el CEO antes de desplegar este código; los documentos que dicen «sin aplicar» sobre la v2 están desactualizados.

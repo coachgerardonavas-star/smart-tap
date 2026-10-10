@@ -158,7 +158,7 @@ export const businessUpdateSchema = businessFields.omit({ ownerEmail: true }).ex
   benefit2: optionalBenefitItemSchema,
   benefit3: optionalBenefitItemSchema,
   heroImageUrl: heroImageUrlSchema,
-  businessType: z.preprocess((value) => typeof value === "string" && value ? value : "otro", z.enum(businessTypes)),
+  businessType: z.preprocess((value) => typeof value === "string" && value ? value : "cafe", z.enum(businessTypes)),
   instagramUrl: instagramUrlSchema,
 }).superRefine((value, context) => {
   checkContactPhone(value, context);

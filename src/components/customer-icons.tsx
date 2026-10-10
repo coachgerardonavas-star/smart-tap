@@ -18,13 +18,13 @@ const paths: Record<IconName, ReactNode> = {
   instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" /></>,
   rays: <path d="M12 1.2v2.4M12 20.4v2.4M1.2 12h2.4M20.4 12h2.4M4.4 4.4 6 6M18 18l1.6 1.6M19.6 4.4 18 6M6 18l-1.6 1.6" />,
   utensils: <><path d="M7 2v9M4.5 2v5.5A2.5 2.5 0 0 0 7 10a2.5 2.5 0 0 0 2.5-2.5V2" /><path d="M7 10v12" /><path d="M17 22V2c-2.2 1.3-3.5 4-3.5 7.5V14H17" /></>,
-  truck: <><path d="M2 6h11v10H2z" /><path d="M13 9h4.5l3.5 3.5V16h-8" /><circle cx="6.5" cy="17.5" r="2" /><circle cx="17" cy="17.5" r="2" /><path d="M5 9.5h5" /></>,
   cup: <><path d="M4 9h12v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" /><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" /><path d="M8 2.5c-.5 1 .5 1.5 0 3M12 2.5c-.5 1 .5 1.5 0 3" /></>,
   bread: <><path d="M5 11a7 4.5 0 0 1 14 0v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" /><path d="M9 9.5 10.5 13M13 9 14.5 12.5" /></>,
   cone: <><path d="M7 10a5 5 0 0 1 10 0" /><path d="M6 10h12l-6 12z" /><path d="M8.5 12.5l5 5M11.5 12.5l3.5 3.5" /></>,
   blade: <><circle cx="7" cy="17" r="3" /><circle cx="17" cy="17" r="3" /><path d="M9 15 18 4M15 15 6 4" /></>,
   comb: <><path d="M4 9h16v3H4z" /><path d="M6 12v6M9 12v6M12 12v6M15 12v6M18 12v6" /><path d="M7 9V6a5 5 0 0 1 10 0v3" /></>,
   store: <><path d="M3 9l1.5-5h15L21 9" /><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" /><path d="M5 12v9h14v-9" /><path d="M10 21v-5h4v5" /></>,
+  dumbbell: <><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" /></>,
 };
 
 export function Icon({ name, className, strokeWidth = 1.8 }: { name: IconName; className?: string; strokeWidth?: number }) {
