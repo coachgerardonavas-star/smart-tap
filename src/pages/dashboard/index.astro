@@ -225,7 +225,7 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
   const search = document.querySelector<HTMLInputElement>("#owner-client-search");
   const customerCards = Array.from(document.querySelectorAll<HTMLElement>("[data-owner-customer]"));
   search?.addEventListener("input",()=>{
-    const normalize = (s: string)=>s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase();
+    const normalize = (s: string)=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
     const query=normalize(search.value.trim());
     let matches=0;
     customerCards.forEach((card)=>{
