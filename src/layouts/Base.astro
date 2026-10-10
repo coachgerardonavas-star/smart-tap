@@ -18,6 +18,7 @@ const {
   dashboardHref = "/dashboard",
   previewReadOnly = false,
 } = Astro.props;
+const homeHref = isAdmin ? "/admin" : dashboardHref;
 ---
 
 <!doctype html>
@@ -33,11 +34,10 @@ const {
   <body class:list={{ "admin-theme": isAdmin }}>
     {privateArea && (
       <header class="app-header" inert={previewReadOnly}>
-        <a class="brand" href={dashboardHref}><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
+        <a class="brand" href={homeHref}><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
         <nav aria-label="Navegación principal">
-          <a href={dashboardHref}>Panel</a>
-          {isAdmin && <a href="/admin#negocios">Negocios</a>}
-          {isAdmin && <a class="nav-new" href="/admin#nuevo-negocio"><span aria-hidden="true">+</span> Nuevo negocio</a>}
+          <a href={homeHref}>{isAdmin ? "Inicio" : "Panel"}</a>
+          {isAdmin && <a class="nav-new" href="/admin#nuevo-negocio"><span class="nav-plus" aria-hidden="true">+</span> Negocio</a>}
           <form action="/api/auth/logout" method="post">
             <button class="link-button" type="submit">Salir</button>
           </form>
@@ -123,6 +123,7 @@ const {
   .admin-theme .field input:focus, .admin-theme .field select:focus { border-color: var(--ait-blue); box-shadow: 0 0 0 3px #0052CC26; }
   .admin-theme .app-header nav a.nav-new { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border-radius: 999px; background: var(--ait-blue); color: #fff; }
   .admin-theme .app-header nav a.nav-new:hover { background: var(--ait-blue-dark); color: #fff; }
+  .admin-theme .app-header nav a .nav-plus { font-size:1.25rem; line-height:1; color:var(--ait-lime); font-weight:900; }
   .brand-dot { display: none; } .admin-theme .brand-dot { display: inline-block; }
   @media (max-width: 700px) {
     .app-header { padding: 0 20px; }
