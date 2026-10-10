@@ -679,3 +679,13 @@ PR #12 implementation commit `c678ae5` passed GitHub Actions `verify` in run `37
 ## D-059 — textos claros y color de marca libre
 
 `npm run verify` en verde (astro check sin errores, Vitest, build). Pruebas nuevas: `tests/color-regions.test.ts` (normalización hex, listas de país/zona) y casos de color libre en `tests/customer-styles-v2.test.ts` (acepta `1a73e8`, `#abc`; rechaza `red`, `#12345`, `#fff;background:url(x)`). Sin migración, deploy ni cambio de secretos.
+
+## 2026-10-10 — WhatsApp opt-out and dashboard scope (Builder)
+
+- Base: `main` `fac21b7`; branch reused: `codex/security-hardening`.
+- Production `fzrzrbzxjdezwylzkbkh`, read-only: two CEO test records each have a true WhatsApp capture consent followed by false admin opt-out consent and matching `customer.whatsapp_opt_out` audit at 15:21:34Z / 15:24:20Z. Current flags are false. No exported phone, names, user IDs or secrets are stored in this evidence. Test-project data was excluded from the diagnosis.
+- `npm ci`: 343 packages. `npm run verify`: 22 files, 235/235 tests, 0 errors/0 warnings and one existing admin hint; standalone build complete. `npm run audit:prod`: 0 vulnerabilities.
+- Regression: temporarily load the original opt-out route from `origin/main`, run `tests/whatsapp-opt-out-route.test.ts`, then restore in `finally`. Four missing/wrong-confirmation cases fail against the old route; the corrected version passes all 13. No external DB used in this test.
+- Tests verify no RPC/query without confirmation, rejection before write for auth/viewer/foreign tenant/terms failures, customer+tenant filters, confirmed RPC arguments, already-opted-out no-op, database-error response, business-preserving redirect and separate read-only screen with unchecked box.
+- Selector tests reject empty/unavailable explicit slugs and ambiguous multi-business entry; valid explicit selection is independent of ordering.
+- No migration, consent restoration, merge, deployment or actual WhatsApp message. Hosted/mobile UI smoke after Reviewer deployment remains pending. Fresh local secret scan blocked by absent Gitleaks; PR CI scan remains mandatory.

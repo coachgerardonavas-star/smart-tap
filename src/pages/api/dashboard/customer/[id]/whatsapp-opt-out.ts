@@ -13,6 +13,9 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const customerId = params.id ?? "";
   await assertBusinessAccess(identity, businessId, false);
   await assertCurrentTermsAccepted(identity, businessId);
+  if (form.get("confirmOptOut") !== "yes") {
+    return new Response("Confirma que el cliente pidió dejar de recibir WhatsApp", { status: 400 });
+  }
 
   const service = createSupabaseServiceClient();
   const [{ data: customer, error: customerError }, { data: business, error: businessError }] = await Promise.all([

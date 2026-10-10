@@ -2,6 +2,18 @@
 
 Updated: 2026-10-06 by Claude Code acting as Builder for D-058 (stale sessions), without deployment, merge or database changes. Earlier the same day: D-057 (PR #13, merged). Previous update: 2026-10-05 by ChatGPT Codex after GS-49 on PR #12. `docs/CURRENT_STATE.md` is the canonical current status; later historical sections remain for evidence.
 
+## Builder correction — WhatsApp consent and dashboard selection (2026-10-10)
+
+Reused `codex/security-hardening` from `main` `fac21b7`. The read-only production investigation found two test customers whose optional consent was recorded true at capture and false later through the existing administrative opt-out function. Consent/audit timestamps match. No production writes ran. The earlier automatic-business hypothesis was not proven as the cause of this incident.
+
+Changes: `src/pages/dashboard/customer/[id]/whatsapp-opt-out.astro` renders a guarded read-only confirmation screen, and the existing opt-out POST rejects missing/wrong confirmation before any query/write. The customer-table action now navigates to confirmation. Auth, AAL2, current terms, tenant filtering, the atomic consent/audit RPC and existing non-reenrollment behavior remain intact. Cancel returns to the same business.
+
+`src/lib/dashboard-business.ts` chooses only an exact accessible slug or the sole accessible business. Multiple/no businesses and unavailable explicit slugs do not query customer metrics. Dashboard entry canonicalizes the sole business; Base header links keep the selected URL. No shared business cookie or storage was added.
+
+Verification: 235/235 tests, zero check errors/warnings (one existing hint in admin deletion), complete build, production dependency audit zero vulnerabilities. `tests/whatsapp-opt-out-route.test.ts`: four missing/invalid-confirmation tests fail on the original route; all 13 pass on the corrected route. Seven selector tests and the existing contact/tenant tests pass. No fresh local Gitleaks executable was available; CI secret scanning remains required.
+
+Reviewer: inspect code and green PR verify, then deploy through the existing main workflow and smoke with synthetic data on mobile/desktop. Verify GET/cancel do not change permission; unconfirmed POST is rejected; confirmed POST writes one opt-out plus audit; viewer/foreign-tenant denial; same business URL shows the same refreshed data. Existing production opt-outs must remain untouched. Hosted verification of the correction is pending.
+
 ## Project identity
 
 - Local path: `C:\automate-it\smart-tap` · GitHub: `coachgerardonavas-star/smart-tap`

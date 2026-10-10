@@ -3,6 +3,7 @@ import { buildFollowUpOpportunities, type FollowUpActionRecord, type FollowUpCus
 import { createSupabaseServiceClient } from "./supabase";
 import { assertCurrentTermsAccepted } from "./terms-access";
 import type { Business, Customer, Visit } from "./types";
+import { selectDashboardBusiness } from "./dashboard-business";
 
 export async function accessibleBusinesses(identity: AuthIdentity): Promise<Business[]> {
   const service = createSupabaseServiceClient();
@@ -28,7 +29,7 @@ export async function accessibleBusinesses(identity: AuthIdentity): Promise<Busi
 
 export async function dashboardData(identity: AuthIdentity, requestedSlug?: string | null) {
   const businesses = await accessibleBusinesses(identity);
-  const business = businesses.find((item) => item.slug === requestedSlug) ?? businesses[0] ?? null;
+  const business = selectDashboardBusiness(businesses, requestedSlug);
   if (!business) return { businesses, business: null, metrics: null };
   await assertBusinessAccess(identity, business.id);
   await assertCurrentTermsAccepted(identity, business.id);

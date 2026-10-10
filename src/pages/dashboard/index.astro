@@ -13,6 +13,10 @@ if (pendingSignatureBusiness) {
 }
 const data = await dashboardData(identity, Astro.url.searchParams.get("business"));
 const { businesses, business, metrics } = data;
+if (business && !Astro.url.searchParams.has("business")) {
+  return Astro.redirect(`/dashboard?business=${encodeURIComponent(business.slug)}`, 302);
+}
+const dashboardHref = business ? `/dashboard?business=${encodeURIComponent(business.slug)}` : "/dashboard";
 const canManage = business ? await assertBusinessAccess(identity, business.id, false).then(() => true).catch(() => false) : false;
 const dateFormat = new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" });
 const birthdayFormat = new Intl.DateTimeFormat("es-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -23,12 +27,29 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
 })).filter((group) => group.items.length > 0) : [];
 ---
 
-<Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin}>
+<Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin} dashboardHref={dashboardHref}>
   {!business || !metrics ? (
     <section class="empty card">
       <p class="eyebrow">Smart Tap</p>
-      <h1>Aún no tienes un negocio asignado</h1>
-      <p class="muted">Pide al administrador de Automate IT que agregue tu cuenta.</p>
+      {businesses.length ? (
+        <>
+          <h1>Selecciona el negocio que quieres ver</h1>
+          {Astro.url.searchParams.has("business") && <p class="muted">El negocio del enlace no está disponible para tu cuenta.</p>}
+          <form method="get" action="/dashboard" class="business-picker">
+            <label for="select-business">Negocio</label>
+            <select id="select-business" name="business" required>
+              <option value="" disabled selected>Selecciona un negocio</option>
+              {businesses.map((item) => <option value={item.slug}>{item.display_name}</option>)}
+            </select>
+            <button class="button" type="submit">Ver panel</button>
+          </form>
+        </>
+      ) : (
+        <>
+          <h1>Aún no tienes un negocio asignado</h1>
+          <p class="muted">Pide al administrador de Automate IT que agregue tu cuenta.</p>
+        </>
+      )}
     </section>
   ) : (
     <>
@@ -121,10 +142,7 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
                         <td>
                           <div class="customer-actions">
                             {customer.whatsapp_opt_in && (
-                              <form action={`/api/dashboard/customer/${customer.id}/whatsapp-opt-out`} method="post">
-                                <input type="hidden" name="businessId" value={business.id} />
-                                <button class="opt-out-button" type="submit">Pidió no recibir WhatsApp</button>
-                              </form>
+                              <a class="opt-out-button" href={`/dashboard/customer/${customer.id}/whatsapp-opt-out?businessId=${encodeURIComponent(business.id)}`}>Registrar baja de WhatsApp</a>
                             )}
                             <form action={`/api/dashboard/customer/${customer.id}/delete`} method="post" onsubmit="return confirm('¿Eliminar este cliente y todas sus visitas? Esta acción no se puede deshacer.')">
                               <input type="hidden" name="businessId" value={business.id} />
@@ -194,6 +212,9 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
   .birthdays small { color: #98a2b3; }
   .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #f2f4f7; color: #475467; font-weight: 800; }
   .empty, .empty-row { padding: 36px; }
+  .business-picker { display: grid; gap: 12px; max-width: 420px; }
+  .business-picker select { min-height: 44px; max-width: 100%; }
+  .opt-out-button { display: inline-flex; align-items: center; min-height: 44px; }
   .legal-footer { margin-top: 34px; text-align: center; font-size: .82rem; color: #667085; }
   @media (max-width: 960px) { .metrics { grid-template-columns: repeat(2, 1fr); } .dashboard-grid { grid-template-columns: 1fr; } }
   @media (max-width: 700px) { .follow-up-row { align-items: start; flex-direction: column; } .follow-up-actions { justify-content: flex-start; } }
