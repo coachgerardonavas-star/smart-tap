@@ -82,3 +82,18 @@ describe("activation steps and copyable NFC links", () => {
     expect(page).toContain("navigator.clipboard.writeText");
   });
 });
+
+describe("activation checklist above the toggle", () => {
+  const page = readFileSync(join(process.cwd(), "src/pages/admin/[id].astro"), "utf8");
+  it("shows the checklist before the Negocio activo checkbox with the real requirements", () => {
+    expect(page.indexOf('id="antes-de-activar"')).toBeGreaterThan(-1);
+    expect(page.indexOf('id="antes-de-activar"')).toBeLessThan(page.indexOf('name="isActive"'));
+    expect(page).toContain("enlace del logo");
+    expect(page).toContain('id="acceso"');
+    expect(page).toContain('id="aprobacion"');
+  });
+  it("tells the admin when an invited email already had an account (no email is sent)", () => {
+    const invite = readFileSync(join(process.cwd(), "src/pages/api/admin/business/[id]/invite.ts"), "utf8");
+    expect(invite).toContain("NO se envió invitación");
+  });
+});

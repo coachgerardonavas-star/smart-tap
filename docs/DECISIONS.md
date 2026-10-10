@@ -305,3 +305,12 @@ Decision:
 - Sin cambiar ningún control: la casilla sigue bloqueada hasta que un dueño activo firme los Términos vigentes y se registre su aprobación. `/terms/sign` sigue redirigiendo al administrador; la firma es del dueño.
 - `/admin/[id]` muestra los cinco pasos en orden, dice quién hace cada uno y explica junto a la casilla exactamente qué falta («Por qué no se puede marcar»).
 - Cada enlace NFC y el enlace de reseñas de Google tienen botón «Copiar enlace» (Clipboard API; si falla, se selecciona el texto) y el enlace se muestra completo.
+
+## D-063 — Checklist «Antes de activar» arriba de «Negocio activo» y aviso de invitación
+
+Context: el administrador no sabía qué debía resolver en una página larga para poder marcar «Negocio activo», y una invitación a un correo que ya tenía cuenta no envió ningún correo sin avisarlo.
+
+Decision:
+- `/admin/[id]` muestra, justo encima de la casilla, cuatro requisitos con ✓/○ y enlace a la sección que lo resuelve: dueño asignado, Términos firmados, datos completos (con lo que falta nombrado) y aprobación registrada. La lista lateral de pasos se sustituye por esa.
+- El enlace del logo pasa de «opcional» a «necesario para activar»: la función `record_business_owner_approval` exige `logo_url` no vacío, así que la etiqueta anterior era incorrecta. No se cambió la base de datos.
+- Supabase solo envía correo de invitación a cuentas nuevas. Si el correo ya existe, el mensaje de `/admin` dice que no se envió invitación y que la persona entra por `/login`.

@@ -47,13 +47,19 @@ const currentColor = business.primary_color.toUpperCase();
 const countries = countryOptions();
 const timezones = timezoneOptions(business.timezone);
 const roleLabels: Record<string, string> = { owner: "Dueño", manager: "Gerente", viewer: "Consulta" };
-const stepsToActivate = [
-  { label: "Invitar al dueño con el rol «Dueño» (panel «Personas con acceso»).", done: activeOwnerIds.size > 0 },
-  { label: `El dueño entra con su propio correo en ${siteUrl}/login y firma los Términos. Tú no puedes firmar por él: es su firma electrónica.`, done: Boolean(currentSignature) },
-  { label: "Completa y guarda los datos del negocio: marca, contacto, las cuatro ofertas, días de inactividad y el enlace de reseñas de Google.", done: null },
-  { label: "Cuando el dueño te confirme que todo está bien, escribe su nombre abajo y registra la aprobación.", done: currentTermsApproved },
-  { label: "Marca «Negocio activo» y guarda los cambios.", done: business.is_active },
+const missingConfig: string[] = [];
+if (!business.logo_url?.trim()) missingConfig.push("enlace del logo");
+if (!business.contact_phone && !business.contact_email) missingConfig.push("teléfono o correo de contacto");
+if (![business.offer_inactive, business.offer_birthday, business.offer_frequent, business.offer_new].every((offer) => offer?.trim())) missingConfig.push("las cuatro ofertas");
+if (!business.google_review_url?.trim()) missingConfig.push("enlace de reseñas de Google");
+if (!(business.inactivity_days >= 7 && business.inactivity_days <= 365)) missingConfig.push("días de inactividad (entre 7 y 365)");
+const activationChecklist = [
+  { label: "Hay un dueño asignado en «Personas con acceso» (rol Dueño)", done: activeOwnerIds.size > 0, href: "#acceso", hint: "" },
+  { label: "El dueño firmó los Términos vigentes", done: Boolean(currentSignature), href: "#acceso", hint: `Debe entrar con su correo en ${siteUrl}/login. Tú no puedes firmar por él.` },
+  { label: "Datos del negocio completos y guardados", done: missingConfig.length === 0, href: "#datos", hint: missingConfig.length ? `Falta: ${missingConfig.join(", ")}.` : "" },
+  { label: "Aprobación del dueño registrada", done: currentTermsApproved, href: "#aprobacion", hint: "Se registra en «Aprobación para activar», cuando el dueño confirme." },
 ];
+const checklistReady = activationChecklist.every((item) => item.done);
 const heroIsStock = Boolean(business.hero_image_url && stockPhotoLibrary.includes(business.hero_image_url));
 const heroCustom = business.hero_image_url && !heroIsStock ? business.hero_image_url : "";
 const presetData = JSON.stringify(Object.fromEntries(businessTypes.map((type) => [type, businessPresets[type]])));
@@ -71,12 +77,12 @@ const formError = Astro.url.searchParams.get("error");
   {formError && <div class="alert">{formError}</div>}
 
   <div class="settings-grid">
-    <section class="card panel">
+    <section class="card panel" id="datos">
       <h2>Datos y marca</h2>
       <form action={`/api/admin/business/${business.id}/update`} method="post">
         <div class="split"><div class="field"><label for="displayName">Nombre del negocio</label><input id="displayName" name="displayName" value={business.display_name} required /><small class="hint">Como lo conocen sus clientes.</small></div><div class="field"><label for="slug">Dirección web del negocio</label><input id="slug" name="slug" value={business.slug} required autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">{siteUrl}/b/{business.slug}. Si ya grabaste tarjetas NFC, no la cambies: las tarjetas apuntan a esta dirección.</small></div></div>
         <div class="field"><label for="legalName">Nombre legal de la empresa (opcional)</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /><small class="hint">El nombre con el que está registrada (ej. Arepas Sabrosas LLC).</small></div>
-        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega la dirección web directa de la imagen (empieza con https:// y suele terminar en .png o .jpg). No se puede subir el archivo aquí. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
+        <div class="field"><label for="logoUrl">Enlace del logo (necesario para activar)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega la dirección web directa de la imagen (empieza con https:// y suele terminar en .png o .jpg). No se puede subir el archivo aquí. Sin este enlace no se puede registrar la aprobación del dueño.</small></div>
         <fieldset class="customer-screen-settings">
           <legend>Pantalla del cliente</legend>
           <p class="muted compact-note">Esto es lo que ve el cliente del negocio cuando toca la tarjeta NFC. Míralo con el botón «Ver pantalla del cliente» de arriba.</p>
@@ -137,6 +143,13 @@ const formError = Astro.url.searchParams.get("error");
           <legend>Enlace de reseñas de Google</legend>
           <div class="field"><label for="googleReviewUrl">Enlace directo para dejar una reseña</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /><small class="hint">Se graba en una tarjeta NFC aparte para pedir reseñas. También aparece como botón al terminar el registro.</small></div>
         </fieldset>
+        {!business.is_active && (
+          <div class="checklist" id="antes-de-activar">
+            <strong>Antes de marcar «Negocio activo» necesitas:</strong>
+            <ul>{activationChecklist.map((item) => <li class:list={{ done: item.done }}><span aria-hidden="true">{item.done ? "✓" : "○"}</span> <div><a href={item.href}>{item.label}</a>{item.done ? " (listo)" : ""}{!item.done && item.hint && <small>{item.hint}</small>}</div></li>)}</ul>
+            <p class="muted compact-note">{checklistReady ? "Todo listo: ya puedes marcar «Negocio activo» y guardar." : "Cuando todo tenga ✓, el cuadro se habilita."}</p>
+          </div>
+        )}
         <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={activationLocked} /> Negocio activo</label>
         {!business.is_active && !currentSignature && <p class="muted compact-note"><strong>Por qué no se puede marcar:</strong> el dueño todavía no ha firmado los Términos. Invítalo en «Personas con acceso» y pídele que entre a {siteUrl}/login con su correo; la firma le aparece al entrar. Tú no puedes firmar por él.</p>}
         {!business.is_active && currentSignature && !currentTermsApproved && <p class="muted compact-note"><strong>Por qué no se puede marcar:</strong> falta registrar la aprobación del dueño (panel «Aprobación para activar», más abajo).</p>}
@@ -161,17 +174,16 @@ const formError = Astro.url.searchParams.get("error");
         <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre de la nueva tarjeta NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Crear tarjeta</button></form>
       </section>
 
-      <section class="card panel">
+      <section class="card panel" id="acceso">
         <h2>Personas con acceso: {activeMemberCount} de 2</h2>
         <p class="muted compact-note">Cada negocio puede tener hasta 2 personas. Dueño y Gerente pueden escribir a los clientes y eliminarlos; Consulta solo mira. Quien firma los Términos debe ser Dueño.</p>
         {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{roleLabels[member.role] ?? member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
         <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo de la persona</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Qué puede hacer</label><select id="role" name="role"><option value="owner">Dueño (administra y firma)</option><option value="manager">Gerente (escribe a clientes)</option><option value="viewer">Consulta (solo mira)</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
       </section>
 
-      <section class="card panel">
+      <section class="card panel" id="aprobacion">
         <h2>Aprobación para activar</h2>
-        <p class="muted compact-note">Para activar un negocio nuevo se hace en este orden:</p>
-        <ol class="steps">{stepsToActivate.map((step) => <li class:list={{ done: step.done }}><span aria-hidden="true">{step.done === null ? "•" : step.done ? "✓" : "○"}</span> {step.label}{step.done ? " (listo)" : ""}</li>)}</ol>
+        <p class="muted compact-note">La lista completa de requisitos está arriba del cuadro «Negocio activo».</p>
         {currentSignature
           ? <p class="approval-state"><strong>Términos firmados</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(currentSignature.signed_at))}</span></p>
           : <p class="alert">Falta que un dueño firme los Términos de servicio (versión {TERMS_VERSION}).</p>}
@@ -300,6 +312,7 @@ const formError = Astro.url.searchParams.get("error");
   .hint { color: #667085; font-size: .82rem; }
   .records small.tag-link { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; user-select: all; }
   .copy-link { min-height: 36px; padding: 0 12px; font-size: .82rem; justify-self: start; margin-top: 6px; }
+  .checklist { border: 1px solid #d0d5dd; border-radius: 12px; padding: 14px 16px; margin: 12px 0; background: #f8fafc; display: grid; gap: 8px; } .checklist ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; } .checklist li { display: flex; gap: 8px; color: #475467; } .checklist li small { display: block; color: #b42318; } .checklist li.done { color: #027a48; font-weight: 650; } .checklist li.done a { color: inherit; }
   .steps { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 6px; color: #475467; } .steps .done { color: #027a48; font-weight: 650; }
   .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .photo-option { position: relative; display: block; border-radius: 9px; overflow: hidden; border: 2px solid transparent; cursor: pointer; }
