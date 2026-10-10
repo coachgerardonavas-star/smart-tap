@@ -39,5 +39,10 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     return redirect(`/admin/${id}?error=${encodeURIComponent(message)}`, 303);
   }
   await service.from("audit_log").insert({ actor_user_id: identity.id, business_id: id, action: "member.invited", entity_type: "business_member", entity_id: userId, details: { role: parsed.data.role } });
-  return redirect(`/admin/${id}?message=${encodeURIComponent("Usuario asignado.")}`, 303);
+  // Supabase only sends the invitation email to NEW accounts. An existing account
+  // makes inviteUserByEmail return an error and no email goes out.
+  const text = invited.error
+    ? "Usuario asignado. Ese correo ya tenía cuenta, así que NO se envió invitación: la persona entra directo en /login con su contraseña."
+    : "Invitación enviada. Si no llega, revisa spam.";
+  return redirect(`/admin/${id}?message=${encodeURIComponent(text)}`, 303);
 };

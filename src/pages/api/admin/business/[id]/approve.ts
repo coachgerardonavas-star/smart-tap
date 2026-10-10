@@ -9,7 +9,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const id = params.id ?? "";
   const parsed = ownerApprovalSchema.safeParse(Object.fromEntries(await request.formData()));
   if (!parsed.success) {
-    return redirect(`/admin/${id}?error=${encodeURIComponent("Escribe el nombre del dueño que aprobó la configuración.")}`, 303);
+    return redirect(`/admin/${id}?error=${encodeURIComponent("Escribe el nombre del dueño que aprobó la configuración.")}#aprobacion`, 303);
   }
 
   const service = createSupabaseServiceClient();
@@ -27,10 +27,10 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
       : error.message.includes("approval_active_member_required")
       ? "Asigna al menos un usuario activo antes de registrar la aprobación."
       : error.message.includes("approval_configuration_incomplete")
-        ? "Completa la marca, el contacto, las cuatro ofertas, los días de inactividad y la URL de Google Review."
+        ? "Faltan datos: revisa la lista «Antes de marcar Negocio activo». Necesita enlace del logo, contacto, las cuatro ofertas, días de inactividad y enlace de reseñas de Google. Guarda los cambios antes de aprobar."
         : "No pudimos registrar la aprobación del dueño.";
-    return redirect(`/admin/${id}?error=${encodeURIComponent(message)}`, 303);
+    return redirect(`/admin/${id}?error=${encodeURIComponent(message)}#aprobacion`, 303);
   }
 
-  return redirect(`/admin/${id}?message=${encodeURIComponent("Aprobación del dueño registrada.")}`, 303);
+  return redirect(`/admin/${id}?message=${encodeURIComponent("Aprobación del dueño registrada.")}#aprobacion`, 303);
 };

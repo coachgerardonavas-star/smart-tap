@@ -57,6 +57,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         p_role: "owner",
       });
       if (membershipError) inviteWarning = " El negocio quedó creado; revisa la asignación del dueño.";
+      else if (inviteError) inviteWarning = " Ese correo ya tenía cuenta: no se envió invitación; el dueño entra directo en /login.";
     } else {
       inviteWarning = " El negocio quedó creado; revisa la invitación del dueño.";
     }
