@@ -59,11 +59,12 @@ describe("D-061 Automate IT brand in the admin area", () => {
 });
 
 describe("admin header link to add a business", () => {
-  it("offers a '+ Nuevo negocio' link that jumps to the creation form", () => {
+  it("offers the compact '+ Negocio' link that opens the creation form", () => {
     const layout = readFileSync(join(process.cwd(), "src/layouts/Base.astro"), "utf8");
     const page = readFileSync(join(process.cwd(), "src/pages/admin/index.astro"), "utf8");
     expect(layout).toContain('href="/admin#nuevo-negocio"');
-    expect(layout).toContain("Nuevo negocio");
+    expect(layout).toContain('class="nav-plus"');
+    expect(layout).toContain("</svg></span> Negocio");
     expect(page).toContain('id="nuevo-negocio"');
     expect(page).toContain('id="negocios"');
   });
