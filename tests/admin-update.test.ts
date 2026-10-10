@@ -68,3 +68,17 @@ describe("admin header link to add a business", () => {
     expect(page).toContain('id="negocios"');
   });
 });
+
+describe("activation steps and copyable NFC links", () => {
+  const page = readFileSync(join(process.cwd(), "src/pages/admin/[id].astro"), "utf8");
+  it("explains why activation is locked and who signs the Terms", () => {
+    expect(page).toContain("Por qué no se puede marcar");
+    expect(page).toContain("Tú no puedes firmar por él");
+    expect(page).toContain("/login");
+  });
+  it("offers a copy button for each NFC link and for the Google review link", () => {
+    expect(page).toContain("data-copy-source");
+    expect((page.match(/data-copy>/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(page).toContain("navigator.clipboard.writeText");
+  });
+});
