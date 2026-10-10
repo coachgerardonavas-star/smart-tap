@@ -26,10 +26,10 @@ const {
     <meta name="robots" content={privateArea ? "noindex,nofollow" : "index,follow"} />
     <title>{title}</title>
   </head>
-  <body>
+  <body class:list={{ "admin-theme": isAdmin }}>
     {privateArea && (
       <header class="app-header">
-        <a class="brand" href="/dashboard">Smart Tap</a>
+        <a class="brand" href="/dashboard"><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
         <nav aria-label="Navegación principal">
           <a href="/dashboard">Panel</a>
           {isAdmin && <a href="/admin">Negocios</a>}
@@ -101,6 +101,22 @@ const {
   th, td { padding: 13px 14px; border-bottom: 1px solid #eaecf0; text-align: left; vertical-align: middle; }
   th { color: #667085; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
   td { font-size: .92rem; }
+
+  /* Automate IT brand (Manual de Marca v3.3) for the admin area: Deep Navy header,
+     Corporate Blue actions, Cyan only as a decorative line, Lime as a tiny accent. */
+  .admin-theme { --ait-navy: #0A0E1A; --ait-blue: #0052CC; --ait-blue-dark: #003DA5; --ait-cyan: #00D9FF; --ait-lime: #AADD00; background: #F4F6FA; }
+  .admin-theme .app-header { background: var(--ait-navy); border-bottom: 2px solid var(--ait-cyan); }
+  .admin-theme .brand { display: inline-flex; align-items: center; gap: 9px; color: #fff; }
+  .admin-theme .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ait-lime); }
+  .admin-theme .app-header nav a, .admin-theme .link-button { color: #D0D5DD; }
+  .admin-theme .app-header nav a:hover, .admin-theme .link-button:hover { color: #fff; }
+  .admin-theme .button { background: var(--ait-blue); }
+  .admin-theme .button:hover { background: var(--ait-blue-dark); filter: none; }
+  .admin-theme .button.secondary { background: #fff; color: var(--ait-blue); border-color: var(--ait-blue); }
+  .admin-theme .button.danger { background: #b42318; }
+  .admin-theme .eyebrow { color: var(--ait-blue); }
+  .admin-theme .field input:focus, .admin-theme .field select:focus { border-color: var(--ait-blue); box-shadow: 0 0 0 3px #0052CC26; }
+  .brand-dot { display: none; } .admin-theme .brand-dot { display: inline-block; }
   @media (max-width: 700px) {
     .app-header { padding: 0 20px; }
     .app-header nav { gap: 13px; font-size: .9rem; }

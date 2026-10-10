@@ -291,3 +291,8 @@ Decision:
 - Nueva ruta `POST /api/admin/business/[id]/delete` (solo administrador de plataforma con MFA). Exige escribir la dirección web del negocio y rechaza cualquier negocio con clientes o visitas, que siguen el flujo de cancelación y purga por retención.
 - Registra `business.deleted` en `audit_log` (solo slug y nombre) antes de borrar. El borrado en cascada elimina tarjetas NFC, accesos y firmas; `audit_log.business_id` pasa a NULL. Los usuarios de Auth no se tocan.
 - La página `/admin/[id]` muestra el formulario solo cuando el negocio está vacío.
+
+## D-061 — Colores de la marca Automate IT en el área de administración
+
+Decision: según el Manual de Marca v3.3 (Drive, carpeta ADN), el área `/admin` usa Deep Navy `#0A0E1A` en el encabezado, Corporate Blue `#0052CC` (hover Navy `#003DA5`) en botones, enlaces y foco, y Cyan `#00D9FF` solo como línea decorativa. Lime `#AADD00` se limita a un punto de 8 px sobre fondo oscuro (máx. 10 %, nunca en cuerpo de texto). El fondo de página pasa a un gris frío `#F4F6FA` para mantener la lectura de formularios largos. Solo aplica con `isAdmin`; el panel del dueño y la pantalla del cliente no cambian.
+Fuera de alcance: tipografías de marca (Anton, Montserrat, Open Sans): la CSP actual (`default-src 'self'`) bloquea fuentes externas, y el logo oficial no está en el repositorio.
