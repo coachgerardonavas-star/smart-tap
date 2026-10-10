@@ -16,7 +16,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const service = createSupabaseServiceClient();
   const wantsActive = form.get("isActive") === "on";
   const { data: current, error: currentError } = await service.from("businesses")
-    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,secondary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,business_type,instagram_url,is_active")
+    .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,business_type,instagram_url,is_active")
     .eq("id", id).maybeSingle();
   if (currentError || !current) return redirect(`/admin/${id}?error=${encodeURIComponent("Negocio no encontrado.")}`, 303);
   if (wantsActive && !current.is_active && (!current.owner_approved_at || current.owner_approved_terms_version !== TERMS_VERSION)) {
@@ -30,7 +30,7 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     display_name: input.displayName, legal_name: input.legalName || null, slug: input.slug,
     logo_url: input.logoUrl || null, privacy_url: input.privacyUrl || null,
     contact_phone: input.contactPhone, contact_email: input.contactEmail,
-    primary_color: input.primaryColor, secondary_color: input.secondaryColor,
+    primary_color: input.primaryColor,
     timezone: input.timezone, default_country: input.defaultCountry, inactivity_days: input.inactivityDays,
     offer_inactive: input.offerInactive, offer_birthday: input.offerBirthday,
     offer_frequent: input.offerFrequent, offer_new: input.offerNew,

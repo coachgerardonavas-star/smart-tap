@@ -22,7 +22,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     contact_phone: input.contactPhone,
     contact_email: input.contactEmail,
     primary_color: input.primaryColor,
-    secondary_color: input.secondaryColor,
     timezone: input.timezone,
     default_country: input.defaultCountry,
     inactivity_days: input.inactivityDays,

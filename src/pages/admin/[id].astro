@@ -5,7 +5,9 @@ import { siteUrl as configuredSiteUrl } from "../../lib/env";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 import { TERMS_VERSION } from "../../lib/terms";
-import { customerThemePaletteNames, customerThemePalettes, customerThemes, isCustomerTheme, isPaletteColor } from "../../lib/customer-theme";
+import { customerThemePaletteNames, customerThemePalettes, customerThemes, isCustomerTheme } from "../../lib/customer-theme";
+import BrandColorField from "../../components/BrandColorField.astro";
+import { countryOptions, timezoneOptions } from "../../lib/regions";
 import { businessPresets, businessTypes, resolveBusinessType, stockPhotoLibrary } from "../../lib/business-presets";
 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
@@ -39,7 +41,15 @@ const businessType = resolveBusinessType(business.business_type);
 const currentTheme = isCustomerTheme(business.theme) ? business.theme : "calido";
 const themeLabels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
 const currentColor = business.primary_color.toUpperCase();
-const colorOffPalette = !isPaletteColor(currentTheme, currentColor);
+const countries = countryOptions();
+const timezones = timezoneOptions(business.timezone);
+const roleLabels: Record<string, string> = { owner: "Dueño", manager: "Gerente", viewer: "Consulta" };
+const stepsToActivate = [
+  { label: "Invitar al dueño", done: activeOwnerIds.size > 0 },
+  { label: "El dueño firma los Términos de servicio", done: Boolean(currentSignature) },
+  { label: "Registrar la aprobación del dueño", done: currentTermsApproved },
+  { label: "Activar el negocio", done: business.is_active },
+];
 const heroIsStock = Boolean(business.hero_image_url && stockPhotoLibrary.includes(business.hero_image_url));
 const heroCustom = business.hero_image_url && !heroIsStock ? business.hero_image_url : "";
 const presetData = JSON.stringify(Object.fromEntries(businessTypes.map((type) => [type, businessPresets[type]])));
@@ -51,7 +61,7 @@ const formError = Astro.url.searchParams.get("error");
   <a class="back" href="/admin">← Todos los negocios</a>
   <header class="page-head">
     <div><p class="eyebrow">Configuración</p><h1>{business.display_name}</h1><p class="muted">/b/{business.slug}</p></div>
-    <a class="button secondary" href={`/b/${business.slug}`} target="_blank">Abrir landing</a>
+    <a class="button secondary" href={`/b/${business.slug}`} target="_blank">Ver pantalla del cliente</a>
   </header>
   {message && <div class="alert success">{message}</div>}
   {formError && <div class="alert">{formError}</div>}
@@ -60,32 +70,32 @@ const formError = Astro.url.searchParams.get("error");
     <section class="card panel">
       <h2>Datos y marca</h2>
       <form action={`/api/admin/business/${business.id}/update`} method="post">
-        <div class="split"><div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" value={business.display_name} required /></div><div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" value={business.slug} required /></div></div>
-        <div class="field"><label for="legalName">Razón social</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /></div>
-        <div class="field"><label for="logoUrl">URL del logo</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /></div>
+        <div class="split"><div class="field"><label for="displayName">Nombre del negocio</label><input id="displayName" name="displayName" value={business.display_name} required /><small class="hint">Como lo conocen sus clientes.</small></div><div class="field"><label for="slug">Dirección web del negocio</label><input id="slug" name="slug" value={business.slug} required autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">{siteUrl}/b/{business.slug}. Si ya grabaste tarjetas NFC, no la cambies: las tarjetas apuntan a esta dirección.</small></div></div>
+        <div class="field"><label for="legalName">Nombre legal de la empresa (opcional)</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /><small class="hint">El nombre con el que está registrada (ej. Arepas Sabrosas LLC).</small></div>
+        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega el enlace de la imagen. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
         <fieldset class="customer-screen-settings">
           <legend>Pantalla del cliente</legend>
+          <p class="muted compact-note">Esto es lo que ve el cliente del negocio cuando toca la tarjeta NFC. Míralo con el botón «Ver pantalla del cliente» de arriba.</p>
           <div class="field"><label for="businessType">Tipo de negocio</label><select id="businessType" name="businessType" required>
             {businessTypes.map((type) => <option value={type} selected={type === businessType}>{businessPresets[type].label}</option>)}
           </select></div>
-          <p class="muted compact-note">Al cambiar el tipo se rellenan el estilo, la frase, los beneficios, los días de inactividad, la foto y el color sugeridos. Puedes editarlos antes de guardar.</p>
-          <div class="field"><label for="theme">Estilo</label><select id="theme" name="theme" required>
+          <p class="muted compact-note">Al elegir el tipo se sugieren el estilo, la frase, los beneficios, los días de inactividad, la foto y el color. Puedes cambiarlos antes de guardar.</p>
+          <div class="field"><label for="theme">Estilo de la pantalla</label><select id="theme" name="theme" required>
             {customerThemes.map((value) => <option value={value} selected={value === currentTheme}>{themeLabels[value]}</option>)}
-          </select></div>
-          <div class="field">
-            <span class="field-label">Color de acento</span>
-            {colorOffPalette && <p class="muted compact-note">El color actual {currentColor} no está en la paleta del estilo. Elige uno antes de guardar.</p>}
+          </select><small class="hint">Cambia las letras, el fondo y el tono de la pantalla.</small></div>
+          <BrandColorField value={currentColor}>
+            <span class="field-label">Colores sugeridos para este estilo</span>
             {customerThemes.map((value) => (
               <div class="swatches" data-theme-palette={value} hidden={value !== currentTheme}>
                 {customerThemePalettes[value].map((color) => (
-                  <label class="swatch"><input type="radio" name="primaryColor" value={color} checked={value === currentTheme && color === currentColor} disabled={value !== currentTheme} required /><span class="chip" style={`background:${color}`}></span><span>{customerThemePaletteNames[color]}</span></label>
+                  <button type="button" class="swatch" data-color={color}><span class="chip" style={`background:${color}`}></span><span>{customerThemePaletteNames[color]}</span></button>
                 ))}
               </div>
             ))}
-          </div>
-          <div class="field"><label for="tagline">Frase de marca (opcional)</label><input id="tagline" name="tagline" value={business.tagline ?? ""} maxlength="80" /></div>
+          </BrandColorField>
+          <div class="field"><label for="tagline">Frase del negocio (opcional)</label><input id="tagline" name="tagline" value={business.tagline ?? ""} maxlength="80" /><small class="hint">Una frase corta que aparece bajo el nombre. Máximo 80 letras.</small></div>
           <div class="field">
-            <span class="field-label">Foto principal</span>
+            <span class="field-label">Foto de portada</span>
             <div class="photo-grid">
               {businessTypes.map((type) => businessPresets[type].photos.map((photo) => (
                 <label class="photo-option" data-photo-type={type} hidden={type !== businessType}>
@@ -94,33 +104,34 @@ const formError = Astro.url.searchParams.get("error");
                 </label>
               )))}
             </div>
-            <label class="toggle"><input type="radio" name="heroSource" value="custom" checked={Boolean(heroCustom)} /> Usar mi propia foto (URL HTTPS)</label>
+            <label class="toggle"><input type="radio" name="heroSource" value="custom" checked={Boolean(heroCustom)} /> Usar mi propia foto (enlace que empiece con https://)</label>
             <input id="heroImageCustom" name="heroImageCustom" type="url" value={heroCustom} maxlength="500" placeholder="https://..." aria-label="URL HTTPS de la foto propia" />
             <label class="toggle"><input type="radio" name="heroSource" value="none" checked={!business.hero_image_url} /> Sin foto (bloque de color)</label>
             <p class="muted compact-note">Fotos de Unsplash con licencia libre para uso comercial. Créditos en /stock/ATTRIBUTION.md.</p>
           </div>
-          <p class="muted compact-note">Escribe los tres beneficios o deja los tres vacíos para usar los textos estándar.</p>
+          <p class="muted compact-note">Son tres razones para registrarse que se muestran en la pantalla. Escribe las tres o deja las tres vacías para usar los textos estándar.</p>
           <div class="field"><label for="benefit1">Beneficio 1</label><input id="benefit1" name="benefit1" value={business.benefits?.[0] ?? ""} maxlength="40" placeholder="Ofertas para clientes" /></div>
           <div class="field"><label for="benefit2">Beneficio 2</label><input id="benefit2" name="benefit2" value={business.benefits?.[1] ?? ""} maxlength="40" placeholder="Sorpresas en tu cumpleaños" /></div>
           <div class="field"><label for="benefit3">Beneficio 3</label><input id="benefit3" name="benefit3" value={business.benefits?.[2] ?? ""} maxlength="40" placeholder="Te reconocemos al volver" /></div>
-          <div class="field"><label for="instagramUrl">Instagram (opcional)</label><input id="instagramUrl" name="instagramUrl" type="url" value={business.instagram_url ?? ""} maxlength="60" placeholder="https://www.instagram.com/usuario" pattern="https://www\.instagram\.com/[A-Za-z0-9._]{1,30}/?" /></div>
+          <div class="field"><label for="instagramUrl">Instagram del negocio (opcional)</label><input id="instagramUrl" name="instagramUrl" type="url" value={business.instagram_url ?? ""} maxlength="60" placeholder="https://www.instagram.com/usuario" pattern="https://www\.instagram\.com/[A-Za-z0-9._]{1,30}/?" title="Un enlace como https://www.instagram.com/usuario" /><small class="hint">Pega el enlace al perfil. En la pantalla aparece un botón «Seguir en Instagram».</small></div>
         </fieldset>
         <script type="application/json" id="business-presets" set:html={presetData}></script>
-        <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /></div>
-        <div class="split"><div class="field"><label for="contactPhone">Teléfono público</label><input id="contactPhone" name="contactPhone" type="tel" inputmode="tel" autocomplete="off" value={business.contact_phone ?? ""} placeholder="(305) 555-0100" /></div><div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
-        <p class="muted compact-note">El aviso usa estos datos. Configura al menos uno antes de registrar la aprobación del dueño.</p>
-        <div class="split"><div class="field"><label for="secondaryColor">Secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value={business.secondary_color} /></div><div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /></div></div>
-        <div class="split"><div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value={business.timezone} /></div><div class="field"><label for="defaultCountry">País</label><input id="defaultCountry" name="defaultCountry" value={business.default_country} maxlength="2" /></div></div>
+        <div class="field"><label for="privacyUrl">Aviso de privacidad propio (opcional)</label><input id="privacyUrl" name="privacyUrl" value={business.privacy_url ?? ""} placeholder={`/privacy/${business.slug} (automática)`} /><small class="hint">Déjalo vacío para usar el aviso de Smart Tap, que ya viene listo.</small></div>
+        <div class="split"><div class="field"><label for="contactPhone">Teléfono del negocio</label><input id="contactPhone" name="contactPhone" type="tel" inputmode="tel" autocomplete="off" value={business.contact_phone ?? ""} placeholder="(305) 555-0100" /><small class="hint">Escríbelo normal, con código de área.</small></div><div class="field"><label for="contactEmail">Correo del negocio</label><input id="contactEmail" name="contactEmail" type="email" value={business.contact_email ?? ""} /></div></div>
+        <p class="muted compact-note">Sus clientes ven estos datos en el aviso de privacidad. Pon al menos uno antes de registrar la aprobación del dueño.</p>
+        <div class="field"><label for="inactivityDays">¿Cuántos días sin venir para considerarlo inactivo?</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value={business.inactivity_days} /><small class="hint">Pasado ese tiempo, el cliente aparece como «no ha vuelto» en el panel.</small></div>
+        <div class="split"><div class="field"><label for="timezone">Zona horaria del negocio</label><select id="timezone" name="timezone" required>{timezones.map((option) => <option value={option.value} selected={option.value === business.timezone}>{option.label}</option>)}</select></div><div class="field"><label for="defaultCountry">País de los teléfonos de sus clientes</label><select id="defaultCountry" name="defaultCountry" required>{countries.map((option) => <option value={option.value} selected={option.value === business.default_country}>{option.label}</option>)}</select><small class="hint">Sirve para entender teléfonos escritos sin código de país.</small></div></div>
         <fieldset>
-          <legend>Ofertas aprobadas por el dueño</legend>
-          <div class="field"><label for="offerInactive">Cliente inactivo</label><input id="offerInactive" name="offerInactive" value={business.offer_inactive ?? ""} minlength="1" maxlength="200" /></div>
+          <legend>Mensajes de oferta por situación</legend>
+          <p class="muted compact-note">El dueño aprueba estos textos. Se incluyen en el WhatsApp que él mismo envía a sus clientes.</p>
+          <div class="field"><label for="offerInactive">Cliente que no ha vuelto</label><input id="offerInactive" name="offerInactive" value={business.offer_inactive ?? ""} minlength="1" maxlength="200" /></div>
           <div class="field"><label for="offerBirthday">Cumpleaños</label><input id="offerBirthday" name="offerBirthday" value={business.offer_birthday ?? ""} minlength="1" maxlength="200" /></div>
           <div class="field"><label for="offerFrequent">Cliente frecuente</label><input id="offerFrequent" name="offerFrequent" value={business.offer_frequent ?? ""} minlength="1" maxlength="200" /></div>
           <div class="field"><label for="offerNew">Cliente nuevo</label><input id="offerNew" name="offerNew" value={business.offer_new ?? ""} minlength="1" maxlength="200" /></div>
         </fieldset>
         <fieldset>
-          <legend>NFC de Google Review — grabar esta URL directamente en el chip</legend>
-          <div class="field"><label for="googleReviewUrl">URL directa de Google Review</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /></div>
+          <legend>Enlace de reseñas de Google</legend>
+          <div class="field"><label for="googleReviewUrl">Enlace directo para dejar una reseña</label><input id="googleReviewUrl" name="googleReviewUrl" type="url" value={business.google_review_url ?? ""} placeholder="https://g.page/r/.../review" /><small class="hint">Se graba en una tarjeta NFC aparte para pedir reseñas. También aparece como botón al terminar el registro.</small></div>
         </fieldset>
         <label class="toggle"><input name="isActive" type="checkbox" checked={business.is_active} disabled={activationLocked} /> Negocio activo</label>
         {!business.is_active && !currentSignature && <p class="muted compact-note">Un dueño activo debe firmar los Términos vigentes para habilitar la aprobación.</p>}
@@ -133,33 +144,36 @@ const formError = Astro.url.searchParams.get("error");
     <div class="side-stack">
       <section class="card panel">
         <h2>NFC y enlaces</h2>
-        <p class="metric-line"><strong>Visitas sin etiqueta registrada</strong><span>{untaggedVisits}</span></p>
+        <p class="muted compact-note">Cada tarjeta NFC tiene su propio enlace: ese es el que se graba en la tarjeta.</p>
+        <p class="metric-line"><strong>Visitas sin tarjeta NFC reconocida</strong><span>{untaggedVisits}</span></p>
         <div class="review-link">
-          <strong>NFC de Google Review — grabar esta URL directamente en el chip</strong>
+          <strong>Enlace de reseñas de Google (para grabar en una tarjeta NFC)</strong>
           {business.google_review_url
             ? <a href={business.google_review_url} target="_blank" rel="noreferrer">{business.google_review_url}</a>
             : <span class="muted">Pendiente de configurar.</span>}
         </div>
         <ul class="records">{tags.map((tag) => <li><div><strong>{tag.label}</strong><small>{siteUrl}/b/{business.slug}?t={tag.code}</small></div><div class="status"><span class:list={["pill", { off: !tag.is_active }]}>{tag.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/tag-status`} method="post"><input type="hidden" name="targetId" value={tag.id} /><input type="hidden" name="active" value={tag.is_active ? "false" : "true"} /><button class="link-button" type="submit">{tag.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul>
-        <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre del nuevo NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Generar</button></form>
+        <form class="inline-form" action={`/api/admin/business/${business.id}/tag`} method="post"><div class="field"><label for="label">Nombre de la nueva tarjeta NFC</label><input id="label" name="label" placeholder="Mesa 2" required /></div><button class="button secondary" type="submit">Crear tarjeta</button></form>
       </section>
 
       <section class="card panel">
-        <h2>Usuarios: {activeMemberCount} de 2</h2>
-        {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
-        <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Rol</label><select id="role" name="role"><option value="owner">Dueño</option><option value="manager">Gerente</option><option value="viewer">Consulta</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
+        <h2>Personas con acceso: {activeMemberCount} de 2</h2>
+        <p class="muted compact-note">Cada negocio puede tener hasta 2 personas. Dueño y Gerente pueden escribir a los clientes y eliminarlos; Consulta solo mira. Quien firma los Términos debe ser Dueño.</p>
+        {members.length ? <ul class="records">{members.map((member) => <li><div><strong>{member.email}</strong><small>{roleLabels[member.role] ?? member.role}</small></div><div class="status"><span class:list={["pill", { off: !member.is_active }]}>{member.is_active ? "Activo" : "Pausado"}</span><form action={`/api/admin/business/${business.id}/member-status`} method="post"><input type="hidden" name="targetId" value={member.user_id} /><input type="hidden" name="active" value={member.is_active ? "false" : "true"} /><button class="link-button" type="submit">{member.is_active ? "Pausar" : "Activar"}</button></form></div></li>)}</ul> : <p class="muted">Aún no hay usuarios asignados.</p>}
+        <form class="inline-form member" action={`/api/admin/business/${business.id}/invite`} method="post"><div class="field"><label for="email">Correo de la persona</label><input id="email" name="email" type="email" required /></div><div class="field"><label for="role">Qué puede hacer</label><select id="role" name="role"><option value="owner">Dueño (administra y firma)</option><option value="manager">Gerente (escribe a clientes)</option><option value="viewer">Consulta (solo mira)</option></select></div><button class="button secondary" type="submit">Invitar</button></form>
       </section>
 
       <section class="card panel">
         <h2>Aprobación para activar</h2>
+        <ol class="steps">{stepsToActivate.map((step) => <li class:list={{ done: step.done }}><span aria-hidden="true">{step.done ? "✓" : "○"}</span> {step.label}{step.done ? " (listo)" : ""}</li>)}</ol>
         {currentSignature
-          ? <p class="approval-state"><strong>Firma v2 registrada</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(currentSignature.signed_at))}</span></p>
-          : <p class="alert">Falta la firma electrónica de un dueño activo para la versión {TERMS_VERSION}.</p>}
+          ? <p class="approval-state"><strong>Términos firmados</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(currentSignature.signed_at))}</span></p>
+          : <p class="alert">Falta que un dueño firme los Términos de servicio (versión {TERMS_VERSION}).</p>}
         {business.owner_approved_at
           ? <p class="approval-state"><strong>Aprobado por {business.owner_approved_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.owner_approved_at))}</span></p>
           : <p class="muted">El dueño debe aprobar la configuración final antes de activar el negocio.</p>}
         <form class="inline-form" action={`/api/admin/business/${business.id}/approve`} method="post">
-          <div class="field"><label for="ownerName">Nombre del dueño que aprobó</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
+          <div class="field"><label for="ownerName">Nombre del dueño que aprobó la configuración</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
           <button class="button secondary" type="submit" disabled={!currentSignature}>Registrar aprobación del dueño</button>
         </form>
       </section>
@@ -193,6 +207,8 @@ const formError = Astro.url.searchParams.get("error");
 </Base>
 
 <script>
+  import { initBrandColorField } from "../../lib/brand-color-field";
+  initBrandColorField();
   type Preset = { theme: string; tagline: string; benefits: string[]; inactivityDays: number; photos: string[] };
   const presets = JSON.parse(document.getElementById("business-presets")?.textContent || "{}") as Record<string, Preset>;
   const form = document.querySelector<HTMLFormElement>(".customer-screen-settings")?.closest("form");
@@ -203,10 +219,7 @@ const formError = Astro.url.searchParams.get("error");
     form?.querySelectorAll<HTMLElement>("[data-theme-palette]").forEach((group) => {
       const active = group.dataset.themePalette === theme;
       group.hidden = !active;
-      group.querySelectorAll<HTMLInputElement>("input").forEach((input, index) => {
-        input.disabled = !active;
-        if (active && pickFirst && index === 0) input.checked = true;
-      });
+      if (active && pickFirst) group.querySelector<HTMLButtonElement>("[data-color]")?.click();
     });
   }
   function showPhotos(type: string) {
@@ -239,7 +252,10 @@ const formError = Astro.url.searchParams.get("error");
   .swatches { display: flex; flex-wrap: wrap; gap: 10px; } .swatches[hidden], .photo-option[hidden] { display: none; }
   .swatch { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 4px 10px 4px 6px; border: 1px solid #d0d5dd; border-radius: 999px; font-size: .85rem; cursor: pointer; }
   .swatch .chip { width: 24px; height: 24px; border-radius: 999px; border: 1px solid rgba(0,0,0,.25); }
-  .swatch:has(input:checked) { border-color: #101828; box-shadow: 0 0 0 2px #101828 inset; }
+  .swatch { background: #fff; font: inherit; color: inherit; }
+  .swatch:hover, .swatch:focus-visible { border-color: #101828; }
+  .hint { color: #667085; font-size: .82rem; }
+  .steps { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 6px; color: #475467; } .steps .done { color: #027a48; font-weight: 650; }
   .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .photo-option { position: relative; display: block; border-radius: 9px; overflow: hidden; border: 2px solid transparent; cursor: pointer; }
   .photo-option img { display: block; width: 100%; height: 86px; object-fit: cover; }

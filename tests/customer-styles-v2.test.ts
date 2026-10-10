@@ -172,7 +172,7 @@ describe("D-057 business type presets", () => {
       const preset = businessPresets[type];
       const parsed = businessUpdateSchema.safeParse({
         displayName: "Negocio", legalName: "", slug: "negocio", logoUrl: "", privacyUrl: "", contactPhone: "", contactEmail: "",
-        primaryColor: customerThemePalettes[preset.theme][0], secondaryColor: "#111111", timezone: "America/New_York", defaultCountry: "US",
+        primaryColor: customerThemePalettes[preset.theme][0], timezone: "America/New_York", defaultCountry: "US",
         inactivityDays: String(preset.inactivityDays), offerInactive: "", offerBirthday: "", offerFrequent: "", offerNew: "", googleReviewUrl: "",
         theme: preset.theme, tagline: preset.tagline, benefit1: preset.benefits[0], benefit2: preset.benefits[1], benefit3: preset.benefits[2],
         heroImageUrl: preset.photos[0], businessType: type, instagramUrl: "",
@@ -202,15 +202,19 @@ describe("D-057 business type presets", () => {
     expect(resolveBusinessType("barberia")).toBe("barberia");
   });
 
-  it("requires the accent to belong to the chosen style", () => {
+  it("accepts any valid brand color in any notation and rejects non-colors", () => {
     const base = {
       displayName: "Negocio", legalName: "", slug: "negocio", logoUrl: "", privacyUrl: "", contactPhone: "", contactEmail: "",
-      secondaryColor: "#111111", timezone: "America/New_York", defaultCountry: "US", inactivityDays: "30", offerInactive: "", offerBirthday: "",
+      timezone: "America/New_York", defaultCountry: "US", inactivityDays: "30", offerInactive: "", offerBirthday: "",
       offerFrequent: "", offerNew: "", googleReviewUrl: "", theme: "moderno", tagline: "", benefit1: "", benefit2: "", benefit3: "", heroImageUrl: "", businessType: "barberia",
     };
     expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "#ff6a2b" }).data?.primaryColor).toBe("#FF6A2B");
-    expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "#C8412A" }).success).toBe(false);
-    expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "#FF6A2B", businessType: "spa" }).success).toBe(false);
+    expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "#C8412A" }).data?.primaryColor).toBe("#C8412A");
+    expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "1a73e8" }).data?.primaryColor).toBe("#1A73E8");
+    expect(businessUpdateSchema.safeParse({ ...base, primaryColor: "#abc" }).data?.primaryColor).toBe("#AABBCC");
+    for (const bad of ["red", "#12345", "#gggggg", "#fff;background:url(x)", ""]) {
+      expect(businessUpdateSchema.safeParse({ ...base, primaryColor: bad }).success).toBe(false);
+    }
   });
 });
 

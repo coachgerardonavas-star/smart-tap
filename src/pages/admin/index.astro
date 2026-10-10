@@ -1,10 +1,15 @@
 ---
 import Base from "../../layouts/Base.astro";
+import BrandColorField from "../../components/BrandColorField.astro";
 import { requirePlatformAdmin } from "../../lib/auth";
+import { siteUrl as configuredSiteUrl } from "../../lib/env";
+import { countryOptions, timezoneOptions } from "../../lib/regions";
 import { createSupabaseServiceClient } from "../../lib/supabase";
 import type { Business } from "../../lib/types";
 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
+const siteUrl = configuredSiteUrl();
+const countries = countryOptions();
 const service = createSupabaseServiceClient();
 const { data, error } = await service.from("businesses").select("*").order("created_at", { ascending: false });
 if (error) throw error;
@@ -26,7 +31,7 @@ const formError = Astro.url.searchParams.get("error");
 ---
 
 <Base title="Administración | Smart Tap" privateArea isAdmin>
-  <header class="page-head"><div><p class="eyebrow">Automate IT Admin</p><h1>Negocios</h1><p class="muted">Configura un negocio y genera su primer enlace NFC.</p></div></header>
+  <header class="page-head"><div><p class="eyebrow">Automate IT Admin</p><h1>Negocios</h1><p class="muted">Registra un negocio nuevo y obtén el enlace para su tarjeta NFC.</p></div></header>
   {message && <div class="alert success">{message}</div>}
   {formError && <div class="alert">{formError}</div>}
   {expiringBusinesses.length > 0 && (
@@ -38,49 +43,51 @@ const formError = Astro.url.searchParams.get("error");
   <div class="admin-grid">
     <section class="card form-card">
       <h2>Nuevo negocio</h2>
+      <p class="muted">Registra el negocio de tu cliente. Lo que escribas en «Nombre» y «Dirección web» lo verán sus clientes.</p>
       <form action="/api/admin/businesses" method="post">
         <div class="split">
-          <div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" required minlength="2" maxlength="100" /></div>
-          <div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Solo minúsculas, números y guiones, sin espacios. Ejemplo: arepas-sabrosas" placeholder="cafe-luna" autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">Se llena sola con el nombre. Solo minúsculas, números y guiones.</small></div>
+          <div class="field"><label for="displayName">Nombre del negocio</label><input id="displayName" name="displayName" required minlength="2" maxlength="100" placeholder="Arepas Sabrosas" /><small class="hint">Como lo conocen sus clientes.</small></div>
+          <div class="field"><label for="slug">Dirección web del negocio</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Solo minúsculas, números y guiones, sin espacios. Ejemplo: arepas-sabrosas" placeholder="arepas-sabrosas" autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">Se verá así: {siteUrl}/b/<strong id="slug-preview">arepas-sabrosas</strong>. Se llena sola con el nombre.</small></div>
         </div>
-        <div class="field"><label for="legalName">Razón social (opcional)</label><input id="legalName" name="legalName" maxlength="160" /></div>
-        <div class="field"><label for="ownerEmail">Correo del dueño (opcional)</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="off" /></div>
+        <div class="field"><label for="legalName">Nombre legal de la empresa (opcional)</label><input id="legalName" name="legalName" maxlength="160" /><small class="hint">El nombre con el que está registrada (ej. Arepas Sabrosas LLC). Déjalo vacío si no tiene.</small></div>
+        <div class="field"><label for="ownerEmail">Correo de quien entrará al panel (opcional)</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="off" /><small class="hint">Le llega una invitación para crear su contraseña. También puedes invitarlo después.</small></div>
         <div class="split">
-          <div class="field"><label for="contactPhone">Teléfono público</label><input id="contactPhone" name="contactPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="(305) 555-0100" /><small class="hint">Escríbelo normal, con código de área. Para otro país, empieza con +.</small></div>
-          <div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" /></div>
+          <div class="field"><label for="contactPhone">Teléfono del negocio</label><input id="contactPhone" name="contactPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="(305) 555-0100" /><small class="hint">Escríbelo normal, con código de área. Para otro país, empieza con +.</small></div>
+          <div class="field"><label for="contactEmail">Correo del negocio</label><input id="contactEmail" name="contactEmail" type="email" /></div>
         </div>
-        <p class="muted">Configura al menos un contacto antes de registrar la aprobación del dueño.</p>
-        <div class="field"><label for="logoUrl">URL del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /></div>
-        <div class="field"><label for="privacyUrl">Aviso de privacidad externo (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="Vacío usa /privacy/url-corta" /></div>
-        <div class="split compact">
-          <div class="field"><label for="primaryColor">Color principal</label><input id="primaryColor" name="primaryColor" type="color" value="#155EEF" /></div>
-          <div class="field"><label for="secondaryColor">Color secundario</label><input id="secondaryColor" name="secondaryColor" type="color" value="#0B1220" /></div>
-          <div class="field"><label for="inactivityDays">Días sin visita para considerar inactivo (definido por el dueño)</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value="30" /></div>
-        </div>
+        <p class="muted">Sus clientes ven estos datos en el aviso de privacidad. Pon al menos uno antes de registrar la aprobación del dueño.</p>
+        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /><small class="hint">Pega el enlace de la imagen. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
+        <div class="field"><label for="privacyUrl">Aviso de privacidad propio (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="Vacío = se usa el aviso de Smart Tap" /></div>
+        <BrandColorField value="#155EEF" />
+        <div class="field"><label for="inactivityDays">¿Cuántos días sin venir para considerarlo inactivo?</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value="30" /><small class="hint">Pasado ese tiempo, el cliente aparece como «no ha vuelto» en el panel. El dueño puede ajustarlo.</small></div>
         <div class="split">
-          <div class="field"><label for="timezone">Zona horaria</label><input id="timezone" name="timezone" value="America/New_York" required /></div>
-          <div class="field"><label for="defaultCountry">País del teléfono</label><input id="defaultCountry" name="defaultCountry" value="US" minlength="2" maxlength="2" required /></div>
+          <div class="field"><label for="timezone">Zona horaria del negocio</label><select id="timezone" name="timezone" required>{timezoneOptions("America/New_York").map((option) => <option value={option.value} selected={option.value === "America/New_York"}>{option.label}</option>)}</select></div>
+          <div class="field"><label for="defaultCountry">País de los teléfonos de sus clientes</label><select id="defaultCountry" name="defaultCountry" required>{countries.map((option) => <option value={option.value} selected={option.value === "US"}>{option.label}</option>)}</select><small class="hint">Sirve para entender teléfonos escritos sin código de país.</small></div>
         </div>
         <button class="button" type="submit">Crear negocio</button>
       </form>
     </section>
     <section class="card list-card">
-      <div class="list-head"><h2>Negocios activos</h2><span>{businesses.length}</span></div>
-      {businessesWithCounts.length ? <ul>{businessesWithCounts.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug} · Sin etiqueta: {business.untaggedVisits}</small>{business.term_ends_at && <small>Vence: {new Intl.DateTimeFormat("es-US", { dateStyle: "medium" }).format(new Date(business.term_ends_at))}</small>}</div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
+      <div class="list-head"><h2>Negocios registrados</h2><span>{businesses.length}</span></div>
+      {businessesWithCounts.length ? <ul>{businessesWithCounts.map((business) => <li><a href={`/admin/${business.id}`}><span class="swatch" style={`background:${business.primary_color}`}></span><div><strong>{business.display_name}</strong><small>/b/{business.slug} · Visitas sin tarjeta NFC: {business.untaggedVisits}</small>{business.term_ends_at && <small>Vence: {new Intl.DateTimeFormat("es-US", { dateStyle: "medium" }).format(new Date(business.term_ends_at))}</small>}</div><span class:list={["status", { off: !business.is_active }]}>{business.cancelled_at ? "Cancelado" : business.is_active ? "Activo" : "Pausado"}</span></a></li>)}</ul> : <p class="empty-row">Aún no hay negocios.</p>}
     </section>
   </div>
 </Base>
 
 <script>
   import { slugify } from "../../lib/slug";
+  import { initBrandColorField } from "../../lib/brand-color-field";
   const nameInput = document.querySelector<HTMLInputElement>("#displayName");
   const slugInput = document.querySelector<HTMLInputElement>("#slug");
+  const slugPreview = document.querySelector<HTMLElement>("#slug-preview");
   if (nameInput && slugInput) {
+    const showPreview = () => { if (slugPreview) slugPreview.textContent = slugInput.value || "arepas-sabrosas"; };
     let slugEditedByHand = false;
-    slugInput.addEventListener("input", () => { slugEditedByHand = slugInput.value !== ""; });
-    slugInput.addEventListener("blur", () => { slugInput.value = slugify(slugInput.value); });
-    nameInput.addEventListener("input", () => { if (!slugEditedByHand) slugInput.value = slugify(nameInput.value); });
+    slugInput.addEventListener("input", () => { slugEditedByHand = slugInput.value !== ""; showPreview(); });
+    slugInput.addEventListener("blur", () => { slugInput.value = slugify(slugInput.value); showPreview(); });
+    nameInput.addEventListener("input", () => { if (!slugEditedByHand) slugInput.value = slugify(nameInput.value); showPreview(); });
   }
+  initBrandColorField();
 </script>
 
 <style>
