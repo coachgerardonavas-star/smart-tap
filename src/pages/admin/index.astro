@@ -41,12 +41,12 @@ const formError = Astro.url.searchParams.get("error");
       <form action="/api/admin/businesses" method="post">
         <div class="split">
           <div class="field"><label for="displayName">Nombre</label><input id="displayName" name="displayName" required minlength="2" maxlength="100" /></div>
-          <div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="cafe-luna" /></div>
+          <div class="field"><label for="slug">URL corta</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Solo minúsculas, números y guiones, sin espacios. Ejemplo: arepas-sabrosas" placeholder="cafe-luna" autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">Se llena sola con el nombre. Solo minúsculas, números y guiones.</small></div>
         </div>
         <div class="field"><label for="legalName">Razón social (opcional)</label><input id="legalName" name="legalName" maxlength="160" /></div>
         <div class="field"><label for="ownerEmail">Correo del dueño (opcional)</label><input id="ownerEmail" name="ownerEmail" type="email" autocomplete="off" /></div>
         <div class="split">
-          <div class="field"><label for="contactPhone">Teléfono público (E.164)</label><input id="contactPhone" name="contactPhone" type="tel" placeholder="+13055550100" pattern="\+[1-9][0-9]{6,14}" /></div>
+          <div class="field"><label for="contactPhone">Teléfono público</label><input id="contactPhone" name="contactPhone" type="tel" inputmode="tel" autocomplete="off" placeholder="(305) 555-0100" /><small class="hint">Escríbelo normal, con código de área. Para otro país, empieza con +.</small></div>
           <div class="field"><label for="contactEmail">Correo público</label><input id="contactEmail" name="contactEmail" type="email" /></div>
         </div>
         <p class="muted">Configura al menos un contacto antes de registrar la aprobación del dueño.</p>
@@ -71,7 +71,20 @@ const formError = Astro.url.searchParams.get("error");
   </div>
 </Base>
 
+<script>
+  import { slugify } from "../../lib/slug";
+  const nameInput = document.querySelector<HTMLInputElement>("#displayName");
+  const slugInput = document.querySelector<HTMLInputElement>("#slug");
+  if (nameInput && slugInput) {
+    let slugEditedByHand = false;
+    slugInput.addEventListener("input", () => { slugEditedByHand = slugInput.value !== ""; });
+    slugInput.addEventListener("blur", () => { slugInput.value = slugify(slugInput.value); });
+    nameInput.addEventListener("input", () => { if (!slugEditedByHand) slugInput.value = slugify(nameInput.value); });
+  }
+</script>
+
 <style>
+  .hint { color: #667085; font-size: .82rem; }
   .page-head { margin-bottom: 28px; } .page-head h1 { font-size: 2.7rem; margin: 8px 0; }
   .admin-grid { display: grid; grid-template-columns: minmax(420px, .9fr) minmax(380px, 1.1fr); gap: 22px; margin-top: 20px; }
   .expiry-card { display: flex; justify-content: space-between; gap: 22px; align-items: start; padding: 22px; border-color: #fdb022; }

@@ -18,13 +18,22 @@ const optionalContactEmailSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
   z.union([z.literal(""), z.email().max(254)]),
 ).transform((value) => value || null);
+// The admin types the public phone in any common format; businessInputSchema and
+// businessUpdateSchema convert it to canonical E.164 using the business country
+// once both fields are known (see checkContactPhone / withNormalizedContactPhone).
 const optionalContactPhoneSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : "",
-  z.union([z.literal(""), z.string().max(32).refine((value) => {
-    const parsed = parsePhoneNumberFromString(value);
-    return Boolean(parsed?.isValid() && parsed.number === value);
-  }, "El teléfono de contacto debe usar formato E.164, por ejemplo +13055550100.")]),
-).transform((value) => value || null);
+  z.string().max(32),
+);
+type ContactPhoneFields = { contactPhone: string; defaultCountry: string };
+function checkContactPhone(value: ContactPhoneFields, context: { addIssue: (issue: { code: "custom"; path: string[]; message: string }) => void }) {
+  if (value.contactPhone && !normalizePhone(value.contactPhone, value.defaultCountry)) {
+    context.addIssue({ code: "custom", path: ["contactPhone"], message: "El teléfono no es válido. Escríbelo con código de área, por ejemplo (305) 555-0100." });
+  }
+}
+function withNormalizedContactPhone<T extends ContactPhoneFields>(value: T): Omit<T, "contactPhone"> & { contactPhone: string | null } {
+  return { ...value, contactPhone: value.contactPhone ? normalizePhone(value.contactPhone, value.defaultCountry) : null };
+}
 const optionalUrlSchema = z.preprocess(
   (value) => typeof value === "string" ? value.trim() : value,
   z.union([z.literal(""), z.url().max(500)]),
@@ -110,7 +119,7 @@ export const loginInputSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
-export const businessInputSchema = z.object({
+const businessFields = z.object({
   displayName: z.string().trim().min(2).max(100),
   legalName: z.string().trim().max(160).optional().or(z.literal("")),
   slug: z.string().trim().min(2).max(80).regex(slugPattern),
@@ -128,7 +137,11 @@ export const businessInputSchema = z.object({
   ownerEmail: optionalEmailSchema,
 });
 
-export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true }).extend({
+export const businessInputSchema = businessFields
+  .superRefine(checkContactPhone)
+  .transform(withNormalizedContactPhone);
+
+export const businessUpdateSchema = businessFields.omit({ ownerEmail: true }).extend({
   offerInactive: optionalOfferSchema,
   offerBirthday: optionalOfferSchema,
   offerFrequent: optionalOfferSchema,
@@ -143,6 +156,7 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
   businessType: z.preprocess((value) => typeof value === "string" && value ? value : "otro", z.enum(businessTypes)),
   instagramUrl: instagramUrlSchema,
 }).superRefine((value, context) => {
+  checkContactPhone(value, context);
   if (!isPaletteColor(value.theme, value.primaryColor)) {
     context.addIssue({ code: "custom", path: ["primaryColor"], message: "Elige uno de los cuatro colores del estilo." });
   }
@@ -151,7 +165,7 @@ export const businessUpdateSchema = businessInputSchema.omit({ ownerEmail: true 
     context.addIssue({ code: "custom", path: ["benefit1"], message: "Completa los tres beneficios o deja los tres vacíos." });
   }
 }).transform(({ benefit1, benefit2, benefit3, ...value }) => ({
-  ...value,
+  ...withNormalizedContactPhone(value),
   primaryColor: value.primaryColor.toUpperCase(),
   benefits: benefit1 && benefit2 && benefit3 ? [benefit1, benefit2, benefit3] : null,
 }));

@@ -433,7 +433,7 @@ Pending: the link inside the email points to the Supabase Site URL; test the ful
 
 ### Contact, consent and age
 
-- Contact phone is accepted only in canonical E.164 form through libphonenumber-js; contact email uses Zod email validation. Database checks provide a second layer.
+- Contact phone is typed by the admin in any common format, parsed with libphonenumber-js using the business country, and stored only as canonical E.164 (invalid numbers are rejected); contact email uses Zod email validation. Database checks still require E.164 as a second layer. The admin form fills the short URL from the business name (`src/lib/slug.ts`); the server slug rule is unchanged.
 - Owner approval requires at least one contact. Activation requires approval, contact and a null cancellation timestamp.
 - Browser payload no longer contains `consentVersion`; Zod strips an injected value; `/api/public/check-in` always sends `PRIVACY_NOTICE_VERSION` to PostgreSQL.
 - The required consent adds `Tengo 13 años o más.` The date input limits selection and the server returns `Debes tener 13 años o más.` for younger birthdays.

@@ -25,6 +25,13 @@ The MVP is implemented and has live evidence for NFC check-in, multi-tenant isol
 - No migration. Each protected request now makes one extra Auth call (`getUser`).
 - Production check after deploy: change a password on one device, then open `/admin` on another. It must land on `/login` without a download.
 
+## Done locally, not yet pushed — admin form usability
+
+- Requested by the CEO on 2026-10-10 after a test registration failed on "URL corta" and the public phone. Builder: Claude Code.
+- "Nuevo negocio" now fills the short URL from the name (editable, normalized on blur) and the public phone accepts any common format; the server parses it with the business country and stores canonical E.164. The strict browser `pattern` on the phone is removed; the DB E.164 check and the server slug rule are unchanged.
+- Changes `validation.test.ts` expectation: `305-555-0100` is now accepted and stored as `+13055550100`.
+- Local gate: `npm run verify` clean (0 diagnostics, all tests, build). Branch and PR pending CEO decision.
+
 ## Done — D-057 customer styles v2 (PR #13 merged; migration pending Reviewer)
 
 - Builder for this task: Claude Code, assigned by the CEO on 2026-10-06, branch `claude/customer-styles-v2` from `main` at `0492ec8` (PR #12 merged). A separate Claude Code session reviews.

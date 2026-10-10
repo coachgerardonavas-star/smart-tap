@@ -58,7 +58,13 @@ describe("admin validation", () => {
   it("validates optional public business contacts", () => {
     const valid = { displayName: "Café Luna", legalName: "", slug: "cafe-luna", logoUrl: "", privacyUrl: "", primaryColor: "#155EEF", secondaryColor: "#0B1220", timezone: "America/New_York", defaultCountry: "US", inactivityDays: "45", ownerEmail: "", contactPhone: "+13055550100", contactEmail: "hola@example.com" };
     expect(businessInputSchema.parse(valid)).toMatchObject({ contactPhone: "+13055550100", contactEmail: "hola@example.com" });
-    expect(businessInputSchema.safeParse({ ...valid, contactPhone: "305-555-0100" }).success).toBe(false);
+    // Any common format is accepted and stored as canonical E.164 (country of the business).
+    expect(businessInputSchema.parse({ ...valid, contactPhone: "305-555-0100" }).contactPhone).toBe("+13055550100");
+    expect(businessInputSchema.parse({ ...valid, contactPhone: "(561) 293-5045" }).contactPhone).toBe("+15612935045");
+    expect(businessInputSchema.parse({ ...valid, contactPhone: "+1 561 293 5045" }).contactPhone).toBe("+15612935045");
+    expect(businessInputSchema.parse({ ...valid, contactPhone: "" }).contactPhone).toBeNull();
+    expect(businessInputSchema.safeParse({ ...valid, contactPhone: "123" }).success).toBe(false);
+    expect(businessInputSchema.safeParse({ ...valid, contactPhone: "no es un teléfono" }).success).toBe(false);
     expect(businessInputSchema.safeParse({ ...valid, contactEmail: "correo-invalido" }).success).toBe(false);
     expect(businessInputSchema.safeParse({ ...valid, contactPhone: "", contactEmail: "" }).success).toBe(true);
   });
