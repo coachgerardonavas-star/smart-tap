@@ -1,6 +1,15 @@
 # Smart Tap — Current State
 
-Canonical short status for agents. Updated 2026-10-06 after the D-058 Builder work (stale sessions).
+Canonical short status for agents. Updated 2026-10-10 after the WhatsApp opt-out investigation and Builder correction.
+
+## In progress — confirmed WhatsApp opt-out and explicit dashboard business (2026-10-10)
+
+- Builder: ChatGPT Codex, reused `codex/security-hardening`, based on `main` at `fac21b7`.
+- Read-only production investigation (`fzrzrbzxjdezwylzkbkh`) confirmed both CEO test registrations recorded WhatsApp opt-in, followed by separate admin opt-out consent and audit rows at 15:21:34Z and 15:24:20Z. Both current flags are false. The mobile/desktop mismatch is consistent with pages loaded before/after those writes; screenshots/session timing were not verified in this workspace.
+- The prior table button revoked consent on a single POST without confirmation. It now opens a read-only, tenant-scoped confirmation page with an unchecked required box; the POST also requires `confirmOptOut=yes`. No consent was restored and no production data was changed.
+- Dashboard selection no longer falls back from an unknown explicit slug or chooses the first of multiple businesses. A single-business entry redirects to its explicit URL; multi-business entry requires a choice. Header links preserve the selected business.
+- Local gate: 235/235 tests, 0 errors / 0 warnings / 1 pre-existing admin hint, full standalone build; production dependency audit 0 vulnerabilities. Four regression cases fail against the original opt-out route and pass after restoring the fix.
+- No migration, merge or deploy. Reviewer must inspect and merge only after `verify` is green, then smoke-test desktop/mobile confirmation, cancellation, viewer/foreign-tenant denial, and explicit business URLs with synthetic data. Do not reverse existing opt-outs as part of deployment.
 
 ## Production
 

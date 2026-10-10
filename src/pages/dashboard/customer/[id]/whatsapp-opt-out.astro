@@ -1,0 +1,58 @@
+---
+import Base from "../../../../layouts/Base.astro";
+import { assertBusinessAccess, requireDataAccess } from "../../../../lib/auth";
+import { createSupabaseServiceClient } from "../../../../lib/supabase";
+import { assertCurrentTermsAccepted } from "../../../../lib/terms-access";
+import { businessIdSchema } from "../../../../lib/validation";
+
+const identity = await requireDataAccess(Astro.request, Astro.cookies);
+const parsed = businessIdSchema.safeParse(Astro.url.searchParams.get("businessId"));
+const customerId = businessIdSchema.safeParse(Astro.params.id);
+if (!parsed.success || !customerId.success) return new Response("Solicitud no válida", { status: 400 });
+const businessId = parsed.data;
+await assertBusinessAccess(identity, businessId, false);
+await assertCurrentTermsAccepted(identity, businessId);
+const service = createSupabaseServiceClient();
+const [{ data: customer, error: customerError }, { data: business, error: businessError }] = await Promise.all([
+  service.from("customers").select("id,full_name,whatsapp_opt_in").eq("business_id", businessId).eq("id", customerId.data).maybeSingle(),
+  service.from("businesses").select("slug,display_name").eq("id", businessId).maybeSingle(),
+]);
+if (customerError || businessError) return new Response("No pudimos consultar el permiso", { status: 500 });
+if (!customer || !business) return new Response("Cliente no encontrado", { status: 404 });
+const dashboardHref = `/dashboard?business=${encodeURIComponent(business.slug)}`;
+---
+
+<Base title="Baja de WhatsApp | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin} dashboardHref={dashboardHref}>
+  <section class="card confirmation">
+    <p class="eyebrow">{business.display_name}</p>
+    <h1>Registrar baja de WhatsApp</h1>
+    <p><strong>{customer.full_name}</strong></p>
+    {customer.whatsapp_opt_in ? (
+      <>
+        <p>Esta acción retira el permiso de WhatsApp. No envía ningún mensaje.</p>
+        <p class="muted">Registra la baja solo si el cliente te pidió dejar de recibir mensajes.</p>
+        <form action={`/api/dashboard/customer/${customer.id}/whatsapp-opt-out`} method="post">
+          <input type="hidden" name="businessId" value={businessId} />
+          <label class="confirm-check">
+            <input type="checkbox" name="confirmOptOut" value="yes" required />
+            <span>Confirmo que este cliente pidió dejar de recibir WhatsApp.</span>
+          </label>
+          <div class="actions">
+            <a class="button secondary" href={dashboardHref}>Cancelar</a>
+            <button class="button" type="submit">Confirmar baja</button>
+          </div>
+        </form>
+      </>
+    ) : (
+      <><p>Este cliente ya figura sin permiso para WhatsApp.</p><a class="button secondary" href={dashboardHref}>Volver al panel</a></>
+    )}
+  </section>
+</Base>
+
+<style>
+  .confirmation { max-width: 620px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: clamp(1.6rem, 5vw, 2rem); }
+  .confirm-check { display: flex; align-items: start; gap: 12px; padding: 16px 0; line-height: 1.5; }
+  .confirm-check input { margin-top: 5px; flex-shrink: 0; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+</style>

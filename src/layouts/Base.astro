@@ -5,6 +5,7 @@ interface Props {
   themeColor?: string;
   privateArea?: boolean;
   isAdmin?: boolean;
+  dashboardHref?: string;
 }
 
 const {
@@ -13,6 +14,7 @@ const {
   themeColor = "#155EEF",
   privateArea = false,
   isAdmin = false,
+  dashboardHref = "/dashboard",
 } = Astro.props;
 ---
 
@@ -29,9 +31,9 @@ const {
   <body class:list={{ "admin-theme": isAdmin }}>
     {privateArea && (
       <header class="app-header">
-        <a class="brand" href="/dashboard"><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
+        <a class="brand" href={dashboardHref}><span class="brand-dot" aria-hidden="true"></span>Smart Tap</a>
         <nav aria-label="Navegación principal">
-          <a href="/dashboard">Panel</a>
+          <a href={dashboardHref}>Panel</a>
           {isAdmin && <a href="/admin#negocios">Negocios</a>}
           {isAdmin && <a class="nav-new" href="/admin#nuevo-negocio"><span aria-hidden="true">+</span> Nuevo negocio</a>}
           <form action="/api/auth/logout" method="post">

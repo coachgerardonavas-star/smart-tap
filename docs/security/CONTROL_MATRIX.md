@@ -181,3 +181,13 @@ Revision: branch `codex/security-hardening`, 2026-10-04. Prepared by Claude Code
 - GS-43: a session revoked by a password change or global logout no longer works until its access token expires. `getAuthIdentity` confirms each session with Auth. A revoked, missing or expired session clears the `sb-*-auth-token` cookies and redirects to `/login?next=` (pages) or returns 401 JSON (`/api/*`). Verified locally with unit tests and `scripts/stale-session/probe.sh` against a local Supabase stand-in; not yet verified in production.
 - GS-03 / GS-44: AAL2 enforcement for platform admins and owners is unchanged; an `aal1` session still goes to `/mfa` without losing its cookies.
 - GS-12 / GS-19: page errors are generic Spanish HTML with `text/html; charset=utf-8` and the security headers; API errors are JSON. No stack traces or internal messages reach the browser; the server log keeps the path and a 200-character error summary.
+
+## Update 2026-10-10 (Builder, WhatsApp opt-out confirmation and dashboard scope)
+
+Threat: owner/manager mistakes the administrative opt-out button for a messaging action → accidental revocation → explicit read-only confirmation with customer/business context and unchecked required acknowledgement; server rejects unconfirmed POST. Test: old route fails four confirmation regression cases. Authorization remains independent of that acknowledgement.
+
+- GS-01 / GS-04 / GS-38 / GS-39 / GS-45: VERIFICADO LOCALMENTE for changed scope; no silent fallback from an inaccessible slug, ambiguous businesses require a choice, and opt-out remains scoped to tenant + customer with manager/owner and current-terms guards. New GET confirmation uses the same guards. Hosted smoke pending.
+- GS-08 / GS-41 / GS-46: VERIFICADO LOCALMENTE; confirmation value validated by POST, GET does not mutate, existing same-origin middleware retained. The checkbox is an intent safeguard, not authentication or a CSRF token.
+- GS-18 / GS-22 / GS-35: atomic append-only consent/audit RPC unchanged. Production read-only diagnosis confirmed existing rows; no production writes or restoration.
+- GS-56: VERIFICADO LOCALMENTE, 235/235 tests and original-route regression reproduction. New UI mobile/desktop hosted smoke pending.
+- GS-26: production audit 0 vulnerabilities. GS-06 / GS-27 / GS-28 / GS-30: PR secret scan and verify plus independent Reviewer inspection remain required; no merge/deploy by Builder. GS-25 restore status unchanged.
