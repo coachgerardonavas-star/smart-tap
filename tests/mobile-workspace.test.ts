@@ -18,6 +18,14 @@ describe("CEO mobile workspace redesign",()=>{
     for(const role of ["ceo","owner","customer"]) expect(ceo).toContain(`data-ceo-view="${role}"`);
     expect(ceo).toContain("Tres perspectivas, una sesión");
     expect(ceo).toContain("Modo seguro");
+    expect(ceo).toContain('grid-template-columns:repeat(2,minmax(0,1fr))');
+    expect(ceo).toContain('data-ceo-tab="administracion" aria-label="Administración">Admin</a>');
+    expect(ceo).not.toContain('>/b/{business.slug}');
+    expect(ceo).toContain("Gestiona este negocio desde aquí.");
+    expect(ceo).toContain("Personas y permisos");
+    expect(ceo).toContain("Solo el Dueño puede firmar los Términos.");
+    expect(ceo).toContain(".access-terms-note");
+    expect(ceo).toContain("#acceso .records {margin:0 0 22px;}");
   });
   it("separates live design from administration and access actions",()=>{
     expect(ceo).toContain('id="business-config-form"');
