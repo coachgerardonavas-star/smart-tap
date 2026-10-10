@@ -155,6 +155,7 @@ describe("follow-up action route policy", () => {
     expect(route).toContain("assertBusinessAccess(currentIdentity, businessId, false)");
     expect(route).toContain("offer_inactive,offer_birthday,offer_frequent,offer_new");
     expect(route).toContain("if (error instanceof AuthorizationError) throw error");
+    expect(route).toContain("whatsappLaunchResponse(result.redirectUrl)");
     const optOutRoute = readFileSync(join(process.cwd(), "src/pages/api/dashboard/customer/[id]/whatsapp-opt-out.ts"), "utf8");
     expect(optOutRoute).toContain("requireDataAccess(request, cookies)");
     expect(optOutRoute).toContain("assertBusinessAccess(identity, businessId, false)");
