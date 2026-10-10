@@ -13,15 +13,17 @@ import { businessPresets, businessTypes, resolveBusinessType, stockPhotoLibrary 
 await requirePlatformAdmin(Astro.request, Astro.cookies);
 const id = Astro.params.id ?? "";
 const service = createSupabaseServiceClient();
-const [businessResult, tagsResult, membersResult, signaturesResult, untaggedResult] = await Promise.all([
+const [businessResult, tagsResult, membersResult, signaturesResult, untaggedResult, customerCountResult, visitCountResult] = await Promise.all([
   service.from("businesses").select("*").eq("id", id).maybeSingle(),
   service.from("nfc_tags").select("*").eq("business_id", id).order("created_at"),
   service.from("business_members").select("user_id,role,is_active,created_at").eq("business_id", id).order("created_at"),
   service.from("terms_signatures").select("signed_at,user_id").eq("business_id", id).eq("terms_version", TERMS_VERSION).order("signed_at", { ascending: false }),
   service.from("visits").select("id", { count: "exact", head: true }).eq("business_id", id).eq("untagged", true),
+  service.from("customers").select("id", { count: "exact", head: true }).eq("business_id", id),
+  service.from("visits").select("id", { count: "exact", head: true }).eq("business_id", id),
 ]);
 if (businessResult.error || !businessResult.data) return Astro.redirect("/admin?error=Negocio%20no%20encontrado", 302);
-if (tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error) throw tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error;
+if (tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error || customerCountResult.error || visitCountResult.error) throw tagsResult.error || membersResult.error || signaturesResult.error || untaggedResult.error || customerCountResult.error || visitCountResult.error;
 const business = businessResult.data as Business;
 const tags = tagsResult.data ?? [];
 const members = await Promise.all((membersResult.data ?? []).map(async (member) => {
@@ -34,6 +36,7 @@ const currentSignature = signaturesResult.data?.find((signature) => activeOwnerI
 const currentTermsApproved = business.owner_approved_terms_version === TERMS_VERSION;
 const activationLocked = !business.is_active && (!currentSignature || !currentTermsApproved || Boolean(business.cancelled_at));
 const untaggedVisits = untaggedResult.count ?? 0;
+const canDelete = (customerCountResult.count ?? 0) === 0 && (visitCountResult.count ?? 0) === 0;
 const currentTermDate = business.term_ends_at?.slice(0, 10) ?? "";
 const minimumExtensionDate = new Date(Math.max(Date.now(), business.term_ends_at ? new Date(business.term_ends_at).getTime() : 0) + 86_400_000).toISOString().slice(0, 10);
 const siteUrl = configuredSiteUrl();
@@ -201,6 +204,16 @@ const formError = Astro.url.searchParams.get("error");
             <button class="button danger" type="submit">Cancelar servicio</button>
           </form>
         )}
+        {canDelete ? (
+          <form class="delete-form" action={`/api/admin/business/${business.id}/delete`} method="post" onsubmit="return confirm('¿Eliminar este negocio para siempre? No se puede deshacer.')">
+            <h3>Eliminar negocio (solo pruebas o errores)</h3>
+            <p class="muted">Borra el negocio, sus tarjetas NFC y sus accesos. Solo aparece si todavía no tiene clientes ni visitas. Los usuarios no se borran.</p>
+            <div class="field"><label for="confirmSlug">Para confirmar, escribe su dirección web: <strong>{business.slug}</strong></label><input id="confirmSlug" name="confirmSlug" required autocomplete="off" autocapitalize="none" spellcheck="false" /></div>
+            <button class="button danger" type="submit">Eliminar negocio</button>
+          </form>
+        ) : (
+          <p class="muted">Este negocio ya tiene clientes o visitas, por eso no se puede eliminar. Usa «Cancelar servicio».</p>
+        )}
       </section>
     </div>
   </div>
@@ -275,6 +288,7 @@ const formError = Astro.url.searchParams.get("error");
   .approval-state { display: grid; gap: 5px; margin: 0 0 18px; } .approval-state span { color: #667085; }
   .danger-zone { border-color: #fda29b; } .danger-zone > form { margin-bottom: 18px; }
   .button.danger { background: #b42318; }
+  .delete-form { display: grid; gap: 12px; margin-top: 22px; padding-top: 20px; border-top: 1px solid #fda29b; } .delete-form h3 { margin: 0; font-size: 1rem; }
   .records { list-style: none; padding: 0; margin: -5px 0 20px; border: 1px solid #eaecf0; border-radius: 11px; overflow: hidden; }
   .records li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px; border-bottom: 1px solid #eaecf0; } .records li:last-child { border: 0; }
   .records li div { min-width: 0; display: grid; gap: 4px; } .records small { color: #98a2b3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

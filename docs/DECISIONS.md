@@ -282,3 +282,12 @@ Decision:
 - `primaryColor` acepta cualquier color hexadecimal (`1a73e8`, `#abc`, `#1A73E8`), normalizado a `#RRGGBB` mayúsculas por `normalizeHexColor`. La restricción a paleta por estilo (D-057) se elimina; la validación hex estricta y el `check` de la base de datos siguen impidiendo inyección de CSS. La legibilidad se mantiene con `buttonTextColor`, `visibleAccent` y `heroOrnament`.
 - Se elimina la casilla de color secundario (no se usaba al renderizar). La columna `secondary_color` permanece en la base; la API ya no la escribe. Sin migración.
 - Fuera de alcance (etapa 2): fondo y letras de marca.
+
+## D-060 — Eliminar negocios de prueba desde el panel
+
+Context: un negocio creado por error o para pruebas no se podía quitar; «Cancelar servicio» solo desactiva y conserva el registro.
+
+Decision:
+- Nueva ruta `POST /api/admin/business/[id]/delete` (solo administrador de plataforma con MFA). Exige escribir la dirección web del negocio y rechaza cualquier negocio con clientes o visitas, que siguen el flujo de cancelación y purga por retención.
+- Registra `business.deleted` en `audit_log` (solo slug y nombre) antes de borrar. El borrado en cascada elimina tarjetas NFC, accesos y firmas; `audit_log.business_id` pasa a NULL. Los usuarios de Auth no se tocan.
+- La página `/admin/[id]` muestra el formulario solo cuando el negocio está vacío.
