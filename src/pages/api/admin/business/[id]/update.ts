@@ -10,15 +10,64 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
   const id = params.id ?? "";
   const form = await request.formData();
   const raw: Record<string, unknown> = Object.fromEntries(form);
-  const parsed = businessUpdateSchema.safeParse({ ...raw, heroImageUrl: heroImageFromForm(raw) });
-  if (!parsed.success) return redirect(`/admin/${id}?error=${encodeURIComponent("Revisa los datos del negocio.")}`, 303);
-  const input = parsed.data;
+  // Explicit scopes prevent a design-only save from changing service status
+  // or an administrative save from altering unpublished branding.
+  const mode = form.get("mode");
+  if (mode !== "design" && mode !== "administration") {
+    return redirect(`/admin/${id}?error=${encodeURIComponent("Elige la sección que quieres guardar.")}#administracion`, 303);
+  }
   const service = createSupabaseServiceClient();
-  const wantsActive = form.get("isActive") === "on";
   const { data: current, error: currentError } = await service.from("businesses")
     .select("owner_approved_at,owner_approved_terms_version,cancelled_at,display_name,legal_name,slug,logo_url,privacy_url,contact_phone,contact_email,primary_color,timezone,default_country,inactivity_days,offer_inactive,offer_birthday,offer_frequent,offer_new,google_review_url,theme,tagline,benefits,hero_image_url,business_type,instagram_url,is_active")
     .eq("id", id).maybeSingle();
   if (currentError || !current) return redirect(`/admin/${id}?error=${encodeURIComponent("Negocio no encontrado.")}`, 303);
+  const saved = {
+    displayName: current.display_name,
+    legalName: current.legal_name ?? "",
+    slug: current.slug,
+    logoUrl: current.logo_url ?? "",
+    privacyUrl: current.privacy_url ?? "",
+    contactPhone: current.contact_phone ?? "",
+    contactEmail: current.contact_email ?? "",
+    primaryColor: current.primary_color,
+    timezone: current.timezone,
+    defaultCountry: current.default_country,
+    inactivityDays: current.inactivity_days,
+    offerInactive: current.offer_inactive ?? "",
+    offerBirthday: current.offer_birthday ?? "",
+    offerFrequent: current.offer_frequent ?? "",
+    offerNew: current.offer_new ?? "",
+    googleReviewUrl: current.google_review_url ?? "",
+    theme: current.theme,
+    tagline: current.tagline ?? "",
+    benefit1: current.benefits?.[0] ?? "",
+    benefit2: current.benefits?.[1] ?? "",
+    benefit3: current.benefits?.[2] ?? "",
+    heroImageUrl: current.hero_image_url ?? "",
+    businessType: current.business_type ?? "otro",
+    instagramUrl: current.instagram_url ?? "",
+  };
+  const designFields = new Set([
+    "displayName","logoUrl","businessType","theme","primaryColor","tagline",
+    "benefit1","benefit2","benefit3","heroSource","heroImageCustom","instagramUrl",
+    "offerInactive","offerBirthday","offerFrequent","offerNew",
+  ]);
+  const administrationFields = new Set([
+    "legalName","slug","privacyUrl","contactPhone","contactEmail","inactivityDays",
+    "timezone","defaultCountry","googleReviewUrl",
+  ]);
+  const allowed = mode === "design" ? designFields : administrationFields;
+  const submitted = Object.fromEntries(Object.entries(raw).filter(([name]) => allowed.has(name)));
+  const merged = { ...saved, ...submitted };
+  const parsed = businessUpdateSchema.safeParse({
+    ...merged,
+    heroImageUrl: mode === "design" ? heroImageFromForm(merged) : saved.heroImageUrl,
+  });
+  if (!parsed.success) {
+    return redirect(`/admin/${id}?error=${encodeURIComponent("Revisa los datos del negocio.")}#${mode === "design" ? "diseno" : "administracion"}`,303);
+  }
+  const input = parsed.data;
+  const wantsActive = mode === "design" ? current.is_active : form.get("isActive") === "on";
   if (wantsActive && !current.is_active && (!current.owner_approved_at || current.owner_approved_terms_version !== TERMS_VERSION)) {
     return redirect(`/admin/${id}?error=${encodeURIComponent("Registra la firma vigente y la aprobación del dueño antes de activar el negocio.")}`, 303);
   }
@@ -59,5 +108,5 @@ export const POST: APIRoute = async ({ request, cookies, params, redirect }) => 
     entity_id: id,
     details: { changedFields },
   });
-  return redirect(`/admin/${id}?message=${encodeURIComponent("Cambios guardados.")}`, 303);
+  return redirect(`/admin/${id}?message=${encodeURIComponent("Cambios guardados.")}#${mode === "design" ? "diseno" : "administracion"}`, 303);
 };
