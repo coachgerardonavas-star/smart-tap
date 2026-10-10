@@ -190,6 +190,9 @@ const formError = Astro.url.searchParams.get("error");
         {business.owner_approved_at
           ? <p class="approval-state"><strong>Aprobado por {business.owner_approved_name}</strong><span>{new Intl.DateTimeFormat("es-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(business.owner_approved_at))}</span></p>
           : <p class="muted">El dueño debe aprobar la configuración final antes de activar el negocio.</p>}
+        {message && <div class="alert success">{message}</div>}
+        {formError && <div class="alert">{formError}</div>}
+        {!currentSignature && <p class="muted compact-note"><strong>El botón está apagado</strong> porque el dueño aún no ha firmado los Términos. Se enciende solo cuando firme.</p>}
         <form class="inline-form" action={`/api/admin/business/${business.id}/approve`} method="post">
           <div class="field"><label for="ownerName">Nombre del dueño que te confirmó que todo está bien</label><input id="ownerName" name="ownerName" minlength="2" maxlength="120" required /></div>
           <button class="button secondary" type="submit" disabled={!currentSignature}>Registrar aprobación del dueño</button>
