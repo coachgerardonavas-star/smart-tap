@@ -13,8 +13,8 @@ const theme = isCustomerTheme(requestedTheme) ? requestedTheme : preset.theme;
 const requestedVisits = Number.parseInt(Astro.url.searchParams.get("visitas") ?? "", 10);
 const demoVisitCount = Number.isInteger(requestedVisits) && requestedVisits >= 1 && requestedVisits <= 999 ? requestedVisits : 3;
 const demoNames = {
-  restaurante: "La Campiña", food_truck: "Sabor Sobre Ruedas", cafe: "Café Luna", panaderia: "Pan de Casa",
-  heladeria: "Coco Loco", barberia: "Norte", salon: "Studio Bella", otro: "Tienda Sol",
+  restaurante: "La Campiña", cafe: "Café Luna", panaderia: "Pan de Casa", barberia: "Norte",
+  salon: "Studio Bella", heladeria: "Coco Loco", tienda: "Tienda Sol", gimnasio: "Fuerza Local",
 } as const;
 const labels = { elegante: "Elegante", calido: "Cálido", moderno: "Moderno", colorido: "Colorido" } as const;
 const accent = customerThemePalettes[theme][0];

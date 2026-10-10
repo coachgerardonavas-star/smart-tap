@@ -1,5 +1,17 @@
 # Customer screens — branded styles (D-046, D-048, D-057)
 
+## D-057 visual system (v2)
+
+The approved visual source is `docs/design/customer-styles-v2/estilos-smart-tap.html`. Both `/b/[slug]` and `/demo/capture` render the same `CustomerCapture` component.
+
+- Registration remains one page. A full-width business photo sits behind a style-specific veil. The logo or initials plus the business-type icon, name, type, tagline, title and three icon benefits appear above an overlapping form card.
+- Name, phone, birthday, consent and optional unchecked WhatsApp fields keep their approved copy. The form includes local SVG field icons and a business-type illustration.
+- Confirmation shows `Esta es tu visita número N` from the database result. Five stars render with `min(N, 5)` filled. It contains no reward or prize claim.
+- The Google button appears only for a configured Google Review URL. `Seguir en Instagram` appears only for a configured validated Instagram URL.
+- Business presets live in `src/lib/business-presets.ts`. Admin users can accept or edit the suggested style, tagline, benefits, photo and accent color.
+- Stock photos live under `public/stock/<tipo>/`; their authors, sources and Unsplash License are recorded in `public/stock/ATTRIBUTION.md`.
+- The hero uses explicit dimensions, responsive `sizes` and high fetch priority. The photo veil maintains text contrast, controls expose visible focus, and reduced-motion preferences disable motion.
+
 Approved by the CEO on 2026-10-04. Visual reference: `docs/design/customer-styles/*.dc.html` (one file per style, three 390×844 screens each: welcome, form, confirmation). Open them in a browser or read the inline styles; colors, fonts, radii and copy are exact. The canvas lives at https://claude.ai/artifact/QrgcmaDNQzYy7MU3RCPpH8 (private to the CEO).
 
 ## Decision
@@ -39,7 +51,7 @@ Supersedes the visual details above where they differ; the rules above still app
 - **Confirmation.** "¡Listo!", "Tu visita quedó registrada", "Esta es tu visita número N" with five stars (min(N, 5) filled), "Gracias por venir. La próxima vez solo toca la tarjeta otra vez.", Google review button when configured, "Seguir en Instagram" only with `instagram_url`, and a per-style farewell. No rewards, prizes or accumulation copy. The counter appears only when the server returns `visitCount` (see D-057 on the name check).
 - **Fonts per style.** elegante: Cormorant Garamond, Jost, Great Vibes. cálido: Fraunces, Nunito, Caveat. moderno: Archivo, IBM Plex Sans. colorido: Baloo 2, Nunito. Only the selected style's faces are declared on a page.
 - **Accent colors.** Four per style; the admin chooses one. elegante `#C9A45C #1E2A3A #B28B42 #9C7B3E`; cálido `#C8412A #E59A55 #3B2316 #8A6A55`; moderno `#FF6A2B #FFD23F #2EC4B6 #FF6F9E`; colorido `#3A1240 #FF6F9E #2EC4B6 #FFD23F`. Button text is black or white by relative luminance (≥ 4.5:1). When an accent is too light for its background, the button keeps a dark 1.5 px edge.
-- **Data.** `business_type` (8 values, null = otro), `instagram_url` (`https://www.instagram.com/<usuario>`, usuario `[A-Za-z0-9._]{1,30}`), `hero_image_url` also accepts `/stock/<type>/<name>.webp`. Admin edits all three; changes go through `business.updated` with `changedFields`.
+- **Data.** `business_type` has 8 values: restaurante, cafe, panaderia, barberia, salon, heladeria, tienda and gimnasio. A null legacy value uses the café presentation. `instagram_url` accepts `https://www.instagram.com/<usuario>` with usuario `[A-Za-z0-9._]{1,30}`. `hero_image_url` also accepts `/stock/<type>/<name>.webp`. Admin edits all three; changes go through `business.updated` with `changedFields`.
 - **Presets by type.** Style, tagline, three benefits, inactivity days, first library photo and first palette color are filled when the admin changes the type. Values remain editable.
 - **Photo library.** `public/stock/<type>/<type>-{1,2,3}.webp`, ≤ 1200 px wide and < 200 KB; credits and license in `public/stock/ATTRIBUTION.md`. The admin can pick a library photo, an own HTTPS URL or no photo.
 - **Performance.** The hero `<img>` has explicit size and `fetchpriority="high"`; React also emits a matching image preload.

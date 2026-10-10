@@ -2,11 +2,11 @@ import type { CustomerTheme } from "./customer-theme";
 
 // D-057: business types and the values the admin pre-fills when one is chosen.
 // Every value stays editable; the presets are suggestions, never enforced.
-export const businessTypes = ["restaurante", "food_truck", "cafe", "panaderia", "heladeria", "barberia", "salon", "otro"] as const;
+export const businessTypes = ["restaurante", "cafe", "panaderia", "barberia", "salon", "heladeria", "tienda", "gimnasio"] as const;
 
 export type BusinessType = (typeof businessTypes)[number];
 
-export type BusinessIcon = "utensils" | "truck" | "cup" | "bread" | "cone" | "blade" | "comb" | "store";
+export type BusinessIcon = "utensils" | "cup" | "bread" | "cone" | "blade" | "comb" | "store" | "dumbbell";
 
 export type BusinessPreset = {
   label: string;
@@ -30,15 +30,6 @@ export const businessPresets: Record<BusinessType, BusinessPreset> = {
     benefits: ["Promociones especiales", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
     inactivityDays: 21,
     photos: stockPhotos("restaurante", "restaurante"),
-  },
-  food_truck: {
-    label: "Food truck",
-    icon: "truck",
-    theme: "colorido",
-    tagline: "Sabor que te sigue",
-    benefits: ["Ofertas para clientes", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
-    inactivityDays: 14,
-    photos: stockPhotos("food_truck", "food-truck"),
   },
   cafe: {
     label: "Café",
@@ -85,14 +76,23 @@ export const businessPresets: Record<BusinessType, BusinessPreset> = {
     inactivityDays: 30,
     photos: stockPhotos("salon", "salon"),
   },
-  otro: {
-    label: "Negocio local",
+  tienda: {
+    label: "Tienda",
     icon: "store",
-    theme: "calido",
-    tagline: "Gracias por elegirnos",
-    benefits: ["Ofertas para clientes", "Te reconocemos al volver", "Sorpresa en tu cumpleaños"],
+    theme: "moderno",
+    tagline: "Siempre algo nuevo",
+    benefits: ["Ofertas para clientes", "Novedades de la tienda", "Un detalle en tu cumpleaños"],
     inactivityDays: 30,
-    photos: stockPhotos("otro", "otro"),
+    photos: stockPhotos("tienda", "tienda"),
+  },
+  gimnasio: {
+    label: "Gimnasio",
+    icon: "dumbbell",
+    theme: "moderno",
+    tagline: "Cada visita cuenta",
+    benefits: ["Beneficios para miembros", "Tu constancia queda registrada", "Un detalle en tu cumpleaños"],
+    inactivityDays: 14,
+    photos: stockPhotos("gimnasio", "gimnasio"),
   },
 };
 
@@ -105,5 +105,5 @@ export function isBusinessType(value: unknown): value is BusinessType {
 }
 
 export function resolveBusinessType(value: unknown): BusinessType {
-  return isBusinessType(value) ? value : "otro";
+  return isBusinessType(value) ? value : "cafe";
 }
