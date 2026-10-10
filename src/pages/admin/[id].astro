@@ -72,7 +72,7 @@ const formError = Astro.url.searchParams.get("error");
       <form action={`/api/admin/business/${business.id}/update`} method="post">
         <div class="split"><div class="field"><label for="displayName">Nombre del negocio</label><input id="displayName" name="displayName" value={business.display_name} required /><small class="hint">Como lo conocen sus clientes.</small></div><div class="field"><label for="slug">Dirección web del negocio</label><input id="slug" name="slug" value={business.slug} required autocapitalize="none" autocomplete="off" spellcheck="false" /><small class="hint">{siteUrl}/b/{business.slug}. Si ya grabaste tarjetas NFC, no la cambies: las tarjetas apuntan a esta dirección.</small></div></div>
         <div class="field"><label for="legalName">Nombre legal de la empresa (opcional)</label><input id="legalName" name="legalName" value={business.legal_name ?? ""} /><small class="hint">El nombre con el que está registrada (ej. Arepas Sabrosas LLC).</small></div>
-        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega el enlace de la imagen. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
+        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" value={business.logo_url ?? ""} /><small class="hint">Pega la dirección web directa de la imagen (empieza con https:// y suele terminar en .png o .jpg). No se puede subir el archivo aquí. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
         <fieldset class="customer-screen-settings">
           <legend>Pantalla del cliente</legend>
           <p class="muted compact-note">Esto es lo que ve el cliente del negocio cuando toca la tarjeta NFC. Míralo con el botón «Ver pantalla del cliente» de arriba.</p>
@@ -219,8 +219,15 @@ const formError = Astro.url.searchParams.get("error");
     form?.querySelectorAll<HTMLElement>("[data-theme-palette]").forEach((group) => {
       const active = group.dataset.themePalette === theme;
       group.hidden = !active;
-      if (active && pickFirst) group.querySelector<HTMLButtonElement>("[data-color]")?.click();
     });
+    if (!pickFirst) return;
+    // Switch to the new style's first suggested color only when the current one is
+    // itself a suggestion; a color typed by hand (the brand's own) is kept.
+    const current = (form?.querySelector<HTMLInputElement>("#primaryColor")?.value ?? "").trim().toUpperCase();
+    const suggested = Array.from(form?.querySelectorAll<HTMLElement>("[data-color]") ?? []).map((button) => (button.dataset.color ?? "").toUpperCase());
+    if (!current || suggested.includes(current)) {
+      form?.querySelector<HTMLElement>(`[data-theme-palette="${theme}"] [data-color]`)?.click();
+    }
   }
   function showPhotos(type: string) {
     form?.querySelectorAll<HTMLElement>("[data-photo-type]").forEach((option) => { option.hidden = option.dataset.photoType !== type; });

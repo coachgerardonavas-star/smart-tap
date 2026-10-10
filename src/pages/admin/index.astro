@@ -56,8 +56,8 @@ const formError = Astro.url.searchParams.get("error");
           <div class="field"><label for="contactEmail">Correo del negocio</label><input id="contactEmail" name="contactEmail" type="email" /></div>
         </div>
         <p class="muted">Sus clientes ven estos datos en el aviso de privacidad. Pon al menos uno antes de registrar la aprobación del dueño.</p>
-        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /><small class="hint">Pega el enlace de la imagen. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
-        <div class="field"><label for="privacyUrl">Aviso de privacidad propio (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="Vacío = se usa el aviso de Smart Tap" /></div>
+        <div class="field"><label for="logoUrl">Enlace del logo (opcional)</label><input id="logoUrl" name="logoUrl" type="url" /><small class="hint">Pega la dirección web directa de la imagen (empieza con https:// y suele terminar en .png o .jpg). No se puede subir el archivo aquí. Si lo dejas vacío se usan las iniciales del negocio.</small></div>
+        <div class="field"><label for="privacyUrl">Aviso de privacidad propio (opcional)</label><input id="privacyUrl" name="privacyUrl" placeholder="https://minegocio.com/privacidad" /><small class="hint">Solo un enlace, no un archivo. Si lo dejas vacío se usa el aviso de Smart Tap, que ya viene listo.</small></div>
         <BrandColorField value="#155EEF" />
         <div class="field"><label for="inactivityDays">¿Cuántos días sin venir para considerarlo inactivo?</label><input id="inactivityDays" name="inactivityDays" type="number" min="7" max="365" value="30" /><small class="hint">Pasado ese tiempo, el cliente aparece como «no ha vuelto» en el panel. El dueño puede ajustarlo.</small></div>
         <div class="split">
