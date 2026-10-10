@@ -7,6 +7,7 @@ import { FOLLOW_UP_KIND_LABELS, FOLLOW_UP_KINDS } from "../../lib/follow-up";
 import { pendingOwnerSignatureBusiness } from "../../lib/terms-access";
 
 const identity = await requireDataAccess(Astro.request, Astro.cookies);
+const ownerPreview = identity.isPlatformAdmin && Astro.url.searchParams.get("preview") === "owner";
 const pendingSignatureBusiness = await pendingOwnerSignatureBusiness(identity);
 if (pendingSignatureBusiness) {
   return Astro.redirect(`/terms/sign?business=${encodeURIComponent(pendingSignatureBusiness)}&next=${encodeURIComponent("/dashboard")}`);
@@ -27,7 +28,8 @@ const followUpGroups = metrics ? FOLLOW_UP_KINDS.map((kind) => ({
 })).filter((group) => group.items.length > 0) : [];
 ---
 
-<Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin} dashboardHref={dashboardHref}>
+<Base title="Panel | Smart Tap" privateArea isAdmin={identity.isPlatformAdmin && !ownerPreview} previewReadOnly={ownerPreview} dashboardHref={dashboardHref}>
+  {ownerPreview && <section class="card" style="padding:12px 16px;margin-bottom:16px"><strong>Vista del dueño · solo lectura.</strong> Los datos son los del negocio seleccionado. Todas las acciones están desactivadas.</section>}
   {!business || !metrics ? (
     <section class="empty card">
       <p class="eyebrow">Smart Tap</p>
