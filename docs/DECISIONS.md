@@ -314,3 +314,9 @@ Decision:
 - `/admin/[id]` muestra, justo encima de la casilla, cuatro requisitos con ✓/○ y enlace a la sección que lo resuelve: dueño asignado, Términos firmados, datos completos (con lo que falta nombrado) y aprobación registrada. La lista lateral de pasos se sustituye por esa.
 - El enlace del logo pasa de «opcional» a «necesario para activar»: la función `record_business_owner_approval` exige `logo_url` no vacío, así que la etiqueta anterior era incorrecta. No se cambió la base de datos.
 - Supabase solo envía correo de invitación a cuentas nuevas. Si el correo ya existe, el mensaje de `/admin` dice que no se envió invitación y que la persona entra por `/login`.
+
+## D-064 — Lista de tipos de negocio vía migración nueva
+
+Context: el PR #15 (Codex) cambió la lista de `business_type` editando `20261006020000_customer_styles_v2.sql`, pero esa migración ya está aplicada en producción (versión `20261006030344`) con la lista anterior (`food_truck`, `otro`). Editar el archivo no cambia la base: guardar «tienda» o «gimnasio» habría fallado.
+
+Decision: la migración original se deja como estaba y la nueva lista se aplica con `20261010150000_business_types_v3.sql`. Comprobación previa: ningún negocio usa `food_truck` ni `otro`. La migración nueva la aplica el CEO antes de desplegar este código; los documentos que dicen «sin aplicar» sobre la v2 están desactualizados.

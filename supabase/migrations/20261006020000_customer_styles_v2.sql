@@ -7,7 +7,7 @@ alter table public.businesses
   add constraint businesses_business_type_check
     check (
       business_type is null
-      or business_type in ('restaurante', 'cafe', 'panaderia', 'barberia', 'salon', 'heladeria', 'tienda', 'gimnasio')
+      or business_type in ('restaurante', 'food_truck', 'cafe', 'panaderia', 'heladeria', 'barberia', 'salon', 'otro')
     ),
   add constraint businesses_instagram_url_check
     check (
@@ -23,7 +23,7 @@ alter table public.businesses
         char_length(hero_image_url) between 1 and 500
         and (
           hero_image_url like 'https://%'
-          or hero_image_url ~ '^/stock/[a-z]+/[a-z0-9-]+\.webp$'
+          or hero_image_url ~ '^/stock/[a-z_]+/[a-z0-9-]+\.webp$'
         )
       )
     );
